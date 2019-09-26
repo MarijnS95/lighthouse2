@@ -1,0 +1,16 @@
+project(imgui)
+
+file(GLOB_RECURSE sources "*.cpp")
+file(GLOB_RECURSE headers "*.h")
+
+# Create object library. This only bundles the compiled objects resulting
+# from the source files, without doing any sort of linking.
+# This is pretty much identical to including the source files directly in the
+# target project, but in an abstracted way. Though, a static library would
+# work just as well.
+add_library(${PROJECT_NAME} OBJECT ${sources} ${headers})
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
+
+find_package(glfw3 REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+target_link_libraries(${PROJECT_NAME} PRIVATE glad)
