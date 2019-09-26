@@ -20,8 +20,8 @@
 
 static CoreAPI_Base* api = 0;
 
-typedef CoreAPI_Base* (*createCoreFunction)();
-typedef void( *destroyCoreFunction )();
+typedef CoreAPI_Base* ( *createCoreFunction )();
+typedef void ( *destroyCoreFunction )();
 static createCoreFunction createCore;
 static destroyCoreFunction destroyCore;
 
