@@ -20,33 +20,108 @@
 
 static CoreAPI_Base* api = 0;
 
-typedef CoreAPI_Base* (*createCoreFunction)();
-typedef void( *destroyCoreFunction )();
+typedef CoreAPI_Base* ( *createCoreFunction )();
+typedef void ( *destroyCoreFunction )();
 static createCoreFunction createCore;
 static destroyCoreFunction destroyCore;
+
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+
+#include <windows.h>
 static HMODULE module;
 
-CoreAPI_Base* CoreAPI_Base::CreateCoreAPI( const char* dllName )
+bool GetLastErrorString( char* buffer, DWORD length )
 {
-	if (!api)
+	auto err = GetLastError();
+
+	if ( !err )
+		return false;
+
+	// Assuming buffer is large enough for any error message.
+	// Otherwise, use FORMAT_MESSAGE_ALLOCATE_BUFFER and LocalFree!
+	auto ret = FormatMessage( FORMAT_MESSAGE_FROM_SYSTEM,
+							  NULL,
+							  err,
+							  MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), // default language
+							  buffer,
+							  length,
+							  NULL );
+
+	return !ret;
+}
+
+HMODULE LoadModule( const char* dllName )
+{
+	// try the development folder structure first
+	string dllpath = "../../coredlls/";
+#ifdef _DEBUG
+	dllpath += "debug/";
+#else
+	dllpath += "release/";
+#endif
+	dllpath += dllName;
+	module = LoadLibrary( dllpath.c_str() );
+	if ( !module )
 	{
-		// try the development folder structure first
-		string dllpath = "../../coredlls/";
-	#ifdef _DEBUG
-		dllpath += "debug/";
-	#else
-		dllpath += "release/";
-	#endif
-		dllpath += string( dllName );
-		module = LoadLibrary( dllpath.c_str() );
+		char errstr[1024] = "FormatMessage failed (unknown error code?)";
+		// Print informative info:
+		if ( GetLastErrorString( errstr, sizeof( errstr ) ) )
+			printf( "Failed to load %s: %s. Trying local DLL", dllpath.c_str(), errstr );
+
+		// see if the dll is perhaps in the current folder
+		module = LoadLibrary( dllName );
 		if ( !module )
 		{
-			// see if the dll is perhaps in the current folder
-			module = LoadLibrary( dllName );
-			FATALERROR_IF( !module, "dll %s not found", dllName );
+			GetLastErrorString( errstr, sizeof( errstr ) );
+			FATALERROR( "Unable to open %s: %s", dllName, errstr );
 		}
-		createCore = (createCoreFunction)GetProcAddress( module, "CreateCore" );
-		FATALERROR_IF( !createCore, "Could not find entrypoint in dll" );
+	}
+	return module;
+}
+
+FARPROC GetSymbol( HMODULE module, const char* symbol )
+{
+	return GetProcAddress( module, symbol );
+}
+
+#else
+
+#include <dlfcn.h>
+static void* module;
+
+void* LoadModule( const char* dllName )
+{
+	auto dllpath = string( "lib" ) + string( dllName ) + string( ".so" );
+	module = dlopen( dllpath.c_str(), RTLD_NOW | RTLD_GLOBAL );
+	if ( !module )
+	{
+		printf( "dlopen %s failed with %s\n", dllpath.c_str(), dlerror() );
+
+		// see if the dll is perhaps in the current folder
+		module = dlopen( dllName, RTLD_NOW | RTLD_GLOBAL );
+		FATALERROR_IF( !module, "Failed to dlopen %s: %s", dllName, dlerror() );
+	}
+	return module;
+}
+
+void* GetSymbol( void* module, const char* symbol )
+{
+	return dlsym( module, symbol );
+}
+
+#endif
+
+CoreAPI_Base* CoreAPI_Base::CreateCoreAPI( const char* coreName )
+{
+	if ( !api )
+	{
+		module = LoadModule( coreName );
+
+		createCore = (createCoreFunction)GetSymbol( module, "CreateCore" );
+		FATALERROR_IF( !createCore, "Could not find CreateCore in library" );
+		destroyCore = (destroyCoreFunction)GetSymbol( module, "DestroyCore" );
+		FATALERROR_IF( !destroyCore, "Could not find DestroyCore in library" );
 		api = createCore();
 		api->Init();
 	}

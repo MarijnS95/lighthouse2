@@ -71,7 +71,7 @@ void HostScene::SerializeMaterials( const char* xmlFile )
 		if ((materials[i]->flags & HostMaterial::FROM_MTL) == 0) continue;
 		// create a new entry for the material
 		char entryName[128];
-		sprintf_s( entryName, "material_%i", i );
+		snprintf( entryName, sizeof(entryName), "material_%i", i );
 		XMLNode* materialEntry = doc.NewElement( entryName );
 		root->InsertEndChild( materialEntry );
 		// store material properties
@@ -121,14 +121,14 @@ void HostScene::DeserializeMaterials( const char* xmlFile )
 	XMLElement* countElement = root->FirstChildElement( "material_count" );
 	if (!countElement) return;
 	int materialCount;
-	sscanf_s( countElement->GetText(), "%i", &materialCount );
+	scanf( countElement->GetText(), "%i", &materialCount );
 	if (materialCount != materials.size()) return;
 	for (int i = 0; i < materialCount; i++)
 	{
 		// find the entry for the material
 		HostMaterial* m /* for brevity */ = materials[i];
 		char entryName[128];
-		sprintf_s( entryName, "material_%i", i );
+		snprintf( entryName, sizeof(entryName), "material_%i", i );
 		XMLNode* entry = root->FirstChildElement( entryName );
 		if (!entry) continue;
 		// set the properties

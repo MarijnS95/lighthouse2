@@ -14,7 +14,13 @@
 */
 
 #include "rendersystem.h"
-#include "direct.h"
+#ifdef _MSC_VER
+#include <direct.h>
+#define getcwd _getcwd
+#define chdir _chdir
+#else
+#include <unistd.h>
+#endif
 
 using namespace tinygltf;
 
@@ -134,8 +140,8 @@ void HostMesh::LoadGeometryFromOBJ( const string& fileName, const char* director
 	// process materials
 	timer.reset();
 	char currDir[1024];
-	_getcwd( currDir, 1024 ); // GetCurrentDirectory( 1024, currDir );
-	_chdir( directory ); // SetCurrentDirectory( directory );
+	getcwd( currDir, 1024 ); // GetCurrentDirectory( 1024, currDir );
+	chdir( directory ); // SetCurrentDirectory( directory );
 	materialList.clear();
 	materialList.reserve( materials.size() );
 	for (auto &mtl : materials)
@@ -149,7 +155,7 @@ void HostMesh::LoadGeometryFromOBJ( const string& fileName, const char* director
 		HostScene::materials.push_back( material );
 		materialList.push_back( material->ID );
 	}
-	_chdir( currDir ); // SetCurrentDirectory( currDir );
+	chdir( currDir ); // SetCurrentDirectory( currDir );
 	printf( "materials finalized in %5.3fs\n", timer.elapsed() );
 	// calculate values for consistent normal interpolation
 	const uint verts = (uint)attrib.normals.size() / 3;

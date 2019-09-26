@@ -24,11 +24,16 @@ typedef unsigned short ushort;
 
 #ifndef __CUDACC__
 
-typedef unsigned __int64 uint64;
+#ifdef _MSC_VER
 typedef unsigned char BYTE; // for freeimage.h
 typedef unsigned short WORD; // for freeimage.h
 typedef unsigned long DWORD; // for freeimage.h
 typedef int BOOL; // for freeimage.h
+
+#define ALIGN( x ) __declspec( align( x ) )
+#else
+#define ALIGN( x ) __attribute__( ( aligned( x ) ) )
+#endif
 
 #pragma warning (disable : 4244 )
 
@@ -45,16 +50,16 @@ typedef int BOOL; // for freeimage.h
 #ifndef CUDABUILD
 
 // vector type placeholders, carefully matching CUDA's layout and alignment
-__declspec(align(8)) struct int2 { int x, y; };
-__declspec(align(8)) struct uint2 { uint x, y; };
-__declspec(align(8)) struct float2 { float x, y; };
+struct ALIGN(8) int2 { int x, y; };
+struct ALIGN(8) uint2 { uint x, y; };
+struct ALIGN(8) float2 { float x, y; };
 struct int3 { int x, y, z; };
 struct uint3 { uint x, y, z; };
 struct float3 { float x, y, z; };
-__declspec(align(16)) struct int4 { int x, y, z, w; };
-__declspec(align(16)) struct uint4 { uint x, y, z, w; };
-__declspec(align(16)) struct float4 { float x, y, z, w; };
-__declspec(align(4)) struct uchar4 { uchar x, y, z, w; };
+struct ALIGN(16) int4 { int x, y, z, w; };
+struct ALIGN(16) uint4 { uint x, y, z, w; };
+struct ALIGN(16) float4 { float x, y, z, w; };
+struct ALIGN(4) uchar4 { uchar x, y, z, w; };
 
 inline float fminf( float a, float b ) { return a < b ? a : b; }
 inline float fmaxf( float a, float b ) { return a > b ? a : b; }

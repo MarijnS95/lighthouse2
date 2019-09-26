@@ -56,11 +56,6 @@ typedef int tinyobjMaterial;
 #include "render_api.h"
 
 #ifdef RENDERSYSTEMBUILD
-#undef APIENTRY
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h> // for dll loading
 using namespace tinyxml2;
 #endif
 
@@ -85,7 +80,7 @@ public:
 	// methods
 	void Init( const char* dllName );
 	void SynchronizeSceneData();
-	void Render( ViewPyramid& view, Convergence converge );
+	void Render( const ViewPyramid& view, Convergence converge );
 	void SetTarget( GLTexture* target, const uint spp );
 	void SetProbePos( int2 pos ) { if (core) core->SetProbePos( pos ); }
 	void Shutdown();
