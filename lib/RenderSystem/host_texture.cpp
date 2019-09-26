@@ -147,11 +147,11 @@ void HostTexture::Load( const char* fileName, const uint modFlags, bool normalMa
 		binFile[strlen( fileName ) - 4] = 0;
 		strcat_s( binFile, ".bin" );
 		FILE* f;
-	#ifdef _MSC_VER
+#ifdef _MSC_VER
 		fopen_s( &f, binFile, "rb" );
-	#else
+#else
 		f = fopen( binFile, "rb" );
-	#endif
+#endif
 		if (f)
 		{
 			uint version;
@@ -251,11 +251,11 @@ void HostTexture::Load( const char* fileName, const uint modFlags, bool normalMa
 		binFile[strlen( fileName ) - 4] = 0;
 		strcat_s( binFile, ".bin" );
 		FILE* f;
-	#ifdef _MSC_VER
+#ifdef _MSC_VER
 		fopen_s( &f, binFile, "rb" );
-	#else
+#else
 		f = fopen( binFile, "rb" );
-	#endif
+#endif
 		if (f)
 		{
 			uint version = BINTEXFILEVERSION;
