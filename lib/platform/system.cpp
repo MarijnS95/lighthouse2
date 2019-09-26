@@ -19,6 +19,12 @@
 
 #include "platform.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifndef WIN32
+#include <unistd.h>
+#endif
+
 //  +-----------------------------------------------------------------------------+
 //  |  RNG - Marsaglia's xor32.                                             LH2'19|
 //  +-----------------------------------------------------------------------------+
@@ -86,61 +92,51 @@ float4 operator * ( const float4& b, const mat4& a )
 //  +-----------------------------------------------------------------------------+
 bool FileIsNewer( const char* file1, const char* file2 )
 {
-	HANDLE fh1 = CreateFile( file1, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	HANDLE fh2 = CreateFile( file2, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	FATALERROR_IF(fh1 == INVALID_HANDLE_VALUE, "File %s not found!", file1);
-	if (fh2 == INVALID_HANDLE_VALUE)
-	{
-		CloseHandle( fh1 );
+	struct stat f1;
+	struct stat f2;
+
+	auto ret = stat( file1, &f1 );
+	FATALERROR_IF( ret, "File %s not found!", file1 );
+
+	if ( stat( file2, &f2 ) )
 		return true; // second file does not exist
-	}
-	FILETIME ft1, ft2;
-	GetFileTime( fh1, NULL, NULL, &ft1 );
-	GetFileTime( fh2, NULL, NULL, &ft2 );
-	int result = CompareFileTime( &ft1, &ft2 );
-	CloseHandle( fh1 );
-	CloseHandle( fh2 );
-	return (result != -1);
+
+#ifdef _MSC_VER
+	return f1.st_mtime >= f2.st_mtime;
+#else
+	if ( f1.st_mtim.tv_sec >= f2.st_mtim.tv_sec )
+		return true;
+	return f1.st_mtim.tv_nsec >= f2.st_mtim.tv_nsec;
+#endif
 }
 
 bool FileExists( const char* f )
 {
-	HANDLE fh = CreateFile( f, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	if (fh == INVALID_HANDLE_VALUE) return false;
-	CloseHandle( fh );
-	return true;
+	std::ifstream s( f );
+	return s.good();
 }
 
 uint FileSize( string filename )
 {
-	struct stat stat_buf;
-	int rc = stat( filename.c_str(), &stat_buf );
-	return rc == 0 ? stat_buf.st_size : -1;
+	std::ifstream s( filename );
+	return s.good();
 }
 
 string TextFileRead( const char* _File )
 {
-	char line[16384];
-	string d;
-	FILE* f;
-	fopen_s( &f, _File, "r" );
-	while (!feof( f ))
-	{
-		fgets( line, 16382, f );
-		d.append( line );
-	}
-	fclose( f );
-	return d;
+	std::ifstream s( _File );
+
+	std::string str( ( std::istreambuf_iterator<char>( s ) ),
+					 std::istreambuf_iterator<char>() );
+	return str;
 }
 
 void TextFileWrite( const string& text, const char* _File )
 {
-	FILE* f;
-	fopen_s( &f, _File, "wb" );
-	int len = (int)strlen( text.c_str() ) + 1;
-	fwrite( &len, 1, 4, f );
-	fwrite( text.c_str(), 1, len, f );
-	fclose( f );
+	std::ofstream s( _File, std::ios::binary );
+	int len = text.size();
+	s.write( (const char*)&len, sizeof( len ) );
+	s.write( text.c_str(), len );
 }
 
 string LowerCase( string s )
@@ -196,7 +192,6 @@ void FatalError( const char* fmt, ... )
 #else
 	fprintf( stderr, t );
 #endif
-
 	assert( false );
 	while ( 1 ) exit( 0 );
 }

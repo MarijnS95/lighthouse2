@@ -15,6 +15,11 @@
 
 #include "rendersystem.h"
 
+// Local hack:
+#ifndef _MSC_VER
+#define strcat_s strcat
+#endif
+
 //  +-----------------------------------------------------------------------------+
 //  |  HostTexture::HostTexture                                                   |
 //  |  Constructor.                                                         LH2'19|

@@ -24,10 +24,6 @@
 */
 
 #include "platform.h"
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include "windows.h"
 
 #pragma comment( linker, "/subsystem:windows /ENTRY:mainCRTStartup" )
 
@@ -38,15 +34,18 @@
 uint sthread_proc( void* param ) { Thread* tp = (Thread*)param; tp->run(); return 0; }
 void Thread::start()
 {
-	DWORD tid = 0;
-	thread = (unsigned long*)CreateThread( NULL, 0, (LPTHREAD_START_ROUTINE)sthread_proc, (Thread*)this, 0, &tid );
-	SetThreadPriority( thread, THREAD_PRIORITY_NORMAL );
+	thread = std::thread( sthread_proc, this );
+#ifdef _MSC_VER
+	SetThreadPriority( thread.native_handle(), THREAD_PRIORITY_NORMAL );
+#else
+	// pthread_setschedprio(thread.native_handle(), ...);
+#endif
 }
 
 //  +-----------------------------------------------------------------------------+
 //  |  OpenGL helper functions.                                             LH2'19|
 //  +-----------------------------------------------------------------------------+
-void _CheckGL( char* f, int l )
+void _CheckGL( const char* f, int l )
 {
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR)
@@ -150,7 +149,7 @@ GLTexture::GLTexture( uint w, uint h, uint type )
 	CheckGL();
 }
 
-GLTexture::GLTexture( char* fileName, int filter )
+GLTexture::GLTexture( const char* fileName, int filter )
 {
 	GLuint textureType = GL_TEXTURE_2D;
 	glGenTextures( 1, &ID );

@@ -23,17 +23,21 @@
 #define GLFW_EXPOSE_NATIVE_WGL
 
 // system includes
+#ifdef WIN32
 #define NOMINMAX
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include "windows.h"
+#include <windows.h>
+#endif
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#ifdef WIN32
 #include <GLFW/glfw3native.h>
+#endif
 #include "zlib.h"
 #include <assert.h>
-#include "freeimage.h"
+#include "FreeImage.h"
 
 // namespaces
 using namespace std;
@@ -70,7 +74,7 @@ private:
 } // namespace lighthouse2
 
 // forward declarations of platform-specific helpers
-void _CheckGL( char* f, int l );
+void _CheckGL( const char* f, int l );
 #define CheckGL() { _CheckGL( __FILE__, __LINE__ ); }
 GLuint CreateVBO( const GLfloat* data, const uint size );
 void BindVBO( const uint idx, const uint N, const GLuint id );

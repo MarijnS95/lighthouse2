@@ -27,7 +27,10 @@
 #include <cstdarg>
 #include <ratio>
 #include <chrono>
-#include "half.hpp"
+#include <half.hpp>
+#include <cstdint>
+#include <thread>
+#include <fstream>
 
 using namespace std;
 using namespace half_float;
@@ -57,17 +60,23 @@ using namespace half_float;
 		if ( ret ) FATALERROR_IN( #stmt, error_parser( ret ), fmt, ##__VA_ARGS__ ) \
 	} while ( 0 )
 
-#define MALLOC64(x) ((x)==0?0:_aligned_malloc((x),64))
-#define FREE64(x) _aligned_free(x)
+#ifdef _MSC_VER
+#define ALIGN( x ) __declspec( align( x ) )
+#define MALLOC64( x ) ((x)==0?0:_aligned_malloc((x),64))
+#define FREE64( x ) _aligned_free( x )
+#else
+#define ALIGN( x ) __attribute__( ( aligned( x ) ) )
+#define MALLOC64( x ) ((x)==0?0:aligned_alloc(64, (x)))
+#define FREE64( x ) free( x )
+#endif
 
 // threading
 class Thread
 {
 public:
-	Thread() { thread = 0; }
 	void start();
-	virtual void run() {};
-	unsigned long* thread;
+	inline virtual void run() {};
+	std::thread thread;
 };
 extern "C" { uint sthread_proc( void* param ); }
 
@@ -219,7 +228,7 @@ public:
 	};
 	// constructor / destructor
 	GLTexture( uint width, uint height, uint type = DEFAULT );
-	GLTexture( char* fileName, int filter = GL_NEAREST );
+	GLTexture( const char* fileName, int filter = GL_NEAREST );
 	~GLTexture();
 	// methods
 	void Bind();
