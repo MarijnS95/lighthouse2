@@ -1,0 +1,36 @@
+# Indentation:
+IndentWidth: 4
+TabWidth: 4
+UseTab: Always
+# Uncomment if you do not want two spaced between public: or private:
+# AccessModifierOffset: -2
+
+# Do not wrap any lines; it's up to the programmer.
+ColumnLimit: 0
+
+# Newlines
+BreakBeforeBraces: Allman
+AlwaysBreakTemplateDeclarations: true
+
+# Jacco's favorite settings:
+SpacesInParentheses: true
+SpacesInContainerLiterals: true
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+
+# This just makes more sense (ex: int *pointer_to_int, not_a_pointer_just_an_int;)
+PointerAlignment: Right
+
+SortIncludes: true
+SortUsingDeclarations: true
+
+AlignAfterOpenBracket: Align
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+# AlignConsecutiveAssignments: true
+# AlignConsecutiveDeclarations: true
+SpacesBeforeTrailingComments: 1
