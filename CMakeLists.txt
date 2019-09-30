@@ -24,6 +24,21 @@ target_include_directories(Platform PRIVATE "lib/RenderSystem")
 # are implemented in platform.cpp, and headers are shared between lib/platform and
 # lib/RenderSystem making dependency management ever so slightly less elegant.
 
+# Include cross-compatible BSDF implementation:
+add_subdirectory("lib/sharedBSDFs")
+
+# Include CUDA support headers:
+add_subdirectory("lib/CUDA")
+
+# Include RenderCores:
+file(GLOB cores "lib/RenderCore_*")
+foreach(core IN LISTS cores)
+    add_subdirectory(${core})
+    get_filename_component(core_name ${core} NAME)
+    # get_property(core_loc TARGET ${core_name} PROPERTY LOCATION)
+    # list(APPEND core_folders $<GENEX_EVAL:$<TARGET_FILE_DIR:${core_name}>>)
+endforeach()
+
 # Include apps:
 file(GLOB app_directories "apps/*")
 foreach(app IN LISTS app_directories)
