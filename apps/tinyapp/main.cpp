@@ -48,6 +48,7 @@ void PrepareScene()
 //  +-----------------------------------------------------------------------------+
 bool HandleInput( float frameTime )
 {
+#ifdef _MSC_VER
 	// handle keyboard input
 	float translateSpeed = (GetAsyncKeyState( VK_SHIFT ) ? 15.0f : 5.0f) * frameTime, rotateSpeed = 2.5f * frameTime;
 	bool changed = false;
@@ -65,6 +66,9 @@ bool HandleInput( float frameTime )
 	if (GetAsyncKeyState( VK_RIGHT )) { changed = true; camera->TranslateTarget( make_float3( rotateSpeed, 0, 0 ) ); }
 	// let the main loop know if the camera should update
 	return changed;
+#else
+	return false;
+#endif
 }
 
 //  +-----------------------------------------------------------------------------+

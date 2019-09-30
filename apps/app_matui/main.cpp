@@ -52,6 +52,7 @@ void PrepareScene()
 //  +-----------------------------------------------------------------------------+
 bool HandleInput( float frameTime )
 {
+#ifdef _MSC_VER
 	if (!hasFocus) return false;
 	// handle keyboard input
 	float translateSpeed = (GetAsyncKeyState( VK_SHIFT ) ? 15.0f : 5.0f) * frameTime, rotateSpeed = 2.5f * frameTime;
@@ -84,6 +85,9 @@ bool HandleInput( float frameTime )
 	}
 	// let the main loop know if the camera should update
 	return changed;
+#else
+	return false;
+#endif
 }
 
 //  +-----------------------------------------------------------------------------+

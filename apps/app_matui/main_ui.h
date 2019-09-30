@@ -13,7 +13,7 @@
    limitations under the License.
 */
 
-#include "anttweakbar.h"
+#include <AntTweakBar.h>
 
 // AntTweakBar data
 float mraysincl = 0, mraysexcl = 0;
