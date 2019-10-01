@@ -14,7 +14,7 @@
     <ProjectGuid>{FF0D391E-1A93-48B0-A700-650F6BAF2597}</ProjectGuid>
     <RootNamespace>CUDATemplate2</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
-    <ProjectName>rendercore_primeref</ProjectName>
+    <ProjectName>RenderCore_PrimeRef</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

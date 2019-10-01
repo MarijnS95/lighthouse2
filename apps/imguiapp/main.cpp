@@ -79,12 +79,12 @@ int main()
 	InitImGui();
 
 	// initialize renderer: pick one
-	// renderer = RenderAPI::CreateRenderAPI( "rendercore_optix7filter.dll" );		// OPTIX7 core, with filtering (SOON)
-	// renderer = RenderAPI::CreateRenderAPI( "rendercore_optix7.dll" );			// OPTIX7 core, best for RTX devices
-	// renderer = RenderAPI::CreateRenderAPI( "rendercore_vulkan_rt.dll" );			// Meir's Vulkan / RTX core
-	renderer = RenderAPI::CreateRenderAPI( "rendercore_optixprime_b.dll" );			// OPTIX PRIME, best for pre-RTX CUDA devices
-	// renderer = RenderAPI::CreateRenderAPI( "rendercore_primeref.dll" );			// REFERENCE, for image validation
-	// renderer = RenderAPI::CreateRenderAPI( "rendercore_softrasterizer.dll" );	// RASTERIZER, your only option if not on NVidia
+	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Optix7filter.dll" );		// OPTIX7 core, with filtering (SOON)
+	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Optix7.dll" );			// OPTIX7 core, best for RTX devices
+	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Vulkan_RT.dll" );			// Meir's Vulkan / RTX core
+	renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_B.dll" );			// OPTIX PRIME, best for pre-RTX CUDA devices
+	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_PrimeRef.dll" );			// REFERENCE, for image validation
+	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_SoftRasterizer.dll" );	// RASTERIZER, your only option if not on NVidia
 
 	renderer->DeserializeCamera( "camera.xml" );
 	// initialize scene
