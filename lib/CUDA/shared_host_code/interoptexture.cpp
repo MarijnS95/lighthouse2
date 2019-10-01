@@ -13,7 +13,7 @@
    limitations under the License.
 */
 
-#include "core_settings.h"
+#include <core_settings.h>
 
 //  +-----------------------------------------------------------------------------+
 //  |  InteropTexture implementation.                                       LH2'19|

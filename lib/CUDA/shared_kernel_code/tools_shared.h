@@ -54,9 +54,9 @@ struct ShadingData4 { float4 data0, data1; uint4 data2; /* for fast 128-bit acce
 
 // random numbers
 
-LH2_DEVFUNC __inline__ uint WangHash( uint s ) { s = (s ^ 61) ^ (s >> 16), s *= 9, s = s ^ (s >> 4), s *= 0x27d4eb2d, s = s ^ (s >> 15); return s; }
-LH2_DEVFUNC __inline__ uint RandomInt( uint& s ) { s ^= s << 13, s ^= s >> 17, s ^= s << 5; return s; }
-LH2_DEVFUNC __inline__ float RandomFloat( uint& s ) { return RandomInt( s ) * 2.3283064365387e-10f; }
+LH2_DEVFUNC uint WangHash( uint s ) { s = (s ^ 61) ^ (s >> 16), s *= 9, s = s ^ (s >> 4), s *= 0x27d4eb2d, s = s ^ (s >> 15); return s; }
+LH2_DEVFUNC uint RandomInt( uint& s ) { s ^= s << 13, s ^= s >> 17, s ^= s << 5; return s; }
+LH2_DEVFUNC float RandomFloat( uint& s ) { return RandomInt( s ) * 2.3283064365387e-10f; }
 
 // math helpers
 

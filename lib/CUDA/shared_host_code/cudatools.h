@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 enum { NOT_ALLOCATED = 0, ON_HOST = 1, ON_DEVICE = 2 };
 
 #define CHK_CUDA( stmt )                                                                                         \
@@ -149,6 +151,7 @@ public:
 		// gather NVRTC options
 		vector<const char*> options;
 		if (optixVer > 6) options.push_back( "-I../../lib/Optix7/include/" ); else options.push_back( "-I../../lib/Optix/include/" );
+
 		string optionString = "-I";
 		optionString += string( sourceDir );
 		options.push_back( optionString.c_str() );
@@ -156,7 +159,7 @@ public:
 		options.push_back( "-I../../lib/CUDA/" );
 		// collect NVRTC options
 		char versionString[64];
-		sprintf_s( versionString, "compute_%i", cc >= 70 ? 70 : 50 );
+		snprintf( versionString, sizeof( versionString ), "compute_%i", cc >= 70 ? 70 : 50 );
 		const char* compiler_options[] = { "-arch", versionString, "-restrict", "-std=c++11", "-use_fast_math", "-default-device", "-rdc", "true", "-D__x86_64", 0 };
 		const size_t n_compiler_options = sizeof( compiler_options ) / sizeof( compiler_options[0] );
 		for (size_t i = 0; i < n_compiler_options - 1; i++) options.push_back( compiler_options[i] );
@@ -186,7 +189,7 @@ template <class T> class CoreBuffer
 {
 public:
 	CoreBuffer() = default;
-	CoreBuffer( __int64 elements, __int64 loc, const void* source = 0 ) : location( loc )
+	CoreBuffer( uint64_t elements, uint64_t loc, const void* source = 0 ) : location( loc )
 	{
 		numElements = elements;
 		sizeInBytes = elements * sizeof( T );
@@ -208,7 +211,7 @@ public:
 				}
 				else
 				{
-					hostPtr = (T*)_aligned_malloc( sizeInBytes, 64 ), owner |= ON_HOST;
+					hostPtr = (T*)MALLOC64( sizeInBytes ), owner |= ON_HOST;
 				}
 			}
 			else if (source && (location & ON_DEVICE))
@@ -226,7 +229,7 @@ public:
 		{
 			if (owner & ON_HOST)
 			{
-				_aligned_free( hostPtr );
+				FREE64( hostPtr );
 				hostPtr = 0;
 				owner &= ~ON_HOST;
 			}
@@ -268,7 +271,7 @@ public:
 	void* MoveToDevice()
 	{
 		CopyToDevice();
-		if (sizeInBytes > 0) _aligned_free( hostPtr );
+		if (sizeInBytes > 0) FREE64( hostPtr );
 		hostPtr = 0;
 		owner &= ~ON_HOST;
 		location &= ~ON_HOST;
@@ -280,7 +283,7 @@ public:
 		{
 			if (!(location & ON_HOST))
 			{
-				hostPtr = (T*)_aligned_malloc( sizeInBytes, 64 );
+				hostPtr = (T*)MALLOC64( sizeInBytes );
 				location |= ON_HOST;
 				owner |= ON_HOST;
 			}
@@ -294,7 +297,7 @@ public:
 		{
 			if (!(location & ON_HOST))
 			{
-				hostPtr = (T*)_aligned_malloc( sizeInBytes, 64 );
+				hostPtr = (T*)MALLOC64( sizeInBytes );
 				location |= ON_HOST;
 				owner |= ON_HOST;
 			}
@@ -311,15 +314,15 @@ public:
 			if (location & ON_DEVICE) CHK_CUDA( cudaMemset( devPtr, 0, bytesToClear ) );
 		}
 	}
-	__int64 GetSizeInBytes() const { return sizeInBytes; }
-	__int64 GetSize() const { return numElements; }
+	uint64_t GetSizeInBytes() const { return sizeInBytes; }
+	uint64_t GetSize() const { return numElements; }
 	T* DevPtr() { return devPtr; }
 	T** DevPtrPtr() { return &devPtr; /* Optix7 wants an array of pointers; this returns an array of 1 pointers. */ }
 	T* HostPtr() { return hostPtr; }
 	void SetHostData( T* hostData ) { hostPtr = hostData; }
 	// member data
 private:
-	__int64 location = NOT_ALLOCATED, owner = 0, sizeInBytes = 0, numElements = 0;
+	uint64_t location = NOT_ALLOCATED, owner = 0, sizeInBytes = 0, numElements = 0;
 	T* devPtr = 0;
 	T* hostPtr = 0;
 };
