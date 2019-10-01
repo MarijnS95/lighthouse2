@@ -20,8 +20,8 @@
 #include "helper_math.h"
 
 // global include files
-#include "../../rendersystem/common_settings.h"
-#include "../../rendersystem/common_types.h"
+#include "../../RenderSystem/common_settings.h"
+#include "../../RenderSystem/common_types.h"
 #include "../core_settings.h"
 
 // global path tracing parameters

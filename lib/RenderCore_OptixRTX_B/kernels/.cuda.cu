@@ -90,13 +90,13 @@ __host__ void InitCountersSubsequent() { InitCountersSubsequent_Kernel << <1, 32
 __host__ void SetCounters( Counters* p ) { cudaMemcpyToSymbol( counters, &p, sizeof( void* ) ); }
 
 // functional blocks
-#include "..\..\CUDA\shared_kernel_code\tools_shared.cu"
-#include "..\..\CUDA\shared_kernel_code\sampling_shared.cu"
-#include "..\..\CUDA\shared_kernel_code\material_shared.cu"
-#include "..\..\CUDA\shared_kernel_code\lights_shared.cu"
+#include "../../CUDA/shared_kernel_code/tools_shared.cu"
+#include "../../CUDA/shared_kernel_code/sampling_shared.cu"
+#include "../../CUDA/shared_kernel_code/material_shared.cu"
+#include "../../CUDA/shared_kernel_code/lights_shared.cu"
 #include "bsdf.cu"
 #include "pathtracer.cu"
-#include "..\..\CUDA\shared_kernel_code\finalize_shared.cu"
+#include "../../CUDA/shared_kernel_code/finalize_shared.cu"
 
 } // namespace lh2core
 
