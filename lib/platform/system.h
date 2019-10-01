@@ -244,4 +244,26 @@ public:
 // library namespace
 using namespace lighthouse2;
 
+// https://stackoverflow.com/questions/2164827/explicitly-exporting-shared-library-functions-in-linux
+#if defined(_MSC_VER)
+    //  Microsoft
+    #define COREDLL_EXPORT __declspec(dllexport)
+    #define COREDLL_IMPORT __declspec(dllimport)
+#elif defined(__GNUC__)
+    //  GCC
+    #define COREDLL_EXPORT __attribute__((visibility("default")))
+    #define COREDLL_IMPORT
+#else
+    //  do nothing and hope for the best?
+    #define COREDLL_EXPORT
+    #define COREDLL_IMPORT
+    #pragma warning Unknown dynamic link import/export semantics.
+#endif
+
+#ifdef COREDLL_EXPORTS
+#define COREDLL_API COREDLL_EXPORT
+#else
+#define COREDLL_API COREDLL_IMPORT
+#endif
+
 // EOF
