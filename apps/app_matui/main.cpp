@@ -36,8 +36,8 @@ static string materialFile;
 void PrepareScene()
 {
 	// initialize scene
-	int worldID = renderer->AddMesh( "materials.obj", "data\\mattest\\", 1.0f );
-	materialFile = string( "data\\mattest\\mattest_materials.xml" );
+	int worldID = renderer->AddMesh( "materials.obj", "data/mattest/", 1.0f );
+	materialFile = string( "data/mattest/mattest_materials.xml" );
 	int lightMat = renderer->AddMaterial( make_float3( 10, 10, 10 ) );
 	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
 	renderer->AddInstance( worldID );

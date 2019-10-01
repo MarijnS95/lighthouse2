@@ -71,7 +71,7 @@ void InitGLFW()
 	glDisable( GL_CULL_FACE );
 	glDisable( GL_BLEND );
 	// logo
-	GLTexture* logo = new GLTexture( "data//system//logo.png", GL_LINEAR );
+	GLTexture* logo = new GLTexture( "data/system/logo.png", GL_LINEAR );
 	shader = new Shader( "shaders/vignette.vert", "shaders/vignette.frag" );
 	shader->Bind();
 	shader->SetInputTexture( 0, "color", logo );
