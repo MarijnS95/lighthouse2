@@ -2,7 +2,7 @@
     <material_count>29</material_count>
     <material_0>
         <name>Plastic_Wall_Only</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>0</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -15,7 +15,7 @@
     </material_0>
     <material_1>
         <name>Plastic_Grey_Dark</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>1</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -28,7 +28,7 @@
     </material_1>
     <material_2>
         <name>Plastic_Red_Matte</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>2</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -41,7 +41,7 @@
     </material_2>
     <material_3>
         <name>Plastic_Blue</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>3</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -54,7 +54,7 @@
     </material_3>
     <material_4>
         <name>Plastic_MediumGrey_Glossy</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>4</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -67,7 +67,7 @@
     </material_4>
     <material_5>
         <name>Plastic_Brown_Satin</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>5</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -80,7 +80,7 @@
     </material_5>
     <material_6>
         <name>Plastic_Orange_Satin</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>6</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -93,7 +93,7 @@
     </material_6>
     <material_7>
         <name>Plastic_Brown_Dark</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>7</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -106,7 +106,7 @@
     </material_7>
     <material_8>
         <name>Plastic_Tape_Glossy</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>8</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -119,7 +119,7 @@
     </material_8>
     <material_9>
         <name>Paper_StickyNote_01</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>9</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -132,7 +132,7 @@
     </material_9>
     <material_10>
         <name>Decal_Note_01</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>10</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -145,7 +145,7 @@
     </material_10>
     <material_11>
         <name>Plastic_White_Matte</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>11</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -158,7 +158,7 @@
     </material_11>
     <material_12>
         <name>Decal_First_Aid_Kit</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>12</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -171,7 +171,7 @@
     </material_12>
     <material_13>
         <name>Plastic_Dark_Matte</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>13</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -184,7 +184,7 @@
     </material_13>
     <material_14>
         <name>Metal_Aluminium</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>14</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -197,7 +197,7 @@
     </material_14>
     <material_15>
         <name>Plastic_Pink_Details</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>15</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -210,7 +210,7 @@
     </material_15>
     <material_16>
         <name>Plastic_Decals</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>16</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -223,7 +223,7 @@
     </material_16>
     <material_17>
         <name>Decal_Caution</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>17</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -236,7 +236,7 @@
     </material_17>
     <material_18>
         <name>Plastic_Blue_Satin</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>18</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -249,7 +249,7 @@
     </material_18>
     <material_19>
         <name>Decal_Keyboard_01</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>19</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -262,7 +262,7 @@
     </material_19>
     <material_20>
         <name>Glass_Dark_01</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>20</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -275,7 +275,7 @@
     </material_20>
     <material_21>
         <name>Plastic_Blue_ExtraLight</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>21</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -288,7 +288,7 @@
     </material_21>
     <material_22>
         <name>Metal_Blue</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>22</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -301,7 +301,7 @@
     </material_22>
     <material_23>
         <name>Plastic_Red_Transparent</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>23</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -314,7 +314,7 @@
     </material_23>
     <material_24>
         <name>Wax_Pastel_Label_02</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>24</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -327,7 +327,7 @@
     </material_24>
     <material_25>
         <name>Wax_Pastel_Yellow_01</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>25</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -340,7 +340,7 @@
     </material_25>
     <material_26>
         <name>Wax_Pastel_Blue_01</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>26</id>
         <flags>129</flags>
         <eta>1</eta>
@@ -353,7 +353,7 @@
     </material_26>
     <material_27>
         <name>Coated_Black_Glossy</name>
-        <origin>data\pica\scene.gltf</origin>
+        <origin>data/pica/scene.gltf</origin>
         <id>27</id>
         <flags>129</flags>
         <eta>1</eta>

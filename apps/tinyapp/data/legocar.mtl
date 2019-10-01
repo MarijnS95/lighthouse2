@@ -9,7 +9,7 @@ Kd 0.0666667 0.0666667 0.0666667
 
 newmtl WHITE_SHIELD
 Kd 0.941177 0.941177 0.941177
-map_Kd textures/legoshld.tga
+map_Kd textures/LEGOSHLD.tga
 
 newmtl YELLOW_GLASS
 Kd 0.92549 0.745098 0.196078
