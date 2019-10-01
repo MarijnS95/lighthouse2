@@ -1,5 +1,5 @@
-rem | This file deletes all files that can be regenerated with 
-rem | a rebuild / run in VS2017. Execute this when archiving, 
+rem | This file deletes all files that can be regenerated with
+rem | a rebuild / run in VS2017. Execute this when archiving,
 rem | handing in assignments etc.
 rem | Make sure VS2017 is *closed* for best results.
 
@@ -38,8 +38,8 @@ rd lib\RenderCore_OpenCL\lib /S /Q
 rd lib\RenderCore_OpenCL\x64 /S /Q
 rd lib\RenderCore_Embree\x64 /S /Q
 rd lib\RenderCore_Embree\lib /S /Q
-rd lib\RenderCore_vulkan_rt\lib /S /Q
-rd lib\RenderCore_vulkan_rt\x64 /S /Q
+rd lib\RenderCore_Vulkan_RT\lib /S /Q
+rd lib\RenderCore_Vulkan_RT\x64 /S /Q
 rd coredlls\debug /S /Q
 rd coredlls\release /S /Q
 

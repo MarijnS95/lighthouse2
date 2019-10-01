@@ -7,14 +7,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendersystem", "lib\RenderS
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "platform", "lib\platform\platform.vcxproj", "{7940AFAE-A1F7-440C-823C-239F2C3BB023}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendercore_softrasterizer", "lib\RenderCore_SoftRasterizer\rendercore_softrasterizer.vcxproj", "{07247B19-33CB-4A06-A828-424ED7BC1796}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderCore_SoftRasterizer", "lib\RenderCore_SoftRasterizer\RenderCore_SoftRasterizer.vcxproj", "{07247B19-33CB-4A06-A828-424ED7BC1796}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7940AFAE-A1F7-440C-823C-239F2C3BB023} = {7940AFAE-A1F7-440C-823C-239F2C3BB023}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "render cores", "render cores", "{24024FCF-C61F-4202-B224-31E446620333}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendercore_optixprime_b", "lib\RenderCore_OptixPrime_B\rendercore_optixprime_b.vcxproj", "{036EBD5B-71EB-4B35-BED5-0EF49753B08E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderCore_OptixPrime_B", "lib\RenderCore_OptixPrime_B\RenderCore_OptixPrime_B.vcxproj", "{036EBD5B-71EB-4B35-BED5-0EF49753B08E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7940AFAE-A1F7-440C-823C-239F2C3BB023} = {7940AFAE-A1F7-440C-823C-239F2C3BB023}
 	EndProjectSection
@@ -45,7 +45,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "app_matui", "apps\app_matui
 		{0FA8FEF9-6E1C-4153-B169-523B14CBC615} = {0FA8FEF9-6E1C-4153-B169-523B14CBC615}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendercore_optix7", "lib\RenderCore_Optix7\rendercore_optix7.vcxproj", "{5847939C-31F3-4D01-A50B-DAEA03A22EF9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderCore_Optix7", "lib\RenderCore_Optix7\RenderCore_Optix7.vcxproj", "{5847939C-31F3-4D01-A50B-DAEA03A22EF9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imguiapp", "apps\imguiapp\imguiapp.vcxproj", "{E2498414-99B6-43B5-A36E-E69273AF5927}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -59,9 +59,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imguiapp", "apps\imguiapp\i
 		{0FA8FEF9-6E1C-4153-B169-523B14CBC615} = {0FA8FEF9-6E1C-4153-B169-523B14CBC615}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendercore_primeref", "lib\RenderCore_PrimeRef\rendercore_primeref.vcxproj", "{FF0D391E-1A93-48B0-A700-650F6BAF2597}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderCore_PrimeRef", "lib\RenderCore_PrimeRef\RenderCore_PrimeRef.vcxproj", "{FF0D391E-1A93-48B0-A700-650F6BAF2597}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendercore_vulkan_rt", "lib\rendercore_vulkan_rt\rendercore_vulkan_rt.vcxproj", "{0FA8FEF9-6E1C-4153-B169-523B14CBC615}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderCore_Vulkan_RT", "lib\RenderCore_Vulkan_RT\RenderCore_Vulkan_RT.vcxproj", "{0FA8FEF9-6E1C-4153-B169-523B14CBC615}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7940AFAE-A1F7-440C-823C-239F2C3BB023} = {7940AFAE-A1F7-440C-823C-239F2C3BB023}
 	EndProjectSection
