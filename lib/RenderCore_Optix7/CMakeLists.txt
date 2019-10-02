@@ -12,15 +12,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	CUDA
 	CUDA_host_code)
 
-set(CMAKE_MODULE_PATH "/opt/optix/SDK/CMake/")
-set(OptiX_INSTALL_DIR "/opt/optix/"
-	CACHE PATH "Path to OptiX installed location."
-	FORCE)
-unset(OptiX_FOUND)
-# find_package(OptiX 7.0.0 EXACT REQUIRED)
-include("/opt/optix/SDK/CMake/FindOptiX.cmake")
-# message(FATAL_ERROR "Optix 7 includes ${OptiX_INCLUDE}")
-target_include_directories(${PROJECT_NAME} PRIVATE ${OptiX_INCLUDE})
+find_package(OptiX7 REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE optix)
 
 # By default a CUDA-enabled project does not include the headers for non *.cu files
 # nor link against the Driver API (libcuda)
