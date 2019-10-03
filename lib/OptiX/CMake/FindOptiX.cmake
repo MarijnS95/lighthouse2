@@ -66,6 +66,10 @@ macro(OPTIX_find_api_library name version)
     find_file(${name}_DLL
       NAMES ${name}.${version}.dll
       )
+    # Create a list of _variable names_ containing the DLLs.
+    # This allows FPHSA to check whether the DLLs are available,
+    # only if the target is WIN32.
+    list(APPEND OptiX_RUNTIME_LIBRARY_VARS ${name}_DLL)
   endif()
 endmacro()
 
@@ -83,29 +87,15 @@ find_path(OptiX_INCLUDE
   NAMES optix.h
   )
 
-# Check to make sure we found what we were looking for
-function(OptiX_report_error error_message required component )
-  if(DEFINED OptiX_FIND_REQUIRED_${component} AND NOT OptiX_FIND_REQUIRED_${component})
-    set(required FALSE)
-  endif()
-  if(OptiX_FIND_REQUIRED AND required)
-    message(FATAL_ERROR "${error_message}  Please locate before proceeding.")
-  else()
-    if(NOT OptiX_FIND_QUIETLY)
-      message(STATUS "${error_message}")
-    endif(NOT OptiX_FIND_QUIETLY)
-  endif()
-endfunction()
-
-if(NOT optix_LIBRARY)
-  OptiX_report_error("optix library not found." TRUE libraries )
-endif()
-if(NOT OptiX_INCLUDE)
-  OptiX_report_error("OptiX headers (optix.h and friends) not found." TRUE headers )
-endif()
-if(NOT optix_prime_LIBRARY)
-  OptiX_report_error("optix Prime library not found." TRUE libraries )
-endif()
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(OptiX
+  DEFAULT_MSG
+  OptiX_INCLUDE
+  optix_LIBRARY
+  optixu_LIBRARY
+  optix_prime_LIBRARY
+  ${OptiX_RUNTIME_LIBRARY_VARS}
+  )
 
 # Macro for setting up dummy targets
 function(OptiX_add_imported_library name lib_location dll_lib dependent_libs)
