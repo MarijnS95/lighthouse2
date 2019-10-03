@@ -12,4 +12,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE RenderSystem)
 
 # Set rpath for dlopen to find the cores:
-target_link_directories(${PROJECT_NAME} PRIVATE ${core_folders})
+if(${CMAKE_VERSION} VERSION_LESS "3.13")
+	message(WARNING "CMake < 3.13 doesn't support target_link_directories!")
+else()
+	target_link_directories(${PROJECT_NAME} PRIVATE ${core_folders})
+endif()
