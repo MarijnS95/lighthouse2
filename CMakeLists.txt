@@ -4,7 +4,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(Lighthouse2)
 
+# Module and Config searches look in the cmake subdirectory first:
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")
+set(CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/cmake" "${CMAKE_PREFIX_PATH}")
 
 # External dependencies bundled with the source:
 add_subdirectory("lib/glad")
