@@ -150,7 +150,17 @@ public:
 		CHK_NVRTC( nvrtcCreateProgram( &prog, cuSource, 0, 0, NULL, NULL ) );
 		// gather NVRTC options
 		vector<const char*> options;
-		if (optixVer > 6) options.push_back( "-I../../lib/Optix7/include/" ); else options.push_back( "-I../../lib/Optix/include/" );
+
+		// TODO: Throw FatalError if no path is defined for the requested OptiX version!
+		if (optixVer > 6) {
+#ifdef OPTIX_INCLUDE_PATH
+			options.push_back( "-I" OPTIX_INCLUDE_PATH );
+#endif
+		} else {
+#ifdef OPTIX_6_INCLUDE_PATH
+			options.push_back( "-I" OPTIX_6_INCLUDE_PATH );
+#endif
+		}
 
 		string optionString = "-I";
 		optionString += string( sourceDir );
