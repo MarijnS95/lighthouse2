@@ -1,0 +1,7 @@
+if(WIN32)
+	LIST(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/AntTweakBar")
+	find_package(AntTweakBar)
+	LIST(POP_FRONT CMAKE_MODULE_PATH)
+else()
+	set(AntTweakBar_FOUND false)
+endif()
