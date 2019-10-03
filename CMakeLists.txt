@@ -28,24 +28,37 @@ target_include_directories(Platform PRIVATE "lib/RenderSystem")
 # Include cross-compatible BSDF implementation:
 add_subdirectory("lib/sharedBSDFs")
 
-# Include CUDA support headers:
-add_subdirectory("lib/CUDA")
-
-# Include RenderCores:
-file(GLOB cores "lib/RenderCore_*")
-foreach(core IN LISTS cores)
-	if(NOT EXISTS "${core}/CMakeLists.txt")
-		message(WARNING "${core} does not contain CMakeLists.txt, it will not be built.")
-		continue()
+macro(add_render_core core_path)
+	if(NOT EXISTS "${core_path}/CMakeLists.txt")
+		message(WARNING "${core_path} does not contain CMakeLists.txt, it will not be built.")
+	else()
+		add_subdirectory(${core_path})
+		get_filename_component(core_name ${core_path} NAME)
+		if(NOT TARGET ${core_name})
+			message(FATAL_ERROR "${core_name} Does not name a target!")
+		endif()
+		# Collect target folders for runtime "linking" (rpath):
+		list(APPEND core_folders $<TARGET_FILE_DIR:${core_name}>)
 	endif()
+endmacro()
 
-	add_subdirectory(${core})
-	get_filename_component(core_name ${core} NAME)
-	# Collect target folders for runtime "linking" (rpath):
-	list(APPEND core_folders $<TARGET_FILE_DIR:${core_name}>)
-endforeach()
+include(CheckLanguage)
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+	# Include CUDA support headers:
+	add_subdirectory("lib/CUDA")
 
-# Include apps:
+	# Include CUDA+Optix RenderCores:
+	file(GLOB cores "lib/RenderCore_Opti*" "lib/RenderCore_Prime*")
+	foreach(core IN LISTS cores)
+		add_render_core(${core})
+	endforeach()
+endif()
+
+# Include default RenderCores:
+add_render_core("lib/RenderCore_SoftRasterizer")
+
+# Include applications:
 file(GLOB app_directories "apps/*")
 foreach(app IN LISTS app_directories)
 	add_subdirectory(${app})
