@@ -47,7 +47,7 @@
 #else
 #pragma comment(lib, "../platform/lib/release/platform.lib" )
 #endif
-#pragma comment(lib, "../OptiX/lib64/optix.6.0.0.lib" )
+#pragma comment(lib, "../OptiX/lib64/optix.6.5.0.lib" )
 
 #define CUDABUILD			// signal system.h to include full CUDA headers
 #include "helper_math.h"	// for vector types

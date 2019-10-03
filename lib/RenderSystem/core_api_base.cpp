@@ -48,7 +48,7 @@ bool GetLastErrorString( char* buffer, DWORD length )
 							  length,
 							  NULL );
 
-	return !ret;
+	return ret > 0;
 }
 
 HMODULE LoadModule( const char* dllName )
@@ -67,7 +67,7 @@ HMODULE LoadModule( const char* dllName )
 		char errstr[1024] = "FormatMessage failed (unknown error code?)";
 		// Print informative info:
 		if ( GetLastErrorString( errstr, sizeof( errstr ) ) )
-			printf( "Failed to load %s: %s. Trying local DLL", dllpath.c_str(), errstr );
+			printf( "Failed to load %s: %s\tTrying local DLL\n", dllpath.c_str(), errstr );
 
 		// see if the dll is perhaps in the current folder
 		module = LoadLibrary( dllName );
