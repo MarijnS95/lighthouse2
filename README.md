@@ -62,7 +62,7 @@ Lighthouse 2 should compile out-of-the-box on Windows using Visual Studio 2017 /
 
 https://developer.nvidia.com/cuda-downloads
 
-Optix 5.x, 6.0 and 7.0 libraries are included in the Lighthouse 2 download.
+Optix 6.5 and 7.0 libraries are included in the Lighthouse 2 download.
 
 ### CMake (Linux, Windows and Visual Studio)
 Only CUDA is required, see the download link above.
