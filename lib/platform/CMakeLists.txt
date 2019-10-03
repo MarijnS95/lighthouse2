@@ -11,9 +11,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
 
 find_package(FreeImage REQUIRED)
+find_package(glfw3 REQUIRED)
 
 # External dependencies, PUBLIC because exposed through header:
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	glad
+	glfw
 	Half::half
 	FreeImage::freeimage)
