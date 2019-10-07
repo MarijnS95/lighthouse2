@@ -18,3 +18,7 @@ if(${CMAKE_VERSION} VERSION_LESS "3.13")
 else()
 	target_link_directories(${PROJECT_NAME} PRIVATE ${core_folders})
 endif()
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+	VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)

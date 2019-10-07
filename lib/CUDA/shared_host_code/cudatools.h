@@ -168,7 +168,7 @@ public:
 #ifdef _MSC_VER
 		options.push_back( "-IC:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include/" );
 #endif
-		options.push_back( "-I../../lib/CUDA/" );
+		options.push_back( "-Ilib/CUDA/" );
 		// collect NVRTC options
 		char versionString[64];
 		snprintf( versionString, sizeof( versionString ), "compute_%i", cc >= 70 ? 70 : 50 );
