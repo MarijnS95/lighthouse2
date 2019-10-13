@@ -65,13 +65,9 @@
 #include <optix_stack_size.h>
 
 const char* ParseOptixError( OptixResult r );
-#define CHK_OPTIX( c ) do { OptixResult r = c; if (r) { \
-	FatalError( __FILE__, __LINE__, ParseOptixError( r ) ); \
-	system( "pause" ); exit( 1 ); } } while( 0 )
 
-#define CHK_OPTIX_LOG( c ) do { OptixResult r = c; if (r) { \
-	FatalError( __FILE__, __LINE__, ParseOptixError( r ), log ); \
-	system( "pause" ); exit( 1 ); } } while( 0 )
+#define CHK_OPTIX( stmt ) FATALERROR_IN_CALL( ( stmt ), ParseOptixError, "" )
+#define CHK_OPTIX_LOG( stmt ) FATALERROR_IN_CALL( ( stmt ), ParseOptixError, "\n%s", log )
 
 using namespace lighthouse2;
 

@@ -62,7 +62,7 @@
 #include <optix.h>
 #include <optix_stubs.h>
 
-const char *ParseOptixError( OptixResult r );
+const char* ParseOptixError( OptixResult r );
 
 #define CHK_OPTIX( stmt ) FATALERROR_IN_CALL( ( stmt ), ParseOptixError, "" )
 #define CHK_OPTIX_LOG( stmt ) FATALERROR_IN_CALL( ( stmt ), ParseOptixError, "\n%s", log )
