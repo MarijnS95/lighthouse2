@@ -55,48 +55,46 @@ using namespace lh2core;
 OptixDeviceContext RenderCore::optixContext = 0;
 struct SBTRecord { __align__( OPTIX_SBT_RECORD_ALIGNMENT ) char header[OPTIX_SBT_RECORD_HEADER_SIZE]; };
 
-char* ParseOptixError( OptixResult r )
+const char *ParseOptixError( OptixResult r )
 {
-	char* t = new char[256];
-	switch (r)
+	switch ( r )
 	{
-	case 0: strcpy_s( t, 256, "NO ERROR" ); break;
-	case 7001: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_VALUE" ); break;
-	case 7002: strcpy_s( t, 256, "OPTIX_ERROR_HOST_OUT_OF_MEMORY" ); break;
-	case 7003: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_OPERATION" ); break;
-	case 7004: strcpy_s( t, 256, "OPTIX_ERROR_FILE_IO_ERROR" ); break;
-	case 7005: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_FILE_FORMAT" ); break;
-	case 7010: strcpy_s( t, 256, "OPTIX_ERROR_DISK_CACHE_INVALID_PATH" ); break;
-	case 7011: strcpy_s( t, 256, "OPTIX_ERROR_DISK_CACHE_PERMISSION_ERROR" ); break;
-	case 7012: strcpy_s( t, 256, "OPTIX_ERROR_DISK_CACHE_DATABASE_ERROR" ); break;
-	case 7013: strcpy_s( t, 256, "OPTIX_ERROR_DISK_CACHE_INVALID_DATA" ); break;
-	case 7050: strcpy_s( t, 256, "OPTIX_ERROR_LAUNCH_FAILURE" ); break;
-	case 7051: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_DEVICE_CONTEXT" ); break;
-	case 7052: strcpy_s( t, 256, "OPTIX_ERROR_CUDA_NOT_INITIALIZED" ); break;
-	case 7200: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_PTX" ); break;
-	case 7201: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_LAUNCH_PARAMETER" ); break;
-	case 7202: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_PAYLOAD_ACCESS" ); break;
-	case 7203: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_ATTRIBUTE_ACCESS" ); break;
-	case 7204: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_FUNCTION_USE" ); break;
-	case 7205: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_FUNCTION_ARGUMENTS" ); break;
-	case 7250: strcpy_s( t, 256, "OPTIX_ERROR_PIPELINE_OUT_OF_CONSTANT_MEMORY" ); break;
-	case 7251: strcpy_s( t, 256, "OPTIX_ERROR_PIPELINE_LINK_ERROR" ); break;
-	case 7299: strcpy_s( t, 256, "OPTIX_ERROR_INTERNAL_COMPILER_ERROR" ); break;
-	case 7300: strcpy_s( t, 256, "OPTIX_ERROR_DENOISER_MODEL_NOT_SET" ); break;
-	case 7301: strcpy_s( t, 256, "OPTIX_ERROR_DENOISER_NOT_INITIALIZED" ); break;
-	case 7400: strcpy_s( t, 256, "OPTIX_ERROR_ACCEL_NOT_COMPATIBLE" ); break;
-	case 7800: strcpy_s( t, 256, "OPTIX_ERROR_NOT_SUPPORTED" ); break;
-	case 7801: strcpy_s( t, 256, "OPTIX_ERROR_UNSUPPORTED_ABI_VERSION" ); break;
-	case 7802: strcpy_s( t, 256, "OPTIX_ERROR_FUNCTION_TABLE_SIZE_MISMATCH" ); break;
-	case 7803: strcpy_s( t, 256, "OPTIX_ERROR_INVALID_ENTRY_FUNCTION_OPTIONS" ); break;
-	case 7804: strcpy_s( t, 256, "OPTIX_ERROR_LIBRARY_NOT_FOUND" ); break;
-	case 7805: strcpy_s( t, 256, "OPTIX_ERROR_ENTRY_SYMBOL_NOT_FOUND" ); break;
-	case 7900: strcpy_s( t, 256, "OPTIX_ERROR_CUDA_ERROR" ); break;
-	case 7990: strcpy_s( t, 256, "OPTIX_ERROR_INTERNAL_ERROR" ); break;
-	case 7999: strcpy_s( t, 256, "OPTIX_ERROR_UNKNOWN" ); break;
-	default: strcpy_s( t, 256, "UNKNOWN ERROR" ); break;
+	case 0: return "NO ERROR";
+	case 7001: return "OPTIX_ERROR_INVALID_VALUE";
+	case 7002: return "OPTIX_ERROR_HOST_OUT_OF_MEMORY";
+	case 7003: return "OPTIX_ERROR_INVALID_OPERATION";
+	case 7004: return "OPTIX_ERROR_FILE_IO_ERROR";
+	case 7005: return "OPTIX_ERROR_INVALID_FILE_FORMAT";
+	case 7010: return "OPTIX_ERROR_DISK_CACHE_INVALID_PATH";
+	case 7011: return "OPTIX_ERROR_DISK_CACHE_PERMISSION_ERROR";
+	case 7012: return "OPTIX_ERROR_DISK_CACHE_DATABASE_ERROR";
+	case 7013: return "OPTIX_ERROR_DISK_CACHE_INVALID_DATA";
+	case 7050: return "OPTIX_ERROR_LAUNCH_FAILURE";
+	case 7051: return "OPTIX_ERROR_INVALID_DEVICE_CONTEXT";
+	case 7052: return "OPTIX_ERROR_CUDA_NOT_INITIALIZED";
+	case 7200: return "OPTIX_ERROR_INVALID_PTX";
+	case 7201: return "OPTIX_ERROR_INVALID_LAUNCH_PARAMETER";
+	case 7202: return "OPTIX_ERROR_INVALID_PAYLOAD_ACCESS";
+	case 7203: return "OPTIX_ERROR_INVALID_ATTRIBUTE_ACCESS";
+	case 7204: return "OPTIX_ERROR_INVALID_FUNCTION_USE";
+	case 7205: return "OPTIX_ERROR_INVALID_FUNCTION_ARGUMENTS";
+	case 7250: return "OPTIX_ERROR_PIPELINE_OUT_OF_CONSTANT_MEMORY";
+	case 7251: return "OPTIX_ERROR_PIPELINE_LINK_ERROR";
+	case 7299: return "OPTIX_ERROR_INTERNAL_COMPILER_ERROR";
+	case 7300: return "OPTIX_ERROR_DENOISER_MODEL_NOT_SET";
+	case 7301: return "OPTIX_ERROR_DENOISER_NOT_INITIALIZED";
+	case 7400: return "OPTIX_ERROR_ACCEL_NOT_COMPATIBLE";
+	case 7800: return "OPTIX_ERROR_NOT_SUPPORTED";
+	case 7801: return "OPTIX_ERROR_UNSUPPORTED_ABI_VERSION";
+	case 7802: return "OPTIX_ERROR_FUNCTION_TABLE_SIZE_MISMATCH";
+	case 7803: return "OPTIX_ERROR_INVALID_ENTRY_FUNCTION_OPTIONS";
+	case 7804: return "OPTIX_ERROR_LIBRARY_NOT_FOUND";
+	case 7805: return "OPTIX_ERROR_ENTRY_SYMBOL_NOT_FOUND";
+	case 7900: return "OPTIX_ERROR_CUDA_ERROR";
+	case 7990: return "OPTIX_ERROR_INTERNAL_ERROR";
+	case 7999: return "OPTIX_ERROR_UNKNOWN";
+	default: return "UNKNOWN ERROR";
 	};
-	return t;
 }
 
 //  +-----------------------------------------------------------------------------+
