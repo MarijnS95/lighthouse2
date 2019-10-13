@@ -59,6 +59,12 @@ if(CMAKE_CUDA_COMPILER)
 	endforeach()
 endif()
 
+find_package(Vulkan QUIET)
+find_package(Shaderc QUIET)
+if(Vulkan_FOUND AND Shaderc_FOUND)
+	add_render_core("lib/RenderCore_Vulkan_RT")
+endif()
+
 # Include default RenderCores:
 add_render_core("lib/RenderCore_SoftRasterizer")
 
