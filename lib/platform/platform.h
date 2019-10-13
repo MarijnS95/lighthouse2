@@ -20,24 +20,31 @@
 #pragma once
 
 // GLFW
+#define GLFW_USE_CHDIR 0 // Do not change cwd
 #define GLFW_EXPOSE_NATIVE_WGL
 
 // system includes
+// clang-format off
 #ifdef WIN32
+//#define GLFW_DLL		 // Use DLL to let render cores be able to use GLFW as well
 #define NOMINMAX
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #ifdef WIN32
 #include <GLFW/glfw3native.h>
 #endif
-#include "zlib.h"
-#include <assert.h>
-#include "FreeImage.h"
+#include <zlib.h>
+#include "emmintrin.h"
+#include <cassert>
+#include <FreeImage.h>
+// clang-format on
 
 // namespaces
 using namespace std;

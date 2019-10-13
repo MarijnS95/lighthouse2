@@ -93,7 +93,7 @@ public:
 	}
 	static const char* decodeError( cudaError_t res )
 	{
-		switch (res)
+		switch ((cudaError_enum)res)
 		{
 		default:                                        return "Unknown cudaError_t";
 		case CUDA_SUCCESS:                              return "No error";
@@ -165,7 +165,9 @@ public:
 		string optionString = "-I";
 		optionString += string( sourceDir );
 		options.push_back( optionString.c_str() );
+#ifdef _MSC_VER
 		options.push_back( "-IC:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include/" );
+#endif
 		options.push_back( "-I../../lib/CUDA/" );
 		// collect NVRTC options
 		char versionString[64];

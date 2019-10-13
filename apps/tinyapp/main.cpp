@@ -14,14 +14,17 @@
 */
 
 #include "platform.h"
-#include "system.h"
 #include "rendersystem.h"
+#include "system.h"
+
+#include <bitset>
 
 static RenderAPI* renderer = 0;
 static GLTexture* renderTarget = 0;
 static Shader* shader = 0;
-static uint scrwidth = 0, scrheight = 0, car = 0;
+static uint scrwidth = 0, scrheight = 0, car = 0, scrspp = 1;
 static bool camMoved = false, hasFocus = true, running = true;
+static std::bitset<1024> keystates;
 
 #include "main_tools.h"
 
@@ -48,27 +51,63 @@ void PrepareScene()
 //  +-----------------------------------------------------------------------------+
 bool HandleInput( float frameTime )
 {
-#ifdef _MSC_VER
 	// handle keyboard input
-	float translateSpeed = (GetAsyncKeyState( VK_SHIFT ) ? 15.0f : 5.0f) * frameTime, rotateSpeed = 2.5f * frameTime;
+	float translateSpeed = ( keystates[GLFW_KEY_LEFT_SHIFT] ? 15.0f : 5.0f ) * frameTime, rotateSpeed = 2.5f * frameTime;
 	bool changed = false;
-	Camera* camera = renderer->GetCamera();
-	if (GetAsyncKeyState( 'A' )) { changed = true; camera->TranslateRelative( make_float3( -translateSpeed, 0, 0 ) ); }
-	if (GetAsyncKeyState( 'D' )) { changed = true; camera->TranslateRelative( make_float3( translateSpeed, 0, 0 ) ); }
-	if (GetAsyncKeyState( 'W' )) { changed = true; camera->TranslateRelative( make_float3( 0, 0, translateSpeed ) ); }
-	if (GetAsyncKeyState( 'S' )) { changed = true; camera->TranslateRelative( make_float3( 0, 0, -translateSpeed ) ); }
-	if (GetAsyncKeyState( 'R' )) { changed = true; camera->TranslateRelative( make_float3( 0, translateSpeed, 0 ) ); }
-	if (GetAsyncKeyState( 'F' )) { changed = true; camera->TranslateRelative( make_float3( 0, -translateSpeed, 0 ) ); }
-	if (GetAsyncKeyState( 'B' )) changed = true; // force restart
-	if (GetAsyncKeyState( VK_UP )) { changed = true; camera->TranslateTarget( make_float3( 0, -rotateSpeed, 0 ) ); }
-	if (GetAsyncKeyState( VK_DOWN )) { changed = true; camera->TranslateTarget( make_float3( 0, rotateSpeed, 0 ) ); }
-	if (GetAsyncKeyState( VK_LEFT )) { changed = true; camera->TranslateTarget( make_float3( -rotateSpeed, 0, 0 ) ); }
-	if (GetAsyncKeyState( VK_RIGHT )) { changed = true; camera->TranslateTarget( make_float3( rotateSpeed, 0, 0 ) ); }
+	Camera *camera = renderer->GetCamera();
+	if ( keystates[GLFW_KEY_A] )
+	{
+		changed = true;
+		camera->TranslateRelative( make_float3( -translateSpeed, 0, 0 ) );
+	}
+	if ( keystates[GLFW_KEY_D] )
+	{
+		changed = true;
+		camera->TranslateRelative( make_float3( translateSpeed, 0, 0 ) );
+	}
+	if ( keystates[GLFW_KEY_W] )
+	{
+		changed = true;
+		camera->TranslateRelative( make_float3( 0, 0, translateSpeed ) );
+	}
+	if ( keystates[GLFW_KEY_S] )
+	{
+		changed = true;
+		camera->TranslateRelative( make_float3( 0, 0, -translateSpeed ) );
+	}
+	if ( keystates[GLFW_KEY_R] )
+	{
+		changed = true;
+		camera->TranslateRelative( make_float3( 0, translateSpeed, 0 ) );
+	}
+	if ( keystates[GLFW_KEY_F] )
+	{
+		changed = true;
+		camera->TranslateRelative( make_float3( 0, -translateSpeed, 0 ) );
+	}
+	if ( keystates[GLFW_KEY_B] ) changed = true; // force restart
+	if ( keystates[GLFW_KEY_UP] )
+	{
+		changed = true;
+		camera->TranslateTarget( make_float3( 0, -rotateSpeed, 0 ) );
+	}
+	if ( keystates[GLFW_KEY_DOWN] )
+	{
+		changed = true;
+		camera->TranslateTarget( make_float3( 0, rotateSpeed, 0 ) );
+	}
+	if ( keystates[GLFW_KEY_LEFT] )
+	{
+		changed = true;
+		camera->TranslateTarget( make_float3( -rotateSpeed, 0, 0 ) );
+	}
+	if ( keystates[GLFW_KEY_RIGHT] )
+	{
+		changed = true;
+		camera->TranslateTarget( make_float3( rotateSpeed, 0, 0 ) );
+	}
 	// let the main loop know if the camera should update
 	return changed;
-#else
-	return false;
-#endif
 }
 
 //  +-----------------------------------------------------------------------------+

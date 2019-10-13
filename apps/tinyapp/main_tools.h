@@ -31,7 +31,9 @@ void ReshapeWindowCallback( GLFWwindow* window, int w, int h )
 }
 void KeyEventCallback( GLFWwindow* window, int key, int scancode, int action, int mods )
 {
-	if (key == GLFW_KEY_ESCAPE) running = false;
+	if ( key == GLFW_KEY_ESCAPE ) running = false;
+	if ( action == GLFW_PRESS ) keystates[key] = true;
+	else if ( action == GLFW_RELEASE ) keystates[key] = false;
 }
 void CharEventCallback( GLFWwindow* window, uint code ) { /* nothing here yet */ }
 void WindowFocusCallback( GLFWwindow* window, int focused ) { hasFocus = (focused == GL_TRUE); }
@@ -40,6 +42,10 @@ void MousePosCallback( GLFWwindow* window, double x, double y )
 {
 	// set pixel probe pos for triangle picking
 	if (renderer) renderer->SetProbePos( make_int2( (int)x, (int)y ) );
+}
+void ErrorCallback(int error, const char*description )
+{
+	fprintf(stderr, "GLFW Error: %s\n", description );
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -51,6 +57,7 @@ void InitGLFW()
 {
 	// open a window
 	if (!glfwInit()) exit( EXIT_FAILURE );
+	glfwSetErrorCallback(ErrorCallback);
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 5 );
 	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
