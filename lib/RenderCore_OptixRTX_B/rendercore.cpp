@@ -243,8 +243,7 @@ void RenderCore::SetInstance( const int instanceIdx, const int meshIdx, const ma
 		instances[instanceIdx]->transform->setChild( instances[instanceIdx]->geometryGroup );
 	}
 	// update the matrices for the transform
-	mat4 inverted = matrix;
-	inverted.Inverted();
+	mat4 inverted = matrix.Inverted();
 	if (instances[instanceIdx]->transform) instances[instanceIdx]->transform->setMatrix( false /* flag: transpose */, (const float*)&matrix, (const float*)&inverted );
 	instances[instanceIdx]->mesh = meshIdx;
 	// mark the toplevel as dirty

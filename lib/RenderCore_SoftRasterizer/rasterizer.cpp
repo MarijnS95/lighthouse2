@@ -39,7 +39,7 @@ static float3 raxis[3] = { make_float3( 1, 0, 0 ), make_float3( 0, 1, 0 ), make_
 // -----------------------------------------------------------
 // Mesh constructor
 // input: vertex count & face count
-// allocates room for mesh data: 
+// allocates room for mesh data:
 // - pos:  vertex positions
 // - tpos: transformed vertex positions
 // - norm: vertex normals
@@ -183,7 +183,7 @@ Scene::~Scene()
 // recursive rendering of a scene graph node and its child nodes
 // input: (inverse) camera transform
 // -----------------------------------------------------------
-void SGNode::Render( mat4& transform )
+void SGNode::Render( const mat4& transform )
 {
 	mat4 M = transform * localTransform;
 	if (GetType() == SG_MESH) ((Mesh*)this)->Render( M );
@@ -235,8 +235,7 @@ void Rasterizer::Render( mat4& transform )
 {
 	memset( Mesh::screen->pixels, 0, Mesh::screen->width * Mesh::screen->height * sizeof( uint ) );
 	memset( zbuffer, 0, Mesh::screen->width * Mesh::screen->height * sizeof( float ) );
-	transform.Inverted();
-	scene.root->Render( transform );
+	scene.root->Render( transform.Inverted() );
 }
 
 // EOF

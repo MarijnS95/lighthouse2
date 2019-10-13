@@ -34,6 +34,14 @@ typedef int BOOL; // for freeimage.h
 
 #include <math.h>
 
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+#define CHECK_RESULT __attribute__ ((warn_unused_result))
+#elif defined(_MSC_VER) && (_MSC_VER >= 1700)
+#define CHECK_RESULT _Check_return_
+#else
+#define CHECK_RESULT
+#endif
+
 #ifndef CUDABUILD
 
 // vector type placeholders, carefully matching CUDA's layout and alignment
@@ -431,7 +439,7 @@ public:
 	static mat4 Translate( const float x, const float y, const float z ) { mat4 r; r.cell[3] = x; r.cell[7] = y; r.cell[11] = z; return r; };
 	static mat4 Translate( const float3 P ) { mat4 r; r.cell[3] = P.x; r.cell[7] = P.y; r.cell[11] = P.z; return r; };
 	float Trace3() const { return cell[0] + cell[5] + cell[10]; }
-	mat4 Transposed()
+	CHECK_RESULT mat4 Transposed() const
 	{
 		mat4 M;
 		M[0] = cell[0], M[1] = cell[4], M[2] = cell[8];
@@ -439,7 +447,7 @@ public:
 		M[8] = cell[2], M[9] = cell[6], M[10] = cell[10];
 		return M;
 	}
-	mat4 Inverted() const
+	CHECK_RESULT mat4 Inverted() const
 	{
 		// from MESA, via http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
 		const float inv[16] = {
