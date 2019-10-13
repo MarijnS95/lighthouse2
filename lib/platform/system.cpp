@@ -88,7 +88,7 @@ bool FileIsNewer( const char* file1, const char* file2 )
 {
 	HANDLE fh1 = CreateFile( file1, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	HANDLE fh2 = CreateFile( file2, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	if (fh1 == INVALID_HANDLE_VALUE) FatalError( __FILE__, __LINE__, file1, "file not found" );
+	FATALERROR_IF(fh1 == INVALID_HANDLE_VALUE, "File %s not found!", file1);
 	if (fh2 == INVALID_HANDLE_VALUE)
 	{
 		CloseHandle( fh1 );
@@ -183,40 +183,22 @@ bool NeedsRecompile( const char* path, const char* target, const char* s1, const
 	return false;
 }
 
-
-static void setfv( string& s, const char* fmt, va_list args )
+void FatalError( const char* fmt, ... )
 {
-	static char* buffer = 0;
-	if (!buffer) buffer = new char[16384];
-	int len = _vscprintf( fmt, args );
-	if (!len) return;
-	vsprintf_s( buffer, len + 1, fmt, args );
-	s = buffer;
-}
-
-void FatalError( const char* source, const int line, const char* message, const char* part2 )
-{
-	printf( "Error executing line %i of file %s:\n%s", line, source, message );
 	char t[16384];
-	sprintf_s( t, 16384, "Error executing line %i of file %s:\n%s", line, source, message );
-	if (part2)
-	{
-		strcat_s( t, "\n" );
-		strcat_s( t, part2 );
-	}
-	MessageBox( NULL, t, "Fatal error", MB_OK );
-	assert( false );
-	while (1) exit( 0 );
-}
+	va_list args;
+	va_start( args, fmt );
+	vsnprintf( t, sizeof( t ), fmt, args );
+	va_end( args );
 
-void FatalError( const char* message, const char* part2 )
-{
-	printf( "Error: %s\n(%s)", message, part2 );
-	char t[16384];
-	sprintf_s( t, 16384, "Error: %s\n(%s)", message, part2 );
+#ifdef _MSC_VER
 	MessageBox( NULL, t, "Fatal error", MB_OK );
+#else
+	fprintf( stderr, t );
+#endif
+
 	assert( false );
-	while (1) exit( 0 );
+	while ( 1 ) exit( 0 );
 }
 
 // EOF

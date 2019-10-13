@@ -51,14 +51,13 @@ void _CheckGL( char* f, int l )
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR)
 	{
-		char t[1024];
-		sprintf_s( t, "error %i: ", error );
-		if (error == 0x500) strcat_s( t, "INVALID ENUM" );
-		else if (error == 0x502) strcat_s( t, "INVALID OPERATION" );
-		else if (error == 0x501) strcat_s( t, "INVALID VALUE" );
-		else if (error == 0x506) strcat_s( t, "INVALID FRAMEBUFFER OPERATION" );
-		else strcat_s( t, "UNKNOWN ERROR" );
-		FatalError( f, l, t );
+		const char *errStr = "UNKNOWN ERROR";
+		if (error == 0x500) errStr = "INVALID ENUM";
+		else if (error == 0x502) errStr = "INVALID OPERATION";
+		else if (error == 0x501) errStr = "INVALID VALUE";
+		else if (error == 0x506) errStr = "INVALID FRAMEBUFFER OPERATION";
+
+		FatalError( "GL error %d: %s at %s:%d\n", error, errStr, f, l );
 	}
 }
 
@@ -83,21 +82,21 @@ void BindVBO( const uint idx, const uint N, const GLuint id )
 void CheckShader( GLuint shader, const char* vshader, const char* fshader )
 {
 	char buffer[1024];
-	memset( buffer, 0, 1024 );
+	memset( buffer, 0, sizeof( buffer ) );
 	GLsizei length = 0;
-	glGetShaderInfoLog( shader, 1024, &length, buffer );
+	glGetShaderInfoLog( shader, sizeof( buffer ), &length, buffer );
 	CheckGL();
-	if (length > 0) if (strstr( buffer, "ERROR" )) ERRORMESSAGE( buffer, "Shader compile error" );
+	FATALERROR_IF( length > 0 && strstr( buffer, "ERROR" ), "Shader compile error:\n%s", buffer );
 }
 
 void CheckProgram( GLuint id, const char* vshader, const char* fshader )
 {
 	char buffer[1024];
-	memset( buffer, 0, 1024 );
+	memset( buffer, 0, sizeof( buffer ) );
 	GLsizei length = 0;
-	glGetProgramInfoLog( id, 1024, &length, buffer );
+	glGetProgramInfoLog( id, sizeof( buffer ), &length, buffer );
 	CheckGL();
-	if (length > 0) ERRORMESSAGE( buffer, "Shader link error" );
+	FATALERROR_IF( length > 0, "Shader link error:\n%s", buffer );
 }
 
 void DrawQuad()
@@ -160,7 +159,7 @@ GLTexture::GLTexture( char* fileName, int filter )
 	fif = FreeImage_GetFileType( fileName, 0 );
 	if (fif == FIF_UNKNOWN) fif = FreeImage_GetFIFFromFilename( fileName );
 	FIBITMAP* tmp = FreeImage_Load( fif, fileName );
-	if (!tmp) ERRORMESSAGE( fileName, "File not found" );
+	FATALERROR_IF( !tmp, "File %s not found", fileName );
 	FIBITMAP* dib = FreeImage_ConvertTo24Bits( tmp );
 	FreeImage_Unload( tmp );
 	width = FreeImage_GetWidth( dib );
@@ -222,8 +221,8 @@ void Shader::Init( const char* vfile, const char* pfile )
 {
 	string vsText = TextFileRead( vfile );
 	string fsText = TextFileRead( pfile );
-	if (vsText.size() == 0) ERRORMESSAGE( vfile, "File not found" );
-	if (fsText.size() == 0) ERRORMESSAGE( pfile, "File not found" );
+	FATALERROR_IF( vsText.size() == 0, "File %s not found", vfile );
+	FATALERROR_IF( fsText.size() == 0, "File %s not found", pfile );
 	const char* vertexText = vsText.c_str();
 	const char* fragmentText = fsText.c_str();
 	Compile( vertexText, fragmentText );

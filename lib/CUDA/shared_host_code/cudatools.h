@@ -17,11 +17,22 @@
 
 enum { NOT_ALLOCATED = 0, ON_HOST = 1, ON_DEVICE = 2 };
 
-#define CUDACHECK(x,y) CUDATools::CheckError( __FILE__, __LINE__, x, y )
+#define CHK_CUDA( stmt )                                                                                         \
+	do                                                                                                           \
+	{                                                                                                            \
+		auto ret = ( stmt );                                                                                     \
+		if ( ret )                                                                                               \
+		{                                                                                                        \
+			if ( !strncmp( #stmt, "cudaGraphicsGLRegisterImage", sizeof( "cudaGraphicsGLRegisterImage" ) - 1 ) ) \
+				FATALERROR_IN( #stmt, CUDATools::decodeError( ret ),                                             \
+							   "\n\t(Are you running using the IGP?\n"                                           \
+							   "Use NVIDIA control panel to enable the high performance GPU.)" )                 \
+			else                                                                                                 \
+				FATALERROR_IN( #stmt, CUDATools::decodeError( ret ), "" )                                        \
+		}                                                                                                        \
+	} while ( 0 )
 
-#define STRINGIFY2(x) #x
-#define CHK_NVRTC( func ) { nvrtcResult code = func; if (code != NVRTC_SUCCESS) \
-	FatalError( __FILE__, __LINE__, nvrtcGetErrorString( code ) ); }
+#define CHK_NVRTC( stmt ) FATALERROR_IN_CALL( ( stmt ), nvrtcGetErrorString, "" )
 
 class CUDATools
 {
@@ -72,15 +83,6 @@ public:
 		}
 		if (prohibited == count) exit( EXIT_FAILURE );
 		return fastest;
-	}
-	static void setfv( string& s, const char* fmt, va_list args )
-	{
-		static char* buffer = 0;
-		if (!buffer) buffer = new char[16384];
-		int len = _vscprintf( fmt, args );
-		if (!len) return;
-		vsprintf_s( buffer, len + 1, fmt, args );
-		s = buffer;
 	}
 	static void fail( const char* t )
 	{
@@ -139,21 +141,6 @@ public:
 		case CUDA_ERROR_MISALIGNED_ADDRESS:             return "Misaligned address";
 		}
 	}
-	static void CheckError( const char* file, int line, const char* funcName, cudaError_t res )
-	{
-		if (res != CUDA_SUCCESS)
-		{
-			if (!strcmp( funcName, "cudaGraphicsGLRegisterImage" ))
-			{
-				FatalError( file, line, decodeError( res ), 
-					"cudaGraphicsGLRegisterImage\n(Are you running using the IGP?\nUse NVIDIA control panel to enable the high performance GPU.)" );
-			}
-			else
-			{
-				FatalError( file, line, decodeError( res ), funcName );
-			}
-		}
-	}
 	static void compileToPTX( string &ptx, const char* cuSource, const char* sourceDir, const int cc, const int optixVer )
 	{
 		// create program
@@ -184,7 +171,7 @@ public:
 		static string nvrtcLog;
 		nvrtcLog.resize( log_size );
 		if (log_size > 1) CHK_NVRTC( nvrtcGetProgramLog( prog, &nvrtcLog[0] ) );
-		if (compileRes != NVRTC_SUCCESS) FatalError( "Compilation failed.\n%s", nvrtcLog.c_str() );
+		FATALERROR_IF (compileRes != NVRTC_SUCCESS, "Compilation failed.\n%s", nvrtcLog.c_str() );
 		// retrieve PTX code
 		size_t ptx_size = 0;
 		CHK_NVRTC( nvrtcGetPTXSize( prog, &ptx_size ) );
@@ -208,7 +195,7 @@ public:
 			if (location & ON_DEVICE)
 			{
 				// location is ON_DEVICE; allocate room on device
-				CUDACHECK( "cudaMalloc", cudaMalloc( &devPtr, sizeInBytes ) );
+				CHK_CUDA( cudaMalloc( &devPtr, sizeInBytes ) );
 				owner |= ON_DEVICE;
 			}
 			if (location & ON_HOST)
@@ -245,7 +232,7 @@ public:
 			}
 			if (owner & ON_DEVICE)
 			{
-				CUDACHECK( "cudaFree", cudaFree( devPtr ) );
+				CHK_CUDA( cudaFree( devPtr ) );
 				owner &= ~ON_DEVICE;
 			}
 		}
@@ -256,11 +243,11 @@ public:
 		{
 			if (!(location & ON_DEVICE))
 			{
-				CUDACHECK( "cudaMalloc", cudaMalloc( &devPtr, sizeInBytes ) );
+				CHK_CUDA( cudaMalloc( &devPtr, sizeInBytes ) );
 				location |= ON_DEVICE;
 				owner |= ON_DEVICE;
 			}
-			CUDACHECK( "cudaMemcpy", cudaMemcpy( devPtr, hostPtr, sizeInBytes, cudaMemcpyHostToDevice ) );
+			CHK_CUDA( cudaMemcpy( devPtr, hostPtr, sizeInBytes, cudaMemcpyHostToDevice ) );
 		}
 		return devPtr;
 	}
@@ -270,11 +257,11 @@ public:
 		{
 			if (!(location & ON_DEVICE))
 			{
-				CUDACHECK( "cudaMalloc", cudaMalloc( &devPtr, sizeInBytes ) );
+				CHK_CUDA( cudaMalloc( &devPtr, sizeInBytes ) );
 				location |= ON_DEVICE;
 				owner |= ON_DEVICE;
 			}
-			CUDACHECK( "cudaMemcpyAsync", cudaMemcpyAsync( devPtr, hostPtr, sizeInBytes, cudaMemcpyHostToDevice, stream ) );
+			CHK_CUDA( cudaMemcpyAsync( devPtr, hostPtr, sizeInBytes, cudaMemcpyHostToDevice, stream ) );
 		}
 		return devPtr;
 	}
@@ -297,7 +284,7 @@ public:
 				location |= ON_HOST;
 				owner |= ON_HOST;
 			}
-			CUDACHECK( "cudaMemcpy", cudaMemcpy( hostPtr, devPtr, sizeInBytes, cudaMemcpyDeviceToHost ) );
+			CHK_CUDA( cudaMemcpy( hostPtr, devPtr, sizeInBytes, cudaMemcpyDeviceToHost ) );
 		}
 		return hostPtr;
 	}
@@ -311,7 +298,7 @@ public:
 				location |= ON_HOST;
 				owner |= ON_HOST;
 			}
-			CUDACHECK( "cudaMemcpyAsync", cudaMemcpyAsync( hostPtr, devPtr, sizeInBytes, cudaMemcpyDeviceToHost, stream ) );
+			CHK_CUDA( cudaMemcpyAsync( hostPtr, devPtr, sizeInBytes, cudaMemcpyDeviceToHost, stream ) );
 		}
 		return hostPtr;
 	}
@@ -321,7 +308,7 @@ public:
 		{
 			int bytesToClear = overrideSize == -1 ? sizeInBytes : overrideSize;
 			if (location & ON_HOST) memset( hostPtr, 0, bytesToClear );
-			if (location & ON_DEVICE) CUDACHECK( "cuMemset", cudaMemset( devPtr, 0, bytesToClear ) );
+			if (location & ON_DEVICE) CHK_CUDA( cudaMemset( devPtr, 0, bytesToClear ) );
 		}
 	}
 	__int64 GetSizeInBytes() const { return sizeInBytes; }

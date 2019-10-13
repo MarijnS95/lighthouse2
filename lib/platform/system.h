@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <ctime>
+#include <cstdarg>
 #include <ratio>
 #include <chrono>
 #include "half.hpp"
@@ -37,8 +38,24 @@ using namespace half_float;
 #include "common_classes.h"
 #include <GLFW/glfw3.h>		// needed for Timer class
 
-#define FATALERROR(m) FatalError( "Error on line %i of %s: %s", __LINE__, __FILE__, m )
-#define ERRORMESSAGE(m,c) FatalError( __FILE__, __LINE__, c, m )
+// https://devblogs.microsoft.com/cppblog/msvc-preprocessor-progress-towards-conformance/
+// MSVC _Should_ support this extended functionality for the token-paste operator:
+#define FATALERROR( fmt, ... ) FatalError( "Error on line %d of %s: " fmt "\n", __LINE__, __FILE__, ##__VA_ARGS__ )
+#define FATALERROR_IF( condition, fmt, ... ) do { if ( ( condition ) ) FATALERROR( fmt, ##__VA_ARGS__ ); } while ( 0 )
+
+#define FATALERROR_IN( prefix, errstr, fmt, ... )                \
+	FatalError( prefix " returned error '%s' at %s:%d" fmt "\n", \
+				errstr, __FILE__, __LINE__,                      \
+				##__VA_ARGS__ );
+
+// Fatal error helper. Executes statement and throws fatal error on non-zero result.
+// The result is converted to string by calling error_parser( ret )
+#define FATALERROR_IN_CALL( stmt, error_parser, fmt, ... )                         \
+	do                                                                             \
+	{                                                                              \
+		auto ret = ( stmt );                                                       \
+		if ( ret ) FATALERROR_IN( #stmt, error_parser( ret ), fmt, ##__VA_ARGS__ ) \
+	} while ( 0 )
 
 #define MALLOC64(x) ((x)==0?0:_aligned_malloc((x),64))
 #define FREE64(x) _aligned_free(x)
@@ -58,15 +75,15 @@ extern "C" { uint sthread_proc( void* param ); }
 struct Timer
 {
 	Timer() { reset(); }
-	float elapsed() const 
-	{ 
+	float elapsed() const
+	{
 		std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - start);
 		return (float)time_span.count();
 	}
-	void reset() 
-	{ 
-		start = std::chrono::high_resolution_clock::now(); 
+	void reset()
+	{
+		start = std::chrono::high_resolution_clock::now();
 	}
 	std::chrono::high_resolution_clock::time_point start;
 };
@@ -168,8 +185,7 @@ float RandomFloat( uint& seed );
 float Rand( float range );
 
 // forward declaration of the helper functions
-void FatalError( const char* message, const char* part2 );
-void FatalError( const char* source, const int line, const char* message, const char* part2 = 0 );
+void FatalError( const char* fmt, ... );
 void OpenConsole();
 bool FileIsNewer( const char* file1, const char* file2 );
 bool NeedsRecompile( const char* path, const char* target, const char* s1, const char* s2 = 0, const char* s3 = 0, const char* s4 = 0 );

@@ -158,13 +158,7 @@ static void _CheckVK( int line, const char *file, vk::Result x )
 		break;
 	}
 
-	char errBuffer[512];
-#ifdef WIN32
-	sprintf_s( errBuffer, "Vulkan error on line %i in %s: %i = %s", line, file, uint(x), error );
-#else
-	sprintf( errBuffer, "Vulkan error on line %i in %s: %i = %s", line, file, uint(x), error );
-#endif
-	FATALERROR( errBuffer );
+	FATALERROR( "Vulkan error on line %d in %s: %u = %s", line, file, uint(x), error );
 }
 
 #include <memory>

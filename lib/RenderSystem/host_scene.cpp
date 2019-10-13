@@ -225,7 +225,7 @@ void HostScene::AddScene( const char* sceneFile, const char* dir, const mat4& tr
 	}
 	if (!warn.empty()) printf( "Warn: %s\n", warn.c_str() );
 	if (!err.empty()) printf( "Err: %s\n", err.c_str() );
-	if (!ret) FatalError( "could not load glTF file:\n%s", cleanFileName.c_str() );
+	FATALERROR_IF( !ret, "could not load glTF file:\n%s", cleanFileName.c_str() );
 	// convert textures
 	for (size_t s = gltfModel.textures.size(), i = 0; i < s; i++)
 	{

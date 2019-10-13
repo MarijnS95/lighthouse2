@@ -80,7 +80,7 @@ void RenderCore::CreateInstance()
 #endif
 
 	m_VkInstance = vk::createInstance( createInfo );
-	if (!m_VkInstance) FATALERROR( "Could not initialize Vulkan." );
+	FATALERROR_IF( !m_VkInstance, "Could not initialize Vulkan." );
 	printf( "Successfully created Vulkan instance.\n" );
 }
 
@@ -151,8 +151,7 @@ void RenderCore::CreateDevice()
 	std::optional<vk::PhysicalDevice> physicalDevice = VulkanDevice::PickDeviceWithExtensions( m_VkInstance, dev_extensions );
 
 	// Sanity check
-	if (!physicalDevice.has_value())
-		FATALERROR( "No supported Vulkan devices available." );
+	FATALERROR_IF( !physicalDevice.has_value(), "No supported Vulkan devices available." );
 
 	// Create device
 	m_Device = VulkanDevice( physicalDevice.value(), dev_extensions );

@@ -108,7 +108,7 @@ void HostMesh::LoadGeometry( const char* file, const char* dir, const float scal
 	}
 	else
 	{
-		FatalError( __FILE__, __LINE__, "unsupported extension in file", cleanFileName.c_str() );
+		FATALERROR( "unsupported extension in file %s", cleanFileName.c_str() );
 	}
 }
 
@@ -127,7 +127,7 @@ void HostMesh::LoadGeometryFromOBJ( const string& fileName, const char* director
 	Timer timer;
 	timer.reset();
 	tinyobj::LoadObj( &attrib, &shapes, &materials, &err, fileName.c_str(), directory );
-	if (err.size() > 0) FatalError( __FILE__, __LINE__, err.c_str(), fileName.c_str() );
+	FATALERROR_IF( err.size() > 0, "tinyobj failed to load %s: %s", fileName.c_str(), err.c_str() );
 	printf( "loaded mesh in %5.3fs\n", timer.elapsed() );
 	// material offset: if we loaded an object before this one, material indices should not start at 0.
 	int matIdxOffset = (int)HostScene::materials.size();
@@ -362,16 +362,16 @@ void HostMesh::ConvertFromGTLFMesh( const tinygltfMesh& gltfMesh, const tinygltf
 				if (attribAccessor.type == TINYGLTF_TYPE_VEC3)
 					if (attribAccessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
 						for (size_t i = 0; i < count; i++, a += byte_stride) tmpVertices.push_back( *((float3*)a) );
-					else FatalError( __FILE__, __LINE__, "double precision positions not supported in gltf file" );
-				else FatalError( __FILE__, __LINE__, "unsupported position definition in gltf file" );
+					else FATALERROR( "double precision positions not supported in gltf file" );
+				else FATALERROR( "unsupported position definition in gltf file" );
 			}
 			else if (attribute.first == "NORMAL")
 			{
 				if (attribAccessor.type == TINYGLTF_TYPE_VEC3)
 					if (attribAccessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
 						for (size_t i = 0; i < count; i++, a += byte_stride) tmpNormals.push_back( *((float3*)a) );
-					else FatalError( __FILE__, __LINE__, "double precision normals not supported in gltf file", "" );
-				else FatalError( __FILE__, __LINE__, "expected vec3 normals in gltf file", "" );
+					else FATALERROR( "double precision normals not supported in gltf file" );
+				else FATALERROR( "expected vec3 normals in gltf file" );
 			}
 			else if (attribute.first == "TANGENT") /* not yet supported */ continue;
 			else if (attribute.first == "TEXCOORD_0")
@@ -379,8 +379,8 @@ void HostMesh::ConvertFromGTLFMesh( const tinygltfMesh& gltfMesh, const tinygltf
 				if (attribAccessor.type == TINYGLTF_TYPE_VEC2)
 					if (attribAccessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
 						for (size_t i = 0; i < count; i++, a += byte_stride) tmpUvs.push_back( *((float2*)a) );
-					else FatalError( __FILE__, __LINE__, "double precision uvs not supported in gltf file", "" );
-				else FatalError( __FILE__, __LINE__, "expected vec2 uvs in gltf file", "" );
+					else FATALERROR( "double precision uvs not supported in gltf file" );
+				else FATALERROR( "expected vec2 uvs in gltf file" );
 			}
 			else if (attribute.first == "TEXCOORD_1")
 			{
@@ -399,8 +399,8 @@ void HostMesh::ConvertFromGTLFMesh( const tinygltfMesh& gltfMesh, const tinygltf
 					else if (attribAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
 						for (size_t i = 0; i < count; i++, a += byte_stride)
 							tmpJoints.push_back( make_uint4( *((uchar*)a), *((uchar*)(a + 1)), *((uchar*)(a + 2)), *((uchar*)(a + 3)) ) );
-					else FatalError( __FILE__, __LINE__, "expected ushorts or uchars for joints in gltf file", "" );
-				else FatalError( __FILE__, __LINE__, "expected vec4s for joints in gltf file", "" );
+					else FATALERROR( "expected ushorts or uchars for joints in gltf file" );
+				else FATALERROR( "expected vec4s for joints in gltf file" );
 			}
 			else if (attribute.first == "WEIGHTS_0")
 			{
@@ -413,8 +413,8 @@ void HostMesh::ConvertFromGTLFMesh( const tinygltfMesh& gltfMesh, const tinygltf
 							w4 *= norm;
 							tmpWeights.push_back( w4 );
 						}
-					else FatalError( __FILE__, __LINE__, "double precision uvs not supported in gltf file", "" );
-				else FatalError( __FILE__, __LINE__, "expected vec4 weights in gltf file", "" );
+					else FATALERROR( "double precision uvs not supported in gltf file" );
+				else FATALERROR( "expected vec4 weights in gltf file" );
 			}
 			else assert( false ); // unkown property
 		}

@@ -39,14 +39,14 @@ CoreAPI_Base* CoreAPI_Base::CreateCoreAPI( const char* dllName )
 	#endif
 		dllpath += string( dllName );
 		module = LoadLibrary( dllpath.c_str() );
-		if (module == 0) 
+		if ( !module )
 		{
 			// see if the dll is perhaps in the current folder
 			module = LoadLibrary( dllName );
-			if (module == 0) FatalError( "dll not found: %s", dllName );
+			FATALERROR_IF( !module, "dll %s not found", dllName );
 		}
 		createCore = (createCoreFunction)GetProcAddress( module, "CreateCore" );
-		if (createCore == 0) FatalError( __FILE__, __LINE__, "could not find entrypoint in dll" );
+		FATALERROR_IF( !createCore, "Could not find entrypoint in dll" );
 		api = createCore();
 		api->Init();
 	}
