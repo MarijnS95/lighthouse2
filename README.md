@@ -1,8 +1,8 @@
 # lighthouse2
 Lighthouse 2 framework for real-time ray tracing
 
-This is the public repo for Lighthouse 2, a rendering framework for real-time ray tracing / path tracing experiments. 
-Lighthouse 2 uses a state-of-the-art wavefront / streaming ray tracing implementation to reach high ray througput on RTX hardware 
+This is the public repo for Lighthouse 2, a rendering framework for real-time ray tracing / path tracing experiments.
+Lighthouse 2 uses a state-of-the-art wavefront / streaming ray tracing implementation to reach high ray througput on RTX hardware
 (using Optix 7) and pre-RTX hardware (using Optix 5 Prime) and soon on AMD hardware (using RadeonRays / OpenCL) and CPUs (using Embree).
 A software rasterizer is also included, mostly as an example of a minimal API implementation.
 
@@ -24,7 +24,7 @@ The main layers are:
 2. The RenderSystem, which handles scene I/O and host-side scene storage;
 3. The render cores, which implement low-level rendering functionality.
 
-Render cores have a common interface and are supplied to the RenderSystem as dlls. The RenderSystem supplies the cores with scene data 
+Render cores have a common interface and are supplied to the RenderSystem as dlls. The RenderSystem supplies the cores with scene data
 (meshes, instances, triangles, textures, materials, lights) and sparse updates to this data.
 
 The Lighthouse 2 project has the following target audience:
@@ -32,8 +32,8 @@ The Lighthouse 2 project has the following target audience:
 *Researchers*
 
 Lighthouse 2 is designed to be a high-performance starting point for novel algorithms involving real-time ray tracing. This may include
-new work on filtering, sampling, materials and lights. The provided ray tracers easily reach hundreds of millions of rays per second 
-on NVidia and AMD GPUs. Combined with a generic GPGPU implementation, this enables a high level of freedom in the implementation of 
+new work on filtering, sampling, materials and lights. The provided ray tracers easily reach hundreds of millions of rays per second
+on NVidia and AMD GPUs. Combined with a generic GPGPU implementation, this enables a high level of freedom in the implementation of
 new code.
 
 *Educators*
@@ -54,15 +54,54 @@ The ray tracing infrastructure (with related scene management acceleration struc
 model (Lambert + speculars). This may or may not change depending on the use cases encountered. This video shows what can be
 achieved with the platform: https://youtu.be/uEDTtu2ky3o .
 
+## Building and installation
+
+### Windows with Visual Studio
+
 Lighthouse 2 should compile out-of-the-box on Windows using Visual Studio 2017 / 2019. For the CUDA/Optix based cores CUDA 10.1 is required:
 
 https://developer.nvidia.com/cuda-downloads
 
 Optix 5.x, 6.0 and 7.0 libraries are included in the Lighthouse 2 download.
 
+### CMake (Linux, Windows and Visual Studio)
+Only CUDA is required, see the download link above.
+Most dependencies are written to look for binaries/headers on the system first, before switching to (most likely outdated) blobs bundled in this repository.
+(TODO: Actually add Linux binaries? Package managers are so much better at dealing with this...)
+
+#### CMake in Visual Studio
+Visual Studio 2017 doesn't play well with `VS_` variables when opening a CMake file directory (the logs indicate an intermediary `Ninja` build is generated,
+where these configurations most likely get lost). Instead it is advised to generate a Visual Studio solution using [`cmake` or `cmake-gui`](https://cmake.org/download/).
+TODO: Check VS2019
+
+#### OptiX
+OptiX doesn't install well to the standard system folders because multiple versions are required. When you deploy both SDKs somewhere, pass them to cmake as follows:
+Note that `:PATH` is necessary to make this a so-called `cached` variable. Cached variables surpass regular variables, and this would otherwise get overwritten by the default. The following command will immediately kick off a build, in release mode with debug info.
+
+```sh
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOptiX_INSTALL_DIR:PATH=/opt/optix-6 -DOptiX7_INSTALL_DIR:PATH=/opt/optix -B build && make -j$(nproc --all) -C build
+```
+
+### TODO:
+The CMake conversion on this branch is not done yet.
+1. Cherry-pick missing Windows commits from `do-not-merge` branch
+2. Find elegant way to one-click-debug on Windows (`target_link_directories` "equivalent")
+   1. Consolidate dll files in single location (instead of lingering them around all `apps`)
+3. Cherry-pick asset/shader unification, start apps from the root project dir
+   (where all deduplicated files will now reside...)
+4. Use CMake `install()` to generate distributable/installable package
+5. Update/remove/replace temporary and in-progress commits
+6. Update headers/libs (freeimage, optix6 to 6.5.0, glfw)
+7. Separate source "libs" from external (header-only) libs
+   (eg. `src/apps/*`, `src/rendercores/RenderCore_*`, `external/glfw`)
+8. `*Config.cmake` isn't intended for configuring `Find*.cmake` targets the way it's abused for currently. Fix this by providing nested `Find*.cmake` instead.
+   After all, `REQUIRED` flags aren't properly forwarded anyway.
+
+## Contact
+
 For more information on Lighthouse 2 please visit: http://jacco.ompf2.com.
 
-<b>Credits</b>
+## Credits
 
 Lighthouse 2 was developed at the Utrecht University, The Netherlands.
 
