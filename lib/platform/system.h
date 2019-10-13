@@ -76,9 +76,9 @@ __inline float sqr( const float x ) { return x * x; }
 template <class T> void Swap( T& x, T& y ) { T t; t = x; x = y; y = t; }
 
 // crc64, from https://sourceforge.net/projects/crc64/
-#define UINT64C(x) ((unsigned __int64) x##ULL)
+#define UINT64C(x) ((uint64_t) x##ULL)
 #define CLEARCRC64 (UINT64C( 0xffffffffffffffff ))
-const unsigned __int64 crc64_table[256] = {
+const uint64_t crc64_table[256] = {
 	UINT64C( 0x0000000000000000 ), UINT64C( 0x42F0E1EBA9EA3693 ), UINT64C( 0x85E1C3D753D46D26 ), UINT64C( 0xC711223CFA3E5BB5 ),
 	UINT64C( 0x493366450E42ECDF ), UINT64C( 0x0BC387AEA7A8DA4C ), UINT64C( 0xCCD2A5925D9681F9 ), UINT64C( 0x8E224479F47CB76A ),
 	UINT64C( 0x9266CC8A1C85D9BE ), UINT64C( 0xD0962D61B56FEF2D ), UINT64C( 0x17870F5D4F51B498 ), UINT64C( 0x5577EEB6E6BB820B ),
@@ -144,9 +144,9 @@ const unsigned __int64 crc64_table[256] = {
 	UINT64C( 0x14DEA25F3AF9026D ), UINT64C( 0x562E43B4931334FE ), UINT64C( 0x913F6188692D6F4B ), UINT64C( 0xD3CF8063C0C759D8 ),
 	UINT64C( 0x5DEDC41A34BBEEB2 ), UINT64C( 0x1F1D25F19D51D821 ), UINT64C( 0xD80C07CD676F8394 ), UINT64C( 0x9AFCE626CE85B507 )
 };
-__inline unsigned __int64 calccrc64( unsigned char* pbData, int len )
+__inline uint64_t calccrc64( unsigned char* pbData, int len )
 {
-	unsigned __int64 crc = CLEARCRC64;
+	uint64_t crc = CLEARCRC64;
 	unsigned char* p = pbData;
 	unsigned int t, l = len;
 	while (l-- > 0)
@@ -154,11 +154,11 @@ __inline unsigned __int64 calccrc64( unsigned char* pbData, int len )
 		crc = crc64_table[t] ^ (crc << 8);
 	return crc ^ CLEARCRC64;
 }
-#define TRACKCHANGES public: bool Changed() { unsigned __int64 currentcrc = crc64; \
-crc64 = CLEARCRC64; unsigned __int64 newcrc = calccrc64( (uchar*)this, sizeof( *this ) ); \
+#define TRACKCHANGES public: bool Changed() { uint64_t currentcrc = crc64; \
+crc64 = CLEARCRC64; uint64_t newcrc = calccrc64( (uchar*)this, sizeof( *this ) ); \
 bool changed = newcrc != currentcrc; crc64 = newcrc; return changed; } \
 void MarkAsDirty() { dirty++; } \
-private: unsigned __int64 crc64 = CLEARCRC64; uint dirty = 0; \
+private: uint64_t crc64 = CLEARCRC64; uint dirty = 0; \
 
 // rng
 uint RandomUInt();
