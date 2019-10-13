@@ -19,6 +19,19 @@
 
 #include "platform.h"
 
+// Enable usage of dedicated GPUs in notebooks
+#ifdef WIN32
+extern "C"
+{
+	__declspec( dllexport ) unsigned long NvOptimusEnablement = 0x00000001;
+}
+
+extern "C"
+{
+	__declspec( dllexport ) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef WIN32
