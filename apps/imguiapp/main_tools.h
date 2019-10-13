@@ -42,7 +42,7 @@ void KeyEventCallback( GLFWwindow* window, int key, int scancode, int action, in
 }
 void CharEventCallback( GLFWwindow* window, uint code ) { /* nothing here yet */ }
 void WindowFocusCallback( GLFWwindow* window, int focused ) { hasFocus = (focused == GL_TRUE); }
-void MouseButtonCallback( GLFWwindow* window, int button, int action, int mods ) 
+void MouseButtonCallback( GLFWwindow* window, int button, int action, int mods )
 {
 	if (action == GLFW_PRESS) mbstates[button] = true;
 	else if (action == GLFW_RELEASE) mbstates[button] = false;
