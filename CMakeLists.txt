@@ -8,6 +8,10 @@ project(Lighthouse2)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")
 set(CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/cmake" "${CMAKE_PREFIX_PATH}")
 
+if(WIN32)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 # External dependencies bundled with the source:
 add_subdirectory("lib/glad")
 add_subdirectory("lib/half2.1.0")
