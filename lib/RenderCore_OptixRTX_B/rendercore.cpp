@@ -97,7 +97,7 @@ void RenderCore::Init()
 	context->setExceptionEnabled( RT_EXCEPTION_ALL, false );
 	// compile cuda code to ptx and obtain programs
 	string ptx;
-	if (NeedsRecompile( "../../lib/RenderCore_OptixRTX_B/optix/", ".optix.turing.cu.ptx", ".optix.cu", "../../rendersystem/common_settings.h", "../core_settings.h" ))
+	if (NeedsRecompile( "../../lib/RenderCore_OptixRTX_B/optix/", ".optix.turing.cu.ptx", ".optix.cu", "../../RenderSystem/common_settings.h", "../core_settings.h" ))
 	{
 		CUDATools::compileToPTX( ptx, TextFileRead( "../../lib/RenderCore_OptixRTX_B/optix/.optix.cu" ).c_str(), "../../lib/RenderCore_OptixRTX_B/optix", computeCapability, 6 );
 		if (computeCapability / 10 == 7) TextFileWrite( ptx, "../../lib/RenderCore_OptixRTX_B/optix/.optix.turing.cu.ptx" );
@@ -107,10 +107,16 @@ void RenderCore::Init()
 	}
 	else
 	{
+		const char *file = NULL;
+		if (coreStats.ccMajor == 7) file = "../../lib/RenderCore_OptixRTX_B/optix/.optix.turing.cu.ptx";
+		else if (coreStats.ccMajor == 6) file = "../../lib/RenderCore_OptixRTX_B/optix/.optix.pascal.cu.ptx";
+		else if (coreStats.ccMajor == 5) file = "../../lib/RenderCore_OptixRTX_B/optix/.optix.maxwell.cu.ptx";
 		FILE* f;
-		if (coreStats.ccMajor == 7) fopen_s( &f, "../../lib/RenderCore_OptixRTX_B/optix/.optix.turing.cu.ptx", "rb" );
-		else if (coreStats.ccMajor == 6) fopen_s( &f, "../../lib/RenderCore_OptixRTX_B/optix/.optix.pascal.cu.ptx", "rb" );
-		else if (coreStats.ccMajor == 5) fopen_s( &f, "../../lib/RenderCore_OptixRTX_B/optix/.optix.maxwell.cu.ptx", "rb" );
+#ifdef _MSC_VER
+		fopen_s( &f, file, "rb" );
+#else
+		f = fopen( file, "rb" );
+#endif
 		int len;
 		fread( &len, 1, 4, f );
 		char* t = new char[len];
@@ -185,7 +191,8 @@ void RenderCore::SetTarget( GLTexture* target, const uint spp )
 		reallocate = true;
 	}
 	// notify OptiX about the new screen size
-	context["scrsize"]->set3iv( (const int*)&make_int3( scrwidth, scrheight, scrspp ) );
+	const auto extent = make_int3(scrwidth, scrheight, scrspp);
+	context["scrsize"]->set3iv( (const int*)&extent );
 	if (reallocate)
 	{
 		// reallocate buffers
@@ -279,7 +286,7 @@ void RenderCore::SetTextures( const CoreTexDesc* tex, const int textures )
 	SyncStorageType( TexelStorage::ARGB32 );
 	SyncStorageType( TexelStorage::ARGB128 );
 	SyncStorageType( TexelStorage::NRM32 );
-	// Notes: 
+	// Notes:
 	// - the three types are copied from the original HostTexture pixel data (to which the
 	//   descriptors point) straight to the GPU. There is no pixel storage on the host
 	//   in the RenderCore.

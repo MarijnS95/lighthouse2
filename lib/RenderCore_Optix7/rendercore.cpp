@@ -15,6 +15,7 @@
 
 #include "core_settings.h"
 #include <optix_function_table_definition.h>
+#include <optix_stack_size.h>
 
 namespace lh2core {
 
@@ -138,10 +139,16 @@ void RenderCore::CreateOptixContext( int cc )
 	}
 	else
 	{
+		const char *file = NULL;
+		if (cc / 10 == 7) file = "../../lib/RenderCore_Optix7/optix/.optix.turing.cu.ptx";
+		else if (cc / 10 == 6) file = "../../lib/RenderCore_Optix7/optix/.optix.pascal.cu.ptx";
+		else if (cc / 10 == 5) file = "../../lib/RenderCore_Optix7/optix/.optix.maxwell.cu.ptx";
 		FILE* f;
-		if (cc / 10 == 7) fopen_s( &f, "../../lib/RenderCore_Optix7/optix/.optix.turing.cu.ptx", "rb" );
-		else if (cc / 10 == 6) fopen_s( &f, "../../lib/RenderCore_Optix7/optix/.optix.pascal.cu.ptx", "rb" );
-		else if (cc / 10 == 5) fopen_s( &f, "../../lib/RenderCore_Optix7/optix/.optix.maxwell.cu.ptx", "rb" );
+#ifdef _MSC_VER
+		fopen_s( &f, file, "rb" );
+#else
+		f = fopen( file, "rb" );
+#endif
 		int len;
 		fread( &len, 1, 4, f );
 		char* t = new char[len];
@@ -379,7 +386,7 @@ void RenderCore::UpdateToplevel()
 		instanceArray = new CoreBuffer<OptixInstance>( instances.size() + 4, ON_HOST | ON_DEVICE );
 	}
 	// copy instance descriptors to the array, sync with device
-	for (int s = (int)instances.size(), i = 0; i < s; i++) 
+	for (int s = (int)instances.size(), i = 0; i < s; i++)
 	{
 		instances[i]->instance.traversableHandle = meshes[instances[i]->mesh]->gasHandle;
 		instanceArray->HostPtr()[i] = instances[i]->instance;
@@ -429,7 +436,7 @@ void RenderCore::SetTextures( const CoreTexDesc* tex, const int textures )
 	SyncStorageType( TexelStorage::ARGB32 );
 	SyncStorageType( TexelStorage::ARGB128 );
 	SyncStorageType( TexelStorage::NRM32 );
-	// Notes: 
+	// Notes:
 	// - the three types are copied from the original HostTexture pixel data (to which the
 	//   descriptors point) straight to the GPU. There is no pixel storage on the host
 	//   in the RenderCore.
@@ -716,7 +723,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 	coreStats.traceTime1 = CUDATools::Elapsed( traceStart[1], traceEnd[1] );
 	coreStats.shadowTraceTime = CUDATools::Elapsed( shadowStart, shadowEnd );
 	coreStats.traceTimeX = coreStats.shadeTime = 0;
-	for( int i = 2; i < MAXPATHLENGTH; i++ ) coreStats.traceTimeX += CUDATools::Elapsed( traceStart[i], traceEnd[i] ); 
+	for( int i = 2; i < MAXPATHLENGTH; i++ ) coreStats.traceTimeX += CUDATools::Elapsed( traceStart[i], traceEnd[i] );
 	for( int i = 0; i < MAXPATHLENGTH; i++ ) coreStats.shadeTime += CUDATools::Elapsed( shadeStart[i], shadeEnd[i] );
 	coreStats.probedInstid = counters.probedInstid;
 	coreStats.probedTriid = counters.probedTriid;

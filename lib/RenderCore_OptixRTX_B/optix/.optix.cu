@@ -41,7 +41,7 @@ typedef unsigned char uchar;
 using namespace optix;
 
 // global include file
-#include "../../rendersystem/common_settings.h"
+#include "../../RenderSystem/common_settings.h"
 #include "../core_settings.h"
 
 // set automatically

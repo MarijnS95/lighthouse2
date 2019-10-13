@@ -62,7 +62,6 @@
 
 #include <optix.h>
 #include <optix_stubs.h>
-#include <optix_stack_size.h>
 
 const char *ParseOptixError( OptixResult r );
 

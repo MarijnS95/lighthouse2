@@ -48,11 +48,11 @@ typedef unsigned char uchar;
 // final pixel buffer for output
 surface<void, cudaSurfaceType2D> renderTarget;
 namespace lh2core {
-__host__ const surfaceReference* renderTargetRef() 
-{ 
-	const surfaceReference* s; 
-	cudaGetSurfaceReference( &s, &renderTarget ); 
-	return s; 
+__host__ const surfaceReference* renderTargetRef()
+{
+	const surfaceReference* s;
+	cudaGetSurfaceReference( &s, &renderTarget );
+	return s;
 }
 } // namespace lh2core
 
