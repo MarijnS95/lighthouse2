@@ -16,7 +16,7 @@
    It takes a buffer of hit results and populates a new buffer with
    extension rays. Shadow rays are added with 'potential contributions'
    as fire-and-forget rays, to be traced later. Streams are compacted
-   using simple atomics. The kernel is a 'persistent kernel': a fixed 
+   using simple atomics. The kernel is a 'persistent kernel': a fixed
    number of threads fights for food by atomically decreasing a counter.
 
    The implemented path tracer is deliberately simple.
@@ -24,6 +24,9 @@
 */
 
 #include "noerrors.h"
+
+#include <cooperative_groups.h>
+namespace cg = cooperative_groups;
 
 // path state flags
 #define S_SPECULAR		1	// previous path vertex was specular
@@ -39,6 +42,23 @@
 #define RAY_O make_float3( O4 )
 #define FLAGS data
 #define PATHIDX (data >> 8)
+
+__device__
+uint atomicAggInc(uint *ptr)
+{
+    cg::coalesced_group g = cg::coalesced_threads();
+    int prev;
+
+    // elect the first active thread to perform atomic add
+    if (g.thread_rank() == 0) {
+        prev = atomicAdd(ptr, g.size());
+    }
+
+    // broadcast previous value within the warp
+    // and add each active thread’s rank to it
+    prev = g.thread_rank() + g.shfl(prev, 0);
+    return prev;
+}
 
 //  +-----------------------------------------------------------------------------+
 //  |  shadeKernel                                                                |
@@ -63,7 +83,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	// gather data by reading sets of four floats for optimal throughput
 	const float4 O4 = extensionRays[jobIndex].O4;		// ray origin xyz, w can be ignored
 	const float4 D4 = extensionRays[jobIndex].D4;		// ray direction xyz
-	const float4 T4 = pathStateData[jobIndex * 2 + 0];	// path thoughput rgb 
+	const float4 T4 = pathStateData[jobIndex * 2 + 0];	// path thoughput rgb
 	const float4 Q4 = pathStateData[jobIndex * 2 + 1];	// x, y: pd of the previous bounce, normal at the previous vertex
 	const Intersection hd = hits[jobIndex];				// TODO: when using instances, Optix Prime needs 5x4 bytes here...
 	const float4 hitData = make_float4( __uint_as_float( (uint)(65535.0f * hd.u) + ((uint)(65535.0f * hd.v) << 16) ), __int_as_float( hd.triid == -1 ? 0 : hd.instid ), __int_as_float( hd.triid ), hd.t );
@@ -109,7 +129,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	{
 		if (pathLength < MAXPATHLENGTH)
 		{
-			const uint extensionRayIdx = atomicAdd( &counters->extensionRays, 1 );
+			const uint extensionRayIdx = atomicAggInc( &counters->extensionRays );
 			extensionRaysOut[extensionRayIdx].O4 = make_float4( I, EPSILON );
 			extensionRaysOut[extensionRayIdx].D4 = make_float4( D, 1e34f );
 			FIXNAN_FLOAT3( throughput );
@@ -181,7 +201,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 				FIXNAN_FLOAT3( contribution );
 				CLAMPINTENSITY;
 				// add fire-and-forget shadow ray to the connections buffer
-				const uint shadowRayIdx = atomicAdd( &counters->shadowRays, 1 ); // compaction
+				const uint shadowRayIdx = atomicAggInc( &counters->shadowRays ); // compaction
 				connections[shadowRayIdx].O4 = make_float4( SafeOrigin( I, L, N, geometryEpsilon ), 0 );
 				connections[shadowRayIdx].D4 = make_float4( L, dist - 2 * geometryEpsilon );
 				potentials[shadowRayIdx] = make_float4( contribution, __int_as_float( pixelIdx ) );
@@ -213,7 +233,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
 
 	// write extension ray
-	const uint extensionRayIdx = atomicAdd( &counters->extensionRays, 1 ); // compact
+	const uint extensionRayIdx = atomicAggInc( &counters->extensionRays ); // compact
 	const uint packedNormal = PackNormal( fN );
 	if (!(FLAGS & S_SPECULAR)) FLAGS |= S_BOUNCED; else FLAGS |= S_VIASPECULAR;
 	extensionRaysOut[extensionRayIdx].O4 = make_float4( SafeOrigin( I, R, N, geometryEpsilon ), 0 );
