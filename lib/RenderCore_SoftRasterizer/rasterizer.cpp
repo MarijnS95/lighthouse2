@@ -71,7 +71,7 @@ Mesh::Mesh( int vcount, int tcount ) : verts( vcount ), tris( tcount )
 //    e) span construction
 //    f) span filling
 // -----------------------------------------------------------
-void Mesh::Render( mat4& T )
+void Mesh::Render( const mat4& T )
 {
 	// cull mesh
 	float3 c[8];
@@ -231,7 +231,7 @@ void Rasterizer::Reinit( int w, int h, Surface* screen )
 // render the scene
 // input: camera to render with
 // -----------------------------------------------------------
-void Rasterizer::Render( mat4& transform )
+void Rasterizer::Render( const mat4& transform )
 {
 	memset( Mesh::screen->pixels, 0, Mesh::screen->width * Mesh::screen->height * sizeof( uint ) );
 	memset( zbuffer, 0, Mesh::screen->width * Mesh::screen->height * sizeof( float ) );

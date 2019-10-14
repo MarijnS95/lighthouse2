@@ -104,7 +104,7 @@ public:
 	Mesh( int vcount, int tcount );
 	~Mesh() { delete pos; delete N; delete spos; delete tri; }
 	// methods
-	void Render( mat4& transform );
+	void Render( const mat4& transform );
 	virtual int GetType() { return SG_MESH; }
 	// data members
 	float3* pos = 0;				// object-space vertex positions
@@ -155,7 +155,7 @@ public:
 	// methods
 	void Init();
 	void Reinit( int w, int h, Surface* screen );
-	void Render( mat4& transform );
+	void Render( const mat4& transform );
 	// data members
 	static Scene scene;
 	static float* zbuffer;
