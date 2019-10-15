@@ -24,7 +24,6 @@
 // #define NOTEXTURES		// all texture reads will be white
 
 #include "platform.h"
-#include "system.h"			// for vector types
 
 using namespace lighthouse2;
 

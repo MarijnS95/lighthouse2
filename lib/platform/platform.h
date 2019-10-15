@@ -42,7 +42,6 @@
 #endif
 #include <zlib.h>
 #include "emmintrin.h"
-#include <cassert>
 #include <FreeImage.h>
 // clang-format on
 

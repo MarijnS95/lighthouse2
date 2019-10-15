@@ -14,7 +14,6 @@
 */
 
 #include "platform.h"
-#include "system.h"
 #include "rendersystem.h"
 
 static RenderAPI* renderer = 0;

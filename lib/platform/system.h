@@ -19,19 +19,19 @@
 
 #pragma once
 
-#include <half.hpp>
 #include <algorithm>
 #include <cassert>
 #include <chrono>
+#include <cstdarg>
+#include <cstdint>
 #include <cstdlib>
 #include <ctime>
-#include <cstdarg>
-#include <ratio>
-#include <chrono>
-#include <half.hpp>
-#include <cstdint>
-#include <thread>
 #include <fstream>
+#include <half.hpp>
+#include <ratio>
+#include <string>
+#include <thread>
+#include <vector>
 
 using namespace std;
 using namespace half_float;

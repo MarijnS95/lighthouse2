@@ -32,7 +32,6 @@
 #endif
 
 #include "platform.h"
-#include "system.h" // for vector types
 
 #define NV_EXTENSIONS
 
