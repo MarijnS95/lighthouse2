@@ -45,7 +45,6 @@
 #define CUDABUILD			// signal system.h to include full CUDA headers
 #include "helper_math.h"	// for vector types
 #include "platform.h"
-#include "system.h"			// for vector types
 #undef APIENTRY				// get rid of an anoying warning
 #include "cuda.h"
 #include "cuda_gl_interop.h"
