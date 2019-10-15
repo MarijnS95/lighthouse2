@@ -15,7 +15,6 @@
 
 #include "platform.h"
 #include "rendersystem.h"
-#include "system.h"
 
 #include <bitset>
 
