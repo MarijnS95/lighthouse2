@@ -14,7 +14,7 @@ add_library(${PROJECT_NAME} OBJECT ${sources} ${headers})
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
 
 find_package(glfw3 REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PLATFORM_GLFW})
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
 
 # Ensure Imgui picks up GLAD, instead of picking one at random based on system header availability.
