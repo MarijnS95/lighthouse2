@@ -34,10 +34,4 @@ using namespace lighthouse2;
 
 using namespace lh2core;
 
-#ifdef _DEBUG
-#pragma comment(lib, "../platform/lib/debug/platform.lib" )
-#else
-#pragma comment(lib, "../platform/lib/release/platform.lib" )
-#endif
-
 // EOF

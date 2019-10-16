@@ -41,13 +41,6 @@
 
 #ifndef __CUDACC__
 
-#ifdef _DEBUG
-#pragma comment(lib, "../platform/lib/debug/platform.lib" )
-#else
-#pragma comment(lib, "../platform/lib/release/platform.lib" )
-#endif
-#pragma comment(lib, "../OptiX/lib64/optix_prime.6.5.0.lib" )
-
 #define CUDABUILD
 #include "helper_math.h"	// for vector types
 #include "platform.h"
