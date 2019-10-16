@@ -10,6 +10,27 @@ project(Lighthouse2)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")
 set(CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/cmake" "${CMAKE_PREFIX_PATH}")
 
+if(MSVC)
+	# Consolidate all runtime libraries and executables to a single folder.
+	# This has the following advantages:
+	# - Single copy of external dependencies (except for those in lib/ for
+	#   currently unused `install`able imported targets)
+	# - Apps can find RenderCores directly, without PATH hacks
+	# - Easier to run outside of Visual Studio, without needind a PATH or manually copying
+	#   (working directory still needs to be relative to the assets: currently project root)
+
+	set(OUTPUT_FOLDER "${PROJECT_SOURCE_DIR}/run" CACHE PATH "Output directory for executables and libraries (Windows only)")
+
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_FOLDER})
+	set(CMAKE_PDB_OUTPUT_DIRECTORY ${OUTPUT_FOLDER})
+
+	foreach(OUTPUTCONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+		string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OUTPUT_FOLDER})
+		set(CMAKE_PDB_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OUTPUT_FOLDER})
+	endforeach()
+endif()
+
 if(WIN32)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
