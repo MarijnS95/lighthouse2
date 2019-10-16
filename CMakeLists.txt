@@ -58,11 +58,12 @@ add_subdirectory("lib/sharedBSDFs")
 macro(add_render_core core_path)
 	add_subdirectory(${core_path})
 	get_filename_component(core_name ${core_path} NAME)
+	# Ensure rendercore is named just like the folder:
 	if(NOT TARGET ${core_name})
 		message(FATAL_ERROR "${core_name} Does not name a target!")
 	endif()
-	# Collect target folders for runtime "linking" (rpath):
-	list(APPEND core_folders $<TARGET_FILE_DIR:${core_name}>)
+	# Collect compiled rendercores for proper loading from apps:
+	list(APPEND render_cores ${core_name})
 endmacro()
 
 include(CheckLanguage)
@@ -86,6 +87,36 @@ endif()
 
 # Include default RenderCores:
 add_render_core("lib/RenderCore_SoftRasterizer")
+
+message(STATUS "Found RenderCores: ${render_cores}")
+
+foreach(core_name IN LISTS render_cores)
+	list(APPEND core_folders $<TARGET_FILE_DIR:${core_name}>)
+endforeach()
+
+# Create a macro for app cmake definitions to call. Their folder name need not
+# match their project/executable name.
+function(register_app app_target)
+	if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13" AND UNIX)
+		# Set rpath for dlopen to find the cores:
+		target_link_directories(${PROJECT_NAME} PRIVATE ${core_folders})
+	elseif(MSVC)
+		# Ensure RenderCores are built as app dependency, in particular when
+		# running (debugging) the startup project (an app) in Visual Studio.
+		add_dependencies(${app_target} ${render_cores})
+
+		# Note that target_link_directories has no effect, since libraries need either
+		# be in the same directory, or on the PATH (CMAKE_MSVCIDE_RUN_PATH).
+		# For now, all executables and libraries are compiled to the same
+		# `/run` folder in the project root (only on WIN32).
+	else()
+		message(FATAL_ERROR "CMake < 3.13 doesn't support target_link_directories!")
+		# TODO: Find a better solution on these platforms:
+		# Also move all output to the same directory?
+		# Use PATH variables during debugging?
+		# Rely on install/export? (not efficient for debugging sessions)
+	endif()
+endfunction()
 
 # Include applications:
 file(GLOB app_directories "apps/*")
