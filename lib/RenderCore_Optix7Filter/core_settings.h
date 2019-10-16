@@ -36,12 +36,6 @@
 
 #ifndef __CUDACC__
 
-#ifdef _DEBUG
-#pragma comment(lib, "../platform/lib/debug/platform.lib" )
-#else
-#pragma comment(lib, "../platform/lib/release/platform.lib" )
-#endif
-
 #define CUDABUILD			// signal system.h to include full CUDA headers
 #include "helper_math.h"	// for vector types
 #include "platform.h"
