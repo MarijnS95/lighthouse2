@@ -7,3 +7,13 @@ if(NOT glfw3_FOUND)
 	find_package(glfw3 MODULE)
 	list(POP_FRONT CMAKE_MODULE_PATH)
 endif()
+
+# Windows has trouble finding the prebuilt dll. (like any other)
+# Provide it the static version instead.
+# TODO: This can hopefully be addressed when target_link_directories
+# works as intended, despite missing unix-like RPATH capabilities.
+if(TARGET glfw-static AND WIN32)
+	set(PLATFORM_GLFW glfw-static)
+else()
+	set(PLATFORM_GLFW glfw)
+endif()
