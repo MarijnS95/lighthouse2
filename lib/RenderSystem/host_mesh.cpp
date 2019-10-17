@@ -414,7 +414,8 @@ void HostMesh::ConvertFromGTLFMesh( const tinygltfMesh& gltfMesh, const tinygltf
 					if (attribAccessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
 						for (size_t i = 0; i < count; i++, a += byte_stride)
 						{
-							float4 w4 = *((float4*)a);
+							float4 w4;
+							memcpy(&w4, a, sizeof(float4));
 							float norm = 1.0f / (w4.x + w4.y + w4.z + w4.w);
 							w4 *= norm;
 							tmpWeights.push_back( w4 );
