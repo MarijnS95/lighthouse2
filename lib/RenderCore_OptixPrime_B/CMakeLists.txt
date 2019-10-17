@@ -14,6 +14,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 find_package(OptiX6 REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE optix optix_prime)
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+	OPTIX_6_INCLUDE_PATH="$<TARGET_PROPERTY:optix,INTERFACE_INCLUDE_DIRECTORIES>")
 
 # By default a CUDA-enabled project does not include the headers for non *.cu files
 # nor link against the Driver API (libcuda)

@@ -155,10 +155,14 @@ public:
 		if (optixVer > 6) {
 #ifdef OPTIX_INCLUDE_PATH
 			options.push_back( "-I" OPTIX_INCLUDE_PATH );
+#else
+			FATALERROR( "No include path defined for OptiX %d!", optixVer );
 #endif
 		} else {
 #ifdef OPTIX_6_INCLUDE_PATH
 			options.push_back( "-I" OPTIX_6_INCLUDE_PATH );
+#else
+			FATALERROR( "No include path defined for OptiX %d!", optixVer );
 #endif
 		}
 
