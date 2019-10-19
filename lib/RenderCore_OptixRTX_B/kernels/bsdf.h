@@ -39,7 +39,7 @@
 #else
 
 // Disney's principled BRDF, adapted from https://www.shadertoy.com/view/XdyyDd
-#include <bsdf.h>
+#include <sharedbsdf.h>
 
 #endif
 
