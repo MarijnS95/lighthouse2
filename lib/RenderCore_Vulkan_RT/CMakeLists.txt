@@ -12,3 +12,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 find_package(Vulkan REQUIRED)
 find_package(Shaderc REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan Shaderc::shaderc)
+
+if(BUILD_SHARED_LIBS)
+	install(TARGETS ${PROJECT_NAME})
+endif()
+
