@@ -20,3 +20,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	TinyOBJLoader::tinyobjloader)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC Platform)
+
+if(BUILD_SHARED_LIBS)
+	install(TARGETS ${PROJECT_NAME})
+endif()
+
