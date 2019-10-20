@@ -18,3 +18,8 @@ register_app(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
+
+if(BUILD_SHARED_LIBS)
+	install(TARGETS ${PROJECT_NAME})
+endif()
+

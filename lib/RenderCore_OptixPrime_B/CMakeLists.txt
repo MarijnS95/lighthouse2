@@ -24,3 +24,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 # (And requires __host__ definitions etc...), include the header+libraries directly
 # set_source_files_properties(${SOURCES} PROPERTIES LANGUAGE CUDA)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
+if(BUILD_SHARED_LIBS)
+	install(TARGETS ${PROJECT_NAME})
+endif()
