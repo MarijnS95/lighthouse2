@@ -127,3 +127,6 @@ endforeach()
 if(WIN32)
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ImguiApp)
 endif()
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/data" DESTINATION share/)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/shaders" DESTINATION share/)
