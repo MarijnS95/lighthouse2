@@ -222,6 +222,30 @@ struct CoreMaterialEx
 	// These are needed by the RenderCore to set the texaddr fields for the material.
 	int texture[11];
 };
+
+enum class MaterialType : char
+{
+	// Existing compacted Disney material
+	DISNEY = 0,
+	// A tree of custom BSDF nodes
+	CUSTOM_BSDF,
+
+	// Other materials:
+
+	// The Disney material expressed in device-created BxDF nodes,
+	// Based on PBRT
+	PBRT_DISNEY,
+
+	// TODO: More PBRT
+};
+
+struct CoreMaterialDesc
+{
+	MaterialType type;
+	unsigned int instanceLocation : 24;
+};
+static_assert( sizeof( CoreMaterialDesc ) == sizeof( int ), "CoreMaterialDesc must be 4 bytes!" );
+
 enum TexelStorage
 {
 	ARGB32 = 0,							// regular texture data, RenderCore::texel32data

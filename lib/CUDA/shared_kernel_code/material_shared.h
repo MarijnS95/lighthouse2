@@ -37,7 +37,11 @@ LH2_DEVFUNC void GetShadingData(
 	const float4 tdata4 = tri.vN2;
 	const float4 tdata5 = tri.T4;
 	// fetch initial set of data from material
-	const CoreMaterial4& mat = (const CoreMaterial4&)materials[TRI_MATERIAL];
+	const CoreMaterialDesc& matDesc = (const CoreMaterialDesc&)materialDescriptions[TRI_MATERIAL];
+	if (matDesc.type != MaterialType::DISNEY)
+		// TODO: This code shouldn't even be called.
+		return;
+	const CoreMaterial4& mat = (const CoreMaterial4&)disneyMaterials[matDesc.instanceLocation];
 	const uint4 baseData = mat.baseData4;
 	// process common data (unconditional)
 	const uint part0 = baseData.x; // diffuse_r, diffuse_g
