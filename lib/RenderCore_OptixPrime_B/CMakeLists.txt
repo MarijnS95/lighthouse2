@@ -13,6 +13,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	CUDA_host_code
 	CUDA_kernel_code)
 
+set_target_properties(${PROJECT_NAME} PROPERTIES
+	CUDA_STANDARD 14
+	CUDA_STANDARD_REQUIRED ON
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF)
+
 find_package(OptiX6 REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE optix optix_prime)
 target_compile_definitions(${PROJECT_NAME} PRIVATE
