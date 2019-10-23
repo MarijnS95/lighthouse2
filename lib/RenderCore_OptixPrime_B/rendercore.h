@@ -90,6 +90,8 @@ private:
 	bool instancesDirty = true;						// we need to sync the instance array to the device
 	InteropTexture renderTarget;					// CUDA will render to this texture
 	CoreBuffer<CoreMaterial>* materialBuffer = 0;	// material array
+	CoreBuffer<CoreMaterialDesc>*
+		materialDescBuffer = 0;						// material descriptors
 	CoreMaterial* hostMaterialBuffer = 0;			// core-managed host-side copy of the materials for alpha tris
 	CoreBuffer<CoreLightTri>* areaLightBuffer;		// area lights
 	CoreBuffer<CorePointLight>* pointLightBuffer;	// point lights
