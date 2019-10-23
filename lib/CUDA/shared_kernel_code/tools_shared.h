@@ -21,6 +21,21 @@
 
 #include "noerrors.h"
 
+struct HasPlacementNewOperator
+{
+	// When not compiling to PTX, nvcc fails to call this operator entirely (at least on Linux)
+	// Defining an override (with the same void*) fixes this.
+	__device__ static void* operator new( size_t, void* ptr )
+	{
+		return ptr;
+	}
+
+	// TODO: This does not silence the (useless) warning
+	// __device__ static void operator delete(  void* ptr )
+	// {
+	// }
+};
+
 #define CHAR2FLT(a,s) (((float)(((a)>>s)&255))*(1.0f/255.0f))
 
 struct ShadingData
