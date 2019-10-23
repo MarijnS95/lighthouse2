@@ -12,6 +12,18 @@
 #define ALIGN( x ) __attribute__( ( aligned( x ) ) )
 #endif
 
+template <bool... v>
+using all_true = std::integral_constant<bool, std::min( {v...} )>;
+
+template <bool... v>
+using any_true = std::integral_constant<bool, std::max( {v...} )>;
+
+template <typename same, typename... more>
+using any_is_same = any_true<std::is_same<same, more>::value...>;
+
+template <typename to, typename... from>
+using all_convertible_to = all_true<std::is_convertible<from, to>::value...>;
+
 template <typename... Ts>
 struct StorageDetail
 {
@@ -44,4 +56,10 @@ struct StorageRequirement
 
 	static_assert( sizeof( char ) == 1, "Char must be 1 byte in size!" );
 	static_assert( alignof( type ) == stack_alignment, "Array storage type lost its alignment!" );
+
+	template <typename T>
+	static constexpr bool HasType()
+	{
+		return any_is_same<T, Ts...>::value;
+	}
 };

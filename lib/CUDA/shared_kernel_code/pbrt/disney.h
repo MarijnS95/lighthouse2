@@ -113,8 +113,7 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse>
 			{
 				if ( /* scatterdistance == 0 */ true )
 				{
-					// Add( stack, BxDF_INSTANCE_DISNEY_DIFFUSE, diffuseWeight * c );
-					new ( bxdfs.Reserve() ) DisneyDiffuse( diffuseWeight * c );
+					bxdfs.emplace_back<DisneyDiffuse>( diffuseWeight * c );
 				}
 				else
 				{

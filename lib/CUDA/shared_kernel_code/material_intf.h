@@ -58,11 +58,22 @@ class MaterialIntf : public HasPlacementNewOperator
 #include "pbrt/materials.h"
 
 // WARNING: When adding a new material type, it _MUST_ be listed here!
-using MaterialStore = StorageRequirement<pbrt::DisneyGltf, DisneyMaterial>::type;
+using MaterialStoreReq = StorageRequirement<pbrt::DisneyGltf, DisneyMaterial>;
+using MaterialStore = MaterialStoreReq::type;
 
 // NOTE: Materialstore is a pointer-type (array) by design
 static_assert( std::is_array<MaterialStore>::value, "MaterialStore must be an array" );
 static_assert( std::is_pointer<std::decay_t<MaterialStore>>::value, "Decayed material store must be an array" );
+
+/**
+ * Inplace new wrapper that validates whether T fits in the MaterialStore
+ */
+template <typename T>
+LH2_DEVFUNC MaterialIntf* CreateMaterial( MaterialStore inplace )
+{
+	static_assert( MaterialStoreReq::HasType<T>(), "Requested material does not fit in the MaterialStore!" );
+	return new ( inplace ) T();
+}
 
 LH2_DEVFUNC MaterialIntf* GetMaterial( MaterialStore inplace, const CoreTri4& tri )
 {
@@ -77,15 +88,15 @@ LH2_DEVFUNC MaterialIntf* GetMaterial( MaterialStore inplace, const CoreTri4& tr
 		// Implement the gltf-extracted material through PBRT BxDFs
 		// (WARNING: No 1-1 mapping!)
 #if 1
-		return new ( inplace ) pbrt::DisneyGltf();
+		return CreateMaterial<pbrt::DisneyGltf>( inplace );
 #else
-		return new ( inplace ) DisneyMaterial();
+		return CreateMaterial<DisneyMaterial>( inplace );
 #endif
 		// case MaterialType::CUSTOM_BSDF:
-		// 	return new ( inplace ) BSDFMaterial();
+		// 	return CreateMaterial<BSDFMaterial>( inplace );
 		// case MaterialType::PBRT_DISNEY:
 		// TODO:
-		// 	return new ( inplace ) PbrtDisneyMaterial();
+		// 	return CreateMaterial<PbrtDisneyMaterial>( inplace );
 	}
 
 	// Unknown material:
