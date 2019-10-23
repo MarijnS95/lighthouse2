@@ -93,7 +93,6 @@ bool HandleInput( float frameTime )
 	if (keystates[GLFW_KEY_DOWN]) { changed = true; camera->TranslateTarget( make_float3( 0, rspd, 0 ) ); }
 	if (keystates[GLFW_KEY_LEFT]) { changed = true; camera->TranslateTarget( make_float3( -rspd, 0, 0 ) ); }
 	if (keystates[GLFW_KEY_RIGHT]) { changed = true; camera->TranslateTarget( make_float3( rspd, 0, 0 ) ); }
-	if (!keystates[GLFW_KEY_SPACE]) spaceDown = false; else { if (!spaceDown) animPaused = !animPaused, changed = true; spaceDown = true; }
 	// process left button click
 	if (mbstates[GLFW_MOUSE_BUTTON_1] && keystates[GLFW_KEY_LEFT_SHIFT])
 	{
@@ -109,6 +108,13 @@ bool HandleInput( float frameTime )
 	}
 	// let the main loop know if the camera should update
 	return changed;
+}
+
+// Handle a single event, once.
+void HandleOneOffInput( int key, int action )
+{
+	if ( key == GLFW_KEY_SPACE && action == GLFW_PRESS )
+		animPaused = !animPaused;
 }
 
 //  +-----------------------------------------------------------------------------+

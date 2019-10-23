@@ -20,6 +20,9 @@
 
 GLFWwindow* window = 0;
 
+// Handle a single event, once.
+void HandleOneOffInput( int key, int action );
+
 //  +-----------------------------------------------------------------------------+
 //  |  ...Callback                                                                |
 //  |  Various GLFW callbacks, mostly just forwarded to AntTweakBar.        LH2'19|
@@ -38,10 +41,12 @@ void KeyEventCallback( GLFWwindow* window, int key, int scancode, int action, in
 {
 	if (key == GLFW_KEY_ESCAPE) running = false;
 
-    if (key < keystates.size()) {
-        if (action == GLFW_PRESS) keystates[key] = true;
-        else if (action == GLFW_RELEASE) keystates[key] = false;
-    }
+	if (key < keystates.size()) {
+		if (action == GLFW_PRESS) keystates[key] = true;
+		else if (action == GLFW_RELEASE) keystates[key] = false;
+	}
+
+	HandleOneOffInput( key, action );
 }
 void CharEventCallback( GLFWwindow* window, uint code ) { /* nothing here yet */ }
 void WindowFocusCallback( GLFWwindow* window, int focused ) { hasFocus = (focused == GL_TRUE); }
