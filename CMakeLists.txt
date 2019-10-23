@@ -83,21 +83,22 @@ if(CMAKE_CUDA_COMPILER)
 	add_subdirectory("lib/CUDA")
 
 	# Include CUDA+Optix RenderCores:
-	file(GLOB cores "lib/RenderCore_Opti*" "lib/RenderCore_Prime*")
-	foreach(core IN LISTS cores)
-		add_render_core(${core})
-	endforeach()
+	# file(GLOB cores "lib/RenderCore_Opti*" "lib/RenderCore_Prime*")
+	# foreach(core IN LISTS cores)
+	# 	add_render_core(${core})
+	# endforeach()
+	add_render_core("lib/RenderCore_OptixPrime_B")
 endif()
 
-find_package(Vulkan QUIET)
-find_package(Shaderc QUIET)
-if(Vulkan_FOUND AND Shaderc_FOUND)
-	add_render_core("lib/RenderCore_Vulkan_RT")
-endif()
+# find_package(Vulkan QUIET)
+# find_package(Shaderc QUIET)
+# if(Vulkan_FOUND AND Shaderc_FOUND)
+# 	add_render_core("lib/RenderCore_Vulkan_RT")
+# endif()
 
 # Include default RenderCores:
-add_render_core("lib/RenderCore_SoftRasterizer")
-add_render_core("lib/RenderCore_Minimal")
+# add_render_core("lib/RenderCore_SoftRasterizer")
+# add_render_core("lib/RenderCore_Minimal")
 
 message(STATUS "Found RenderCores: ${render_cores}")
 
