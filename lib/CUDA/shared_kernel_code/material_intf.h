@@ -1,4 +1,11 @@
-class MaterialIntf
+#pragma once
+
+#include "Storage.h"
+
+namespace materials
+{
+
+class MaterialIntf : public HasPlacementNewOperator
 {
   public:
 	__device__ virtual void Setup(
@@ -10,9 +17,12 @@ class MaterialIntf
 		float3& N, float3& iN, float3& fN, //		geometric normal, interpolated normal, final normal (normal mapped)
 		float3& T,						   //		tangent vector
 		const float waveLength = -1.0f	 // IN:	wavelength (optional)
-	) = 0;
+		) = 0;
 	__device__ virtual bool IsEmissive() const = 0;
 	__device__ virtual bool IsAlpha() const = 0;
+	/**
+	 * Used to retrieve color for emissive surfaces.
+	 */
 	__device__ virtual float3 Color() const = 0;
 	__device__ virtual float Roughness() const = 0;
 
@@ -20,23 +30,21 @@ class MaterialIntf
 										const float3 wo, const float3 wi, float& pdf ) const = 0;
 	__device__ virtual float3 Sample( float3 iN, const float3 N, const float3 T,
 									  const float3 wo, const float r3, const float r4, float3& wi, float& pdf ) const = 0;
-
-	// When not compiling to PTX, nvcc fails to call this operator entirely (at least on Linux)
-	// Defining an override (with the same void*) fixes this.
-	__device__ static void* operator new( size_t, void* ptr )
-	{
-		return ptr;
-	}
-
-	// TODO: This does not silence the (useless) warning
-	// __device__ static void operator delete(  void* ptr )
-	// {
-	// }
 };
 
-#include "material_disney.h"
+#include "material_bsdf_stack.h"
 
-LH2_DEVFUNC MaterialIntf* GetMaterial( void* inplace, const CoreTri4& tri )
+#include "material_disney.h"
+#include "pbrt/materials.h"
+
+// WARNING: When adding a new material type, it _MUST_ be listed here!
+using MaterialStore = StorageRequirement<pbrt::DisneyGltf, DisneyMaterial>::type;
+
+// NOTE: Materialstore is a pointer-type (array) by design
+static_assert( std::is_array<MaterialStore>::value );
+static_assert( std::is_pointer<std::decay_t<MaterialStore>>::value );
+
+LH2_DEVFUNC MaterialIntf* GetMaterial( MaterialStore inplace, const CoreTri4& tri )
 {
 	// Copy desc (single integer) to register:
 	const CoreMaterialDesc matDesc = materialDescriptions[GET_TRI_MATERIAL( tri.v4 )];
@@ -46,16 +54,22 @@ LH2_DEVFUNC MaterialIntf* GetMaterial( void* inplace, const CoreTri4& tri )
 	switch ( matDesc.type )
 	{
 	case MaterialType::DISNEY:
+		// Implement the gltf-extracted material through PBRT BxDFs
+		// (WARNING: No 1-1 mapping!)
+#if 1
+		return new ( inplace ) pbrt::DisneyGltf();
+#else
 		return new ( inplace ) DisneyMaterial();
+#endif
 		// case MaterialType::CUSTOM_BSDF:
 		// 	return new ( inplace ) BSDFMaterial();
+		// case MaterialType::PBRT_DISNEY:
+		// TODO:
+		// 	return new ( inplace ) PbrtDisneyMaterial();
 	}
 
 	// Unknown material:
 	return nullptr;
 }
 
-// Helper to store a variable-typed virtual MaterialIntf on stack/in registers:
-// TODO: Expand this to a compile-time max over all material implementations
-#define LOCAL_MATERIAL_STORAGE( varname ) \
-	char __attribute__( ( aligned( alignof( DisneyMaterial ) ) ) ) varname[sizeof( DisneyMaterial )]
+}; // namespace materials

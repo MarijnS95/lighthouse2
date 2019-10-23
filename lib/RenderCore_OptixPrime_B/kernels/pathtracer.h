@@ -123,18 +123,23 @@ void shadeKernel( float4* accumulator, const uint stride,
 	const float3 I = RAY_O + HIT_T * D;
 	const float coneWidth = spreadAngle * HIT_T;
 
-	LOCAL_MATERIAL_STORAGE( inplace_material );
+	// Switch between a directly-inlinable material, versus virtual material class:
+#if 1
+	materials::MaterialStore inplace_material;
 
-	// Scope mutable material for setup:
 	const auto& material = *( {
-		// (Justification: setup function is separate to prevent overcrowding GetMaterial+constructors)
-		auto material = GetMaterial( inplace_material, instanceTriangles[PRIMIDX] );
-		if (!material)
+		// (Non-const wrapper justification: setup function is separate to prevent overcrowding GetMaterial+constructors)
+		auto material = materials::GetMaterial( inplace_material, instanceTriangles[PRIMIDX] );
+		if ( !material )
 			// Should hardly ever happen
 			return;
 		material->Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, N, iN, fN, T );
 		material;
 	} );
+#else
+	materials::DisneyMaterial material;
+	material.Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, N, iN, fN, T );
+#endif
 
 	// we need to detect alpha in the shading code.
 	if (material.IsAlpha())
@@ -241,7 +246,9 @@ void shadeKernel( float4* accumulator, const uint stride,
 		r3 = RandomFloat( seed );
 		r4 = RandomFloat( seed );
 	}
+
 	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, r3, r4, R, newBsdfPdf );
+
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
 
 	// write extension ray
