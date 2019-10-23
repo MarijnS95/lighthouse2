@@ -46,6 +46,37 @@ LH2_DEVFUNC float SchlickWeight( float cosTheta )
 	return ( m * m ) * ( m * m ) * m;
 }
 
+LH2_DEVFUNC float FrSchlick( float R0, float cosTheta )
+{
+	return pbrt_Lerp( SchlickWeight( cosTheta ), R0, 1.f );
+}
+
+LH2_DEVFUNC float pbrt_GTR1( float cosTheta, float alpha )
+{
+	float alpha2 = alpha * alpha;
+	return ( alpha2 - 1.f ) /
+		   ( PI * std::log( alpha2 ) *
+			 ( 1.f + ( alpha2 - 1.f ) * cosTheta * cosTheta ) );
+}
+
+// Smith masking/shadowing term.
+LH2_DEVFUNC float smithG_GGX( float cosTheta, float alpha )
+{
+	float alpha2 = alpha * alpha;
+	float cosTheta2 = cosTheta * cosTheta;
+	return 1.f / ( cosTheta + std::sqrt( alpha2 + cosTheta2 - alpha2 * cosTheta2 ) );
+}
+
+// ----------------------------------------------------------------
+// TODO: Move (PBRT) math helpers elsewhere
+
+LH2_DEVFUNC float3 SphericalDirection( float sinTheta, float cosTheta, float phi )
+{
+	return make_float3( sinTheta * std::cos( phi ),
+						sinTheta * std::sin( phi ),
+						cosTheta );
+}
+
 // ----------------------------------------------------------------
 
 class DisneyDiffuse : public BxDF_T<DisneyDiffuse,
@@ -60,8 +91,8 @@ class DisneyDiffuse : public BxDF_T<DisneyDiffuse,
 
 	__device__ float3 f( const float3& wo, const float3& wi ) const override
 	{
-		float Fo = SchlickWeight( AbsCosTheta( wo ) ),
-			  Fi = SchlickWeight( AbsCosTheta( wi ) );
+		const float Fo = SchlickWeight( AbsCosTheta( wo ) ),
+					Fi = SchlickWeight( AbsCosTheta( wi ) );
 
 		// Diffuse fresnel - go from 1 at normal incidence to .5 at grazing.
 		// Burley 2015, eq (4).
@@ -69,11 +100,158 @@ class DisneyDiffuse : public BxDF_T<DisneyDiffuse,
 	}
 };
 
+class DisneyFakeSS : public BxDF_T<DisneyFakeSS,
+								   BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_DIFFUSE )>
+{
+	const float3 R;
+	const float roughness;
+
+  public:
+	__device__ DisneyFakeSS( const float3& r, float roughness ) : R( r ), roughness( roughness )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		const float3 wh = normalize( wo + wi );
+		if ( wh.x == 0 && wh.y == 0 && wh.z == 0 ) return make_float3( 0.f );
+
+		const float Fo = SchlickWeight( AbsCosTheta( wo ) ),
+					Fi = SchlickWeight( AbsCosTheta( wi ) );
+		const float cosThetaD = dot( wi, wh );
+
+		// Fss90 used to "flatten" retroreflection based on roughness
+		const float Fss90 = cosThetaD * cosThetaD * roughness;
+		const float Fss = pbrt_Lerp( Fo, 1.0f, Fss90 ) * pbrt_Lerp( Fi, 1.0f, Fss90 );
+		// 1.25 scale is used to (roughly) preserve albedo
+		const float ss =
+			1.25f * ( Fss * ( 1 / ( AbsCosTheta( wo ) + AbsCosTheta( wi ) ) - .5f ) + .5f );
+
+		return R * INVPI * ss;
+	}
+};
+
+class DisneyRetro : public BxDF_T<DisneyRetro,
+								  BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_DIFFUSE )>
+{
+	const float3 R;
+	const float roughness;
+
+  public:
+	__device__ DisneyRetro( const float3& r, float roughness ) : R( r ), roughness( roughness )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		const float3 wh = normalize( wo + wi );
+		if ( wh.x == 0 && wh.y == 0 && wh.z == 0 ) return make_float3( 0.f );
+
+		const float Fo = SchlickWeight( AbsCosTheta( wo ) ),
+					Fi = SchlickWeight( AbsCosTheta( wi ) );
+		const float cosThetaD = dot( wi, wh );
+
+		const float Rr = 2 * cosThetaD * cosThetaD * roughness;
+
+		// Burley 2015, eq (4).
+		return R * INVPI * Rr * ( Fo + Fi + Fo * Fi * ( Rr - 1 ) );
+	}
+};
+
+class DisneySheen : public BxDF_T<DisneySheen,
+								  BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_DIFFUSE )>
+{
+	const float3 R;
+
+  public:
+	__device__ DisneySheen( const float3& r ) : R( r )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		const float3 wh = normalize( wo + wi );
+		if ( wh.x == 0 && wh.y == 0 && wh.z == 0 ) return make_float3( 0.f );
+
+		const float cosThetaD = dot( wi, wh );
+
+		return R * SchlickWeight( cosThetaD );
+	}
+};
+
+class DisneyClearcoat : public BxDF_T<DisneyClearcoat,
+									  BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_DIFFUSE )>
+{
+	const float weight, gloss;
+
+  public:
+	__device__ DisneyClearcoat( const float weight, const float gloss ) : weight( weight ), gloss( gloss )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		const float3 wh = normalize( wo + wi );
+		if ( wh.x == 0 && wh.y == 0 && wh.z == 0 ) return make_float3( 0.f );
+
+		const float cosThetaD = dot( wi, wh );
+		// Clearcoat has ior = 1.5 hardcoded -> F0 = 0.04. It then uses the
+		// GTR1 distribution, which has even fatter tails than Trowbridge-Reitz
+		// (which is GTR2).
+		const float Dr = pbrt_GTR1( AbsCosTheta( wh ), gloss );
+		const float Fr = FrSchlick( .04, dot( wo, wh ) );
+		// The geometric term always based on alpha = 0.25.
+		const float Gr =
+			smithG_GGX( AbsCosTheta( wo ), .25 ) * smithG_GGX( AbsCosTheta( wi ), .25 );
+
+		return make_float3( weight * Gr * Fr * Dr / 4 );
+	}
+
+	__device__ float3 Sample_f( const float3 wo, float3& wi,
+								/*  const Point2f& u, */ const float r0, const float r1,
+								float& pdf, BxDFType& sampledType ) const override
+	{
+		if ( wo.z == 0 ) return make_float3( 0.f );
+
+		const float alpha2 = gloss * gloss;
+		const float cosTheta = std::sqrt(
+			std::max( 0.f, ( 1.f - std::pow( alpha2, 1.f - r0 ) ) / ( 1.f - alpha2 ) ) );
+		const float sinTheta = std::sqrt( std::max( 0.f, 1.f - cosTheta * cosTheta ) );
+		const float phi = 2 * PI * r1;
+		float3 wh = SphericalDirection( sinTheta, cosTheta, phi );
+		if ( !SameHemisphere( wo, wh ) ) wh = -wh;
+
+		wi = pbrt_Reflect( wo, wh );
+		if ( !SameHemisphere( wo, wi ) ) return make_float3( 0.f );
+
+		pdf = Pdf( wo, wi );
+		return f( wo, wi );
+	}
+
+	__device__ float Pdf( const float3& wo, const float3& wi ) const override
+	{
+		if ( !SameHemisphere( wo, wi ) )
+			return 0;
+
+		const float3 wh = normalize( wo + wi );
+		if ( wh.x == 0 && wh.y == 0 && wh.z == 0 ) return 0.f;
+
+		// The sampling routine samples wh exactly from the GTR1 distribution.
+		// Thus, the final value of the PDF is just the value of the
+		// distribution for wh converted to a mesure with respect to the
+		// surface normal.
+		float Dr = pbrt_GTR1( AbsCosTheta( wh ), gloss );
+		return Dr * AbsCosTheta( wh ) / ( 4 * dot( wo, wh ) );
+	}
+};
+
+// ----------------------------------------------------------------
+
 /**
  * DisneyGltf: Disney material expressed as PBRT BxDF stack.
- * Material input data does not match
+ * Material input data does not match it entirely, so be cautious.
  */
-class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse>
+class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen, DisneyClearcoat>
 {
   public:
 	__device__ void Setup(
@@ -91,25 +269,28 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse>
 		// spectrans: Controls contribution of glossy specular transmission. Range: [0,1].
 
 		ShadingData shadingData;
+		const bool thin = false;
 
-		GetShadingData( D, u, v, coneWidth, tri, instIdx, shadingData, N, iN, fN, T, waveLength );
+		GetShadingData( D, u, v, coneWidth, tri, instIdx,
+						// Returns:
+						shadingData, N, iN, fN, T, waveLength );
 
 		SetupTBN( T, iN );
 
-		float strans = TRANSMISSION;
-		float diffuseWeight = ( 1.f - METALLIC ) * ( 1.f - strans );
+		const float strans = TRANSMISSION;
+		const float diffuseWeight = ( 1.f - METALLIC ) * ( 1.f - strans );
 		const float3 c = shadingData.color;
 
 		if ( diffuseWeight > 0 )
 		{
-			if ( /* thin */ false )
+			if ( thin )
 			{
 				// TODO: use thin, difftrans and flatness properties
 				const float3 s = make_float3( sqrt( c.x ), sqrt( c.y ), sqrt( c.z ) );
 				// TODO: Weight with flatness!
 
-				// new ( bxdfs.Reserve() ) DisneyDiffuse( diffuseWeight * s );
-				// new ( bxdfs.Reserve() ) DisneyFakeSS( diffuseWeight * s );
+				bxdfs.emplace_back<DisneyDiffuse>( diffuseWeight * s );
+				bxdfs.emplace_back<DisneyFakeSS>( diffuseWeight * s, ROUGHNESS );
 			}
 			else
 			{
@@ -119,24 +300,39 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse>
 				}
 				else
 				{
-					// TODO: bssrdf
+					// TODO:
+
+					// Implementation of the empirical BSSRDF described in "Extending the
+					// Disney BRDF to a BSDF with integrated subsurface scattering" (Brent
+					// Burley) and "Approximate Reflectance Profiles for Efficient Subsurface
+					// Scattering (Christensen and Burley).
 				}
 			}
 
-			// Add( stack, BxDF_INSTANCE_DISNEY_RETRO, diffuseWeight * c );
+			// Retro-reflection.
+			bxdfs.emplace_back<DisneyRetro>( diffuseWeight * c, ROUGHNESS );
 
 			const float lum = 0.212671f * c.x + 0.715160f * c.y + 0.072169f * c.z;
 			// normalize lum. to isolate hue+sat
-			float3 Ctint = lum > 0 ? ( c / lum ) : make_float3( 1.f );
+			const float3 Ctint = lum > 0 ? ( c / lum ) : make_float3( 1.f );
 
-			float sheenWeight = SHEEN;
+			// Sheen (if enabled)
+			const float sheenWeight = SHEEN;
 			if ( sheenWeight > 0 )
 			{
-				float stint = SHEENTINT;
-				float3 Csheen = pbrt_Lerp( stint, make_float3( 1.f ), Ctint );
+				const float stint = SHEENTINT;
+				const float3 Csheen = pbrt_Lerp( stint, make_float3( 1.f ), Ctint );
 
-				// Add( stack, BxDF_INSTANCE_DISNEY_SHEEN, diffuseWeight * sheenWeight * Csheen );
+				bxdfs.emplace_back<DisneySheen>( diffuseWeight * sheenWeight * Csheen );
 			}
 		}
+
+		// TODO: Add microfacets and fresnels
+
+		const float cc = CLEARCOAT;
+		if ( cc > 0 )
+			bxdfs.emplace_back<DisneyClearcoat>( cc, pbrt_Lerp( CLEARCOATGLOSS, .1f, .001f ) );
+
+		// TODO: BTDF
 	}
 };

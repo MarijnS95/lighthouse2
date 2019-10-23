@@ -17,6 +17,11 @@ LH2_DEVFUNC T pbrt_Lerp( F t, T a, T b )
 	return lerp( a, b, t );
 }
 
+LH2_DEVFUNC float3 pbrt_Reflect( const float3& wo, const float3& n )
+{
+	return -wo + 2 * dot( wo, n ) * n;
+}
+
 // ----------------------------------------------------------------
 
 class BxDF : public HasPlacementNewOperator
@@ -41,7 +46,7 @@ class BxDF : public HasPlacementNewOperator
 		return f( wo, wi );
 	}
 
-	__device__ float Pdf( const float3& wo, const float3& wi ) const
+	__device__ virtual float Pdf( const float3& wo, const float3& wi ) const
 	{
 		return SameHemisphere( wo, wi ) ? AbsCosTheta( wi ) * INVPI : 0;
 	}
