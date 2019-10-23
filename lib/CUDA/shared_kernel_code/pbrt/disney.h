@@ -58,10 +58,10 @@ class DisneyDiffuse : public BxDF_T<DisneyDiffuse,
 	{
 	}
 
-	__device__ float3 f( const float NDotV, const float NDotL ) const override
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
 	{
-		float Fo = SchlickWeight( NDotV ),
-			  Fi = SchlickWeight( NDotL );
+		float Fo = SchlickWeight( AbsCosTheta( wo ) ),
+			  Fi = SchlickWeight( AbsCosTheta( wi ) );
 
 		// Diffuse fresnel - go from 1 at normal incidence to .5 at grazing.
 		// Burley 2015, eq (4).
