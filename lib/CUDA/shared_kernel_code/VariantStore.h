@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <utility>
 
 template <typename BaseType, typename Storage>
 class other_type_iterator
@@ -116,13 +117,37 @@ class VariantStore
 		return *reinterpret_cast<const Base*>( stack + idx );
 	}
 
-	// Pass type to copy proper size:
-	template <typename T>
-	__device__ void push_back( const T& bxdf )
+	// Pass type to know what constructor to invoke
+	template <typename T, typename... Args>
+	__device__ std::decay_t<T>& emplace_back( Args&&... args )
 	{
-		new ( Reserve() ) std::decay_t<T>( bxdf );
+		// Decay template argument into the underlying type:
+		// (This removes const qualifiers and references)
+		using simple_type = std::decay_t<T>;
+
+		// Make sure the added type fits on the stack
+		static_assert( any_is_same<simple_type, Variants...>::value );
+
+		// Construct in place
+		return *new ( Reserve() ) simple_type( std::forward<Args>( args )... );
 	}
 
+	// Overload for emplacing an object on the stack, invoking the
+	// copy/move constructor. This is a helper to resolve T
+	// as the first "Args" type
+	template <typename T>
+	__device__ std::decay_t<T>& emplace_back( T&& arg )
+	{
+		return emplace_back<T, T>( std::forward<T>( arg ) );
+	}
+
+	template <typename T>
+	__device__ void push_back( T&& arg )
+	{
+		emplace_back<T>( std::forward<T>( arg ) );
+	}
+
+  private:
 	__device__ void* Reserve()
 	{
 		assert( items < max_elements );
@@ -130,7 +155,7 @@ class VariantStore
 	}
 };
 
-__device__ void compile_time_tests()
+__device__ static void compile_time_tests()
 {
 	struct Base
 	{
@@ -144,11 +169,32 @@ __device__ void compile_time_tests()
 		__device__ Thing( float a, int x ) : Base( a ), x( x ) {}
 	};
 
-	VariantStore<Base, Thing> store;
+	struct Thing2 : public Base
+	{
+		__device__ Thing2( float a ) : Base( a ) {}
+	};
 
+	VariantStore<Base, Thing, Thing2> store;
+
+	store.emplace_back<Thing>( 1.f, 1 );
 	store.push_back( Thing( 1.f, 1 ) );
 	auto nonconst = Thing( 1.f, 1 );
 	store.push_back( nonconst );
+
+	// The variant store accepts multiple types by definition. Invoking
+	// emplace_back with constructor arguments requires specifying the
+	// desired type to construct:
+	store.emplace_back<Thing>( 2.f, 3 );
+	// Test if an rvalue can be "emplaced" into the list
+	// (effectively invoking the move constructor)
+	store.emplace_back( Thing2( 3.f ) );
+	store.emplace_back<Thing2>( 3.f );
+
+	auto& ref1 = store.emplace_back( nonconst );
+	auto& ref2 = store.emplace_back( std::move( nonconst ) );
 	const auto cnst = Thing( 1.f, 1 );
 	store.push_back( cnst );
+	auto& ref3 = store.emplace_back( cnst );
+	auto& ref4 = store.emplace_back( std::move( cnst ) );
+	static_assert( !std::is_const<std::remove_reference_t<decltype( ref3 )>>::value );
 }
