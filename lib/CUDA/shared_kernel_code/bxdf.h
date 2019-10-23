@@ -19,19 +19,6 @@ LH2_DEVFUNC T pbrt_Lerp( F t, T a, T b )
 
 // ----------------------------------------------------------------
 
-// Commonly used types. This saves massively on readability,
-// instead of defining all
-struct CommonIntersectionParams
-{
-	float3 wo;
-	float NDotV;
-	float3 wi;
-	float NDotL;
-	float3 N;
-};
-
-// ----------------------------------------------------------------
-
 class BxDF : public HasPlacementNewOperator
 {
   protected:
@@ -40,41 +27,23 @@ class BxDF : public HasPlacementNewOperator
   public:
 	const BxDFType type;
 
-	__device__ virtual float3 f( const float NDotV, const float NDotL ) const = 0;
+	__device__ virtual float3 f( const float3& wo, const float3& wi ) const = 0;
 
-	__device__ /* virtual */ float3 f( const float3& wo, const float3& wi ) const
-	{
-		return f( AbsCosTheta( wo ), AbsCosTheta( wi ) );
-	}
-
-	__device__ virtual float3 Sample_f( const float NDotV, float3& wi,
+	__device__ virtual float3 Sample_f( const float3 wo, float3& wi,
 										/*  const Point2f& u, */ const float r0, const float r1,
 										float& pdf, BxDFType& sampledType ) const
 	{
 		// Cosine-sample the hemisphere, flipping the direction if necessary
-		// *wi = CosineSampleHemisphere( u );
 		wi = DiffuseReflectionCosWeighted( r0, r1 );
-		if ( NDotV < 0 ) wi.z *= -1;
-		pdf = Pdf( std::abs( NDotV ), AbsCosTheta( wi ) );
-		return f( std::abs( NDotV ), AbsCosTheta( wi ) );
-	}
+		if ( wo.z < 0 ) wi.z *= -1;
 
-	__device__ /* virtual */ float3 Sample_f( const float3& wo, float3& wi,
-											  /*  const Point2f& u, */ const float r0, const float r1,
-											  float& pdf, BxDFType& sampledType ) const
-	{
-		return Sample_f( wo.z, wi, r0, r1, pdf, sampledType );
-	}
-
-	__device__ virtual float Pdf( const float NDotV, const float NDotL ) const
-	{
-		return NDotV * NDotL > 0 ? NDotL * INVPI : 0;
+		pdf = Pdf( wo, wi );
+		return f( wo, wi );
 	}
 
 	__device__ float Pdf( const float3& wo, const float3& wi ) const
 	{
-		return Pdf( AbsCosTheta( wo ), AbsCosTheta( wi ) );
-		// return SameHemisphere( wo, wi ) ? AbsCosTheta( wi ) * INVPI : 0;
+		return SameHemisphere( wo, wi ) ? AbsCosTheta( wi ) * INVPI : 0;
 	}
 };
 
