@@ -16,6 +16,53 @@
    used in RenderCore_OptixPrime and RenderCore_OptixRTX.
 */
 
+/**
+ * Extract information from the triangle instance, not (directly)
+ * related to any material (type).
+ */
+LH2_DEVFUNC void SetupFrame(
+	const float3 D,					   // IN:	incoming ray direction, used for consistent normals
+	const float u, const float v,	  //		barycentric coordinates of intersection point
+	const CoreTri4& tri,			   //		triangle data
+	const int instIdx,				   //		instance index, for normal transform
+	const bool hasSmoothNormals,	   // model has a normal per vertex (to interpolate)
+	float3& N, float3& iN, float3& fN, //		geometric normal, interpolated normal, final normal (normal mapped)
+	float3& T,						   //		tangent vector
+	float& w )
+{
+	const float4 tdata2 = tri.vN0;
+	const float4 tdata3 = tri.vN1;
+	const float4 tdata4 = tri.vN2;
+	const float4 tdata5 = tri.T4;
+
+	// initialize normals
+	N = iN = fN = TRI_N;
+	T = TRI_T;
+	w = 1 - ( u + v );
+	// calculate interpolated normal
+#ifdef OPTIXPRIMEBUILD
+	if ( hasSmoothNormals ) iN = normalize( u * TRI_N0 + v * TRI_N1 + w * TRI_N2 );
+#else
+	if ( hasSmoothNormals ) iN = normalize( w * TRI_N0 + u * TRI_N1 + v * TRI_N2 );
+#endif
+	// transform the normals for the current instance
+	const float3 A = make_float3( instanceDescriptors[instIdx].invTransform.A );
+	const float3 B = make_float3( instanceDescriptors[instIdx].invTransform.B );
+	const float3 C = make_float3( instanceDescriptors[instIdx].invTransform.C );
+	N = N.x * A + N.y * B + N.z * C, iN = iN.x * A + iN.y * B + iN.z * C;
+	// "Consistent Normal Interpolation", Reshetov et al., 2010
+	const float4 vertexAlpha = tri.alpha4;
+#ifdef OPTIXPRIMEBUILD
+	const float alpha = u * vertexAlpha.x + v * vertexAlpha.y + w * vertexAlpha.z;
+#else
+	const float alpha = w * vertexAlpha.x + u * vertexAlpha.y + v * vertexAlpha.z;
+#endif
+	const bool backSide = dot( D, N ) > 0;
+	iN = ConsistentNormal( D * -1.0f, backSide ? ( iN * -1.0f ) : iN, alpha );
+	if ( backSide ) iN *= -1.0f;
+	fN = iN;
+}
+
 LH2_DEVFUNC void GetShadingData(
 	const float3 D,							// IN:	incoming ray direction, used for consistent normals
 	const float u, const float v,			//		barycentric coordinates of intersection point
@@ -32,10 +79,6 @@ LH2_DEVFUNC void GetShadingData(
 	// only called for intersections. We thus can assume that we have a valid
 	// triangle reference.
 	const float4 tdata1 = tri.v4;
-	const float4 tdata2 = tri.vN0;
-	const float4 tdata3 = tri.vN1;
-	const float4 tdata4 = tri.vN2;
-	const float4 tdata5 = tri.T4;
 	// fetch initial set of data from material
 	const CoreMaterialDesc& matDesc = (const CoreMaterialDesc&)materialDescriptions[TRI_MATERIAL];
 	if (matDesc.type != MaterialType::DISNEY)
@@ -56,31 +99,14 @@ LH2_DEVFUNC void GetShadingData(
 	retVal4.data1 = make_float4( base_b_medium_r.y, medium_gb.x, medium_gb.y, __uint_as_float( 0 /* matid? */ ) );
 	retVal4.data2 = mat.parameters;
 	// initialize normals
-	N = iN = fN = TRI_N;
-	T = TRI_T;
-	const float w = 1 - (u + v);
-	// calculate interpolated normal
-#ifdef OPTIXPRIMEBUILD
-	if (MAT_HASSMOOTHNORMALS) iN = normalize( u * TRI_N0 + v * TRI_N1 + w * TRI_N2 );
-#else
-	if (MAT_HASSMOOTHNORMALS) iN = normalize( w * TRI_N0 + u * TRI_N1 + v * TRI_N2 );
-#endif
-	// transform the normals for the current instance
-	const float3 A = make_float3( instanceDescriptors[instIdx].invTransform.A );
-	const float3 B = make_float3( instanceDescriptors[instIdx].invTransform.B );
-	const float3 C = make_float3( instanceDescriptors[instIdx].invTransform.C );
-	N = N.x * A + N.y * B + N.z * C, iN = iN.x * A + iN.y * B + iN.z * C;
-	// "Consistent Normal Interpolation", Reshetov et al., 2010
+	float w;
+	SetupFrame(
+		// Input:
+		D, u, v, tri, instIdx, MAT_HASSMOOTHNORMALS,
+		// Output:
+		N, iN, fN, T, w );
 	const float4 vertexAlpha = tri.alpha4;
-#ifdef OPTIXPRIMEBUILD
-	const float alpha = u * vertexAlpha.x + v * vertexAlpha.y + w * vertexAlpha.z;
-#else
-	const float alpha = w * vertexAlpha.x + u * vertexAlpha.y + v * vertexAlpha.z;
-#endif
-	const bool backSide = dot( D, N ) > 0;
-	iN = ConsistentNormal( D * -1.0f, backSide ? (iN * -1.0f) : iN, alpha );
-	if (backSide) iN *= -1.0f;
-	fN = iN;
+
 	// texturing
 	float tu, tv;
 	if (MAT_HASDIFFUSEMAP || MAT_HAS2NDDIFFUSEMAP || MAT_HAS3RDDIFFUSEMAP || MAT_HASSPECULARITYMAP ||
