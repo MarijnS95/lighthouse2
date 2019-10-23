@@ -87,6 +87,12 @@ bool HandleInput( float frameTime )
 		// camera->focalDistance = coreStats.probedDist;
 		changed = true;
 	}
+	if ( keystates[GLFW_KEY_SPACE] )
+	{
+		// changed stays false!
+		// TODO: This should be debounced...
+		animPaused = !animPaused;
+	}
 	// let the main loop know if the camera should update
 	return changed;
 }
