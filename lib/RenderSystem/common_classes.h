@@ -144,7 +144,8 @@ struct CoreTri4
 #define TRI_V0			tdata1.x
 #define TRI_V1			tdata1.y
 #define TRI_V2			tdata1.z
-#define TRI_MATERIAL	__float_as_int( tdata1.w )
+#define GET_TRI_MATERIAL(v)	__float_as_int( v.w )
+#define TRI_MATERIAL	GET_TRI_MATERIAL( tdata1 )
 #define TRI_N0			make_float3( tdata2.x, tdata2.y, tdata2.z )
 #define TRI_N1			make_float3( tdata3.x, tdata3.y, tdata3.z )
 #define TRI_N2			make_float3( tdata4.x, tdata4.y, tdata4.z )
