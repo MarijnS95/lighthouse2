@@ -41,7 +41,8 @@ void InitCountersSubsequent();
 
 // setters / getters
 void SetInstanceDescriptors( CoreInstanceDesc* p );
-void SetMaterialList( CoreMaterial* p );
+void SetDisneyMaterialList( CoreMaterial* p );
+void SetMaterialDescList( CoreMaterialDesc* p );
 void SetAreaLights( CoreLightTri* p );
 void SetPointLights( CorePointLight* p );
 void SetSpotLights( CoreSpotLight* p );
@@ -356,7 +357,7 @@ void RenderCore::SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, c
 	// Call this after the textures have been set; CoreMaterials store the offset of each texture
 	// in the continuous arrays; this data is valid only when textures are in sync.
 	delete materialBuffer;
-	delete hostMaterialBuffer;
+	delete[] hostMaterialBuffer;
 	hostMaterialBuffer = new CoreMaterial[materialCount];
 	memcpy( hostMaterialBuffer, mat, materialCount * sizeof( CoreMaterial ) );
 	for (int i = 0; i < materialCount; i++)
@@ -376,7 +377,15 @@ void RenderCore::SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, c
 		if (e.texture[10] != -1) m.amapaddr = texDescs[e.texture[10]].firstPixel;
 	}
 	materialBuffer = new CoreBuffer<CoreMaterial>( materialCount, ON_DEVICE | ON_HOST /* on_host: for alpha mapped tris */, hostMaterialBuffer );
-	SetMaterialList( materialBuffer->DevPtr() );
+	SetDisneyMaterialList( materialBuffer->DevPtr() );
+
+	auto matDesc = new CoreMaterialDesc[materialCount];
+	for ( int i = 0; i < materialCount; i++ )
+		matDesc[i] = {MaterialType::DISNEY, (unsigned int)i};
+
+	materialDescBuffer = new CoreBuffer<CoreMaterialDesc>( materialCount, ON_DEVICE, matDesc );
+	delete[] matDesc;
+	SetMaterialDescList( materialDescBuffer->DevPtr() );
 }
 
 //  +-----------------------------------------------------------------------------+
