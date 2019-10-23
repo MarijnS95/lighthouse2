@@ -49,7 +49,7 @@ inline float fmaxf(float a, float b)
   return a > b ? a : b;
 }
 
-inline int max(int a, int b)
+inline constexpr int max(int a, int b)
 {
   return a > b ? a : b;
 }

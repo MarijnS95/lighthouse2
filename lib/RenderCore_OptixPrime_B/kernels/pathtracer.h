@@ -118,15 +118,26 @@ void shadeKernel( float4* accumulator, const uint stride,
 		counters->probedTriid = PRIMIDX,		// record primitive id at the selected pixel
 		counters->probedDist = HIT_T;			// record primary ray hit distance
 
-	// get shadingData and normals
-	ShadingData shadingData;
+	// get material and normals
 	float3 N, iN, fN, T;
 	const float3 I = RAY_O + HIT_T * D;
 	const float coneWidth = spreadAngle * HIT_T;
-	GetShadingData( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, shadingData, N, iN, fN, T );
+
+	LOCAL_MATERIAL_STORAGE( inplace_material );
+
+	// Scope mutable material for setup:
+	const auto& material = *( {
+		// (Justification: setup function is separate to prevent overcrowding GetMaterial+constructors)
+		auto material = GetMaterial( inplace_material, instanceTriangles[PRIMIDX] );
+		if (!material)
+			// Should hardly ever happen
+			return;
+		material->Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, N, iN, fN, T );
+		material;
+	} );
 
 	// we need to detect alpha in the shading code.
-	if (shadingData.flags & 1)
+	if (material.IsAlpha())
 	{
 		if (pathLength < MAXPATHLENGTH)
 		{
@@ -144,7 +155,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	// if (FLAGS & S_BOUNCED) shadingData.roughness2 = max( 0.7f, shadingData.roughness2 );
 
 	// stop on light
-	if (shadingData.IsEmissive() /* r, g or b exceeds 1 */)
+	if (material.IsEmissive() /* r, g or b exceeds 1 */)
 	{
 		const float DdotNL = -dot( D, N );
 		float3 contribution = make_float3( 0 ); // initialization required.
@@ -155,8 +166,8 @@ void shadeKernel( float4* accumulator, const uint stride,
 			const CoreTri& tri = (const CoreTri&)instanceTriangles[PRIMIDX];
 			const float lightPdf = CalculateLightPDF( D, HIT_T, tri.area, N );
 			const float pickProb = LightPickProb( tri.ltriIdx, RAY_O, lastN /* TODO: lastN for primary ray? */, I /* the N at the previous vertex */ );
-			if ((bsdfPdf + lightPdf * pickProb) > 0) contribution = throughput * shadingData.color * (1.0f / (bsdfPdf + lightPdf * pickProb));
-			contribution = throughput * shadingData.color * (1.0f / (bsdfPdf + lightPdf));
+			if ((bsdfPdf + lightPdf * pickProb) > 0) contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf * pickProb));
+			contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf));
 			CLAMPINTENSITY;
 			FIXNAN_FLOAT3( contribution );
 			accumulator[pixelIdx] += make_float4( contribution, 0 );
@@ -165,7 +176,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	}
 
 	// detect specular surfaces
-	if (ROUGHNESS < 0.01f) FLAGS |= S_SPECULAR; else FLAGS &= ~S_SPECULAR;
+	if (material.Roughness() < 0.01f) FLAGS |= S_SPECULAR; else FLAGS &= ~S_SPECULAR;
 
 	// initialize seed based on pixel index
 	uint seed = WangHash( pathIdx + R0 /* well-seeded xor32 is all you need */ );
@@ -194,7 +205,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 		if (NdotL > 0 && dot( fN, L ) > 0 && lightPdf > 0)
 		{
 			float bsdfPdf;
-			const float3 sampledBSDF = EvaluateBSDF( shadingData, fN, T, D * -1.0f, L, bsdfPdf );
+			const float3 sampledBSDF = material.Evaluate( fN, T, D * -1.0f, L, bsdfPdf );
 			if (bsdfPdf > 0)
 			{
 				// calculate potential contribution
@@ -230,7 +241,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 		r3 = RandomFloat( seed );
 		r4 = RandomFloat( seed );
 	}
-	const float3 bsdf = SampleBSDF( shadingData, fN, N, T, D * -1.0f, r3, r4, R, newBsdfPdf );
+	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, r3, r4, R, newBsdfPdf );
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
 
 	// write extension ray

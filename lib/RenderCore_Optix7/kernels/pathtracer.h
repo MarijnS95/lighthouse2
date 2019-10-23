@@ -62,7 +62,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	// gather data by reading sets of four floats for optimal throughput
 	const float4 O4 = pathStates[jobIndex];				// ray origin xyz, w can be ignored
 	const float4 D4 = pathStates[jobIndex + stride];	// ray direction xyz
-	float4 T4 = pathLength == 1 ? make_float4( 1 ) /* faster */ : pathStates[jobIndex + stride * 2]; // path thoughput rgb 
+	float4 T4 = pathLength == 1 ? make_float4( 1 ) /* faster */ : pathStates[jobIndex + stride * 2]; // path thoughput rgb
 	const float4 hitData = hits[jobIndex];
 	const float bsdfPdf = T4.w;
 
@@ -99,7 +99,9 @@ void shadeKernel( float4* accumulator, const uint stride,
 	float3 N, iN, fN, T;
 	const float3 I = RAY_O + HIT_T * D;
 	const float coneWidth = spreadAngle * HIT_T;
-	GetShadingData( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, shadingData, N, iN, fN, T );
+
+	auto &material = GetMaterial(instanceTriangles[PRIMIDX]);
+	material->Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, shadingData, N, iN, fN, T );
 
 	// we need to detect alpha in the shading code.
 	if (shadingData.flags & 1)
@@ -245,7 +247,7 @@ __host__ void shade( const int pathCount, float4* accumulator, const uint stride
 	const float3 p1, const float3 p2, const float3 p3, const float3 pos )
 {
 	const dim3 gridDim( NEXTMULTIPLEOF( pathCount, 128 ) / 128, 1 ), blockDim( 128, 1 );
-	shadeKernel<<<gridDim.x, 128>>>( accumulator, stride, pathStates, hits, connections, R0, blueNoise, 
+	shadeKernel<<<gridDim.x, 128>>>( accumulator, stride, pathStates, hits, connections, R0, blueNoise,
 		pass, probePixelIdx, pathLength, scrwidth, scrheight, spreadAngle, p1, p2, p3, pos, pathCount );
 }
 
