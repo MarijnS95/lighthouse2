@@ -46,6 +46,15 @@ class BSDFStackMaterial : public MaterialIntf
 		) override
 	{
 		// Empty BxDF stack by default
+
+		// Extract _common_ normal/frame info from triangle.
+		// TODO: This should _not_ be the responsibility of the material. REFACTOR!
+		float w;
+		SetupFrame(
+			// In:
+			D, u, v, tri, instIdx, /* TODO: Extract smoothnormal information elsewhere */ true,
+			// Out:
+			N, iN, fN, T, w );
 	}
 
 	__device__ bool IsEmissive() const override
