@@ -244,6 +244,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	materials::BxDFType sampledType;
 	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, HIT_T, r3, r4,
 										 R, newBsdfPdf, sampledType );
+
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
 
 	// detect specular surfaces

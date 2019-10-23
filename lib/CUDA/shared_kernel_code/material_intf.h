@@ -44,11 +44,11 @@ class MaterialIntf : public HasPlacementNewOperator
 	__device__ virtual float3 Color() const = 0;
 
 	__device__ virtual float3 Evaluate( const float3 iN, const float3 T,
-										const float3 wo, const float3 wi, float& pdf ) const = 0;
+										const float3 woWorld, const float3 wiWorld, float& pdf ) const = 0;
 	__device__ virtual float3 Sample( float3 iN, const float3 N, const float3 T,
-									  const float3 wo, const float distance,
+									  const float3 woWorld, const float distance,
 									  const float r3, const float r4,
-									  float3& wi, float& pdf,
+									  float3& wiWorld, float& pdf,
 									  BxDFType& sampledType ) const = 0;
 };
 

@@ -8,19 +8,40 @@
 template <typename... BxDFs>
 class BSDFStackMaterial : public MaterialIntf
 {
+	float3 T, B, N;
+
   protected:
 	VariantStore<BxDF, BxDFs...> bxdfs;
 
+	__device__ float3 WorldToLocal( const float3& v ) const
+	{
+		return make_float3( dot( v, T ), dot( v, B ), dot( v, N ) );
+	}
+
+	__device__ float3 LocalToWorld( const float3& v ) const
+	{
+		return T * v.x + B * v.y + N * v.z;
+	}
+
+	__device__ void SetupTBN( const float3& T, const float3& N )
+	{
+		// Setup TBN (Not using Tangent2World/World2Tangent because we already have T, besides N)
+		this->N = N;
+		this->B = normalize( cross( T, N ) );
+		this->T = cross( B, N );
+	}
+
 	// ----------------------------------------------------------------
 
-	__device__ float Pdf( const float NDotV, const float NDotL ) const
+  private:
+	__device__ float Pdf( const float3 wo, const float3 wi ) const
 	{
 		int matches = (int)bxdfs.size();
 		float pdf = 0.f;
 		for ( const auto& bxdf : bxdfs )
 		{
 			if ( true ) // TODO: Implement type matching here, if necessary
-				pdf += bxdf.Pdf( NDotV, NDotL );
+				pdf += bxdf.Pdf( wo, wi );
 			else
 				matches -= 1;
 		}
@@ -30,6 +51,7 @@ class BSDFStackMaterial : public MaterialIntf
 
 	// ----------------------------------------------------------------
 	// Overrides:
+
   public:
 	/**
 	 * Create BxDF stack
@@ -55,6 +77,8 @@ class BSDFStackMaterial : public MaterialIntf
 			D, u, v, tri, instIdx, /* TODO: Extract smoothnormal information elsewhere */ true,
 			// Out:
 			N, iN, fN, T, w );
+
+		SetupTBN( T, iN );
 	}
 
 	__device__ bool IsEmissive() const override
@@ -76,42 +100,31 @@ class BSDFStackMaterial : public MaterialIntf
 		return make_float3( 1, 0, 1 );
 	}
 
-	__device__ float3 Evaluate( const float3 iN, const float3 T,
-								const float3 wo, const float3 wi,
+	__device__ float3 Evaluate( const float3 /* iN */, const float3 /* Tinit */,
+								const float3 woWorld, const float3 wiWorld,
 								float& pdf ) const override
 	{
-		const float NDotV = dot( iN, wo );
-		const float NDotL = dot( iN, wi );
+		const float3 wo = WorldToLocal( woWorld ), wi = WorldToLocal( wiWorld );
 
-		pdf = Pdf( NDotV, NDotL );
-
-		// TODO: Reuse this inlined datastructure on more functions?
-		// CommonIntersectionParams ss = {
-		// 	wo,
-		// 	NDotV,
-		// 	wi,
-		// 	NDotL,
-		// 	iN,
-		// };
+		pdf = Pdf( wo, wi );
 
 		float3 r = make_float3( 0.f );
 		for ( const auto& bxdf : bxdfs )
-			// for (int i=0;i<bxdfs.size();++i)
 			// TODO: Match based on reflect/transmit!
-			r += bxdf.f( NDotV, NDotL );
+			r += bxdf.f( wo, wi );
 		return r;
 	}
 
-	__device__ float3 Sample( float3 iN, const float3 N, const float3 T,
-							  const float3 wo, const float distance,
-							  float r3, const float r4,
-							  float3& wi, float& pdf,
+	__device__ float3 Sample( float3 /* iN */, const float3 /* N */, const float3 /* Tinit */,
+							  const float3 woWorld, const float distance,
+							  float r3, float r4,
+							  float3& wiWorld, float& pdf,
 							  BxDFType& sampledType ) const override
 	{
-		pdf = 0;
+		pdf = 0.f;
 		sampledType = BxDFType( 0 );
 
-		const float NDotV = dot( iN, wo );
+		const float3 wo = WorldToLocal( woWorld );
 
 		// TODO: Select bsdf based on comp !!AND!! match type
 
@@ -137,32 +150,15 @@ class BSDFStackMaterial : public MaterialIntf
 		assert( bxdf );
 
 		sampledType = bxdf->type;
-		auto f = bxdf->Sample_f( NDotV, wi, r3, r4, pdf, sampledType );
-
-		// const float NDotL = dot( iN, wi );
+		float3 wi;
+		auto f = bxdf->Sample_f( wo, wi, r3, r4, pdf, sampledType );
+		wiWorld = LocalToWorld( wi );
 
 		if ( pdf == 0 )
 		{
 			sampledType = BxDFType( 0 );
 			return make_float3( 0.f );
 		}
-
-		// Convert wi to world-space. (Not using Tangent2World because we already have T, besides N)
-
-		const float3 B = normalize( cross( T, iN ) );
-		const float3 Tfinal = cross( B, iN );
-
-		wi = Tfinal * wi.x + B * wi.y + iN * wi.z;
-
-		// ShaderState ss = {
-		// 	wo,
-		// 	NDotV,
-		// 	wi,
-		// 	NDotL,
-		// 	iN,
-		// };
-
-		// printf( "f.x: %f\n", f.x );
 
 		return f;
 		// TODO: Calculate pdf and f over all MATCHING brdfs if stack.types[comp] is _not_ specular
