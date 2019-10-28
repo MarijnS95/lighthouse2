@@ -1,5 +1,3 @@
-// #include "material_intf.h"
-
 class DisneyMaterial : public MaterialIntf
 {
 	ShadingData shadingData;
