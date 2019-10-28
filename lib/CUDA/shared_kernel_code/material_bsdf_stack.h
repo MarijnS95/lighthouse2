@@ -1,3 +1,10 @@
+/**
+ * BSDF implementation to sample multiple BxDFs.
+ *
+ * Based on the `BSDF' structure from PBRT, altered to work on the GPU
+ * with a type "invariant" list on the stack / in registers.
+ */
+
 #pragma once
 
 // #define NDEBUG
