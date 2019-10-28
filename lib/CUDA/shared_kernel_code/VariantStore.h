@@ -58,6 +58,10 @@ class other_type_iterator
 template <typename Base, typename... Variants>
 class VariantStore
 {
+	// Check if every type is a Base. They are casted as such from a typeless stack,
+	// so make sure the cast/reinterpretation is valid.
+	static_assert( all_convertible_to<Base&, Variants&...>::value );
+
 	using Req = StorageRequirement<Variants...>;
 	using StorageType = typename Req::type;
 

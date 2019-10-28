@@ -1,28 +1,16 @@
+/**
+ * BXDF interfaces and reflection/transmission types.
+ *
+ * Based on PBRT interface, modified for the GPU.
+ */
+
 #pragma once
 
-// ----------------------------------------------------------------
-// TODO: Move to frame class or something
-
-LH2_DEVFUNC float AbsCosTheta( const float3& w ) { return std::abs( w.z ); }
-
-LH2_DEVFUNC bool SameHemisphere( const float3& w, const float3& wp )
+namespace pbrt
 {
-	return w.z * wp.z > 0;
-}
-
-// PBRT Uses t-first. Provide a function for clarity.
-template <typename F, typename T>
-LH2_DEVFUNC T pbrt_Lerp( F t, T a, T b )
-{
-	return lerp( a, b, t );
-}
-
-LH2_DEVFUNC float3 pbrt_Reflect( const float3& wo, const float3& n )
-{
-	return -wo + 2 * dot( wo, n ) * n;
-}
-
-// ----------------------------------------------------------------
+#include "pbrt/util.h"
+};
+using namespace pbrt;
 
 class BxDF : public HasPlacementNewOperator
 {

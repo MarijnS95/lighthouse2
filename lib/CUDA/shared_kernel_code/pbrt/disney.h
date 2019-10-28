@@ -51,6 +51,15 @@ LH2_DEVFUNC float FrSchlick( float R0, float cosTheta )
 	return pbrt_Lerp( SchlickWeight( cosTheta ), R0, 1.f );
 }
 
+LH2_DEVFUNC float3 FrSchlick( float3 R0, float cosTheta )
+{
+	return pbrt_Lerp( SchlickWeight( cosTheta ), R0, make_float3( 1.f ) );
+}
+
+// For a dielectric, R(0) = (eta - 1)^2 / (eta + 1)^2, assuming we're
+// coming from air..
+LH2_DEVFUNC float SchlickR0FromEta( float eta ) { return sqr( eta - 1 ) / sqr( eta + 1 ); }
+
 LH2_DEVFUNC float pbrt_GTR1( float cosTheta, float alpha )
 {
 	float alpha2 = alpha * alpha;
@@ -65,16 +74,6 @@ LH2_DEVFUNC float smithG_GGX( float cosTheta, float alpha )
 	float alpha2 = alpha * alpha;
 	float cosTheta2 = cosTheta * cosTheta;
 	return 1.f / ( cosTheta + std::sqrt( alpha2 + cosTheta2 - alpha2 * cosTheta2 ) );
-}
-
-// ----------------------------------------------------------------
-// TODO: Move (PBRT) math helpers elsewhere
-
-LH2_DEVFUNC float3 SphericalDirection( float sinTheta, float cosTheta, float phi )
-{
-	return make_float3( sinTheta * std::cos( phi ),
-						sinTheta * std::sin( phi ),
-						cosTheta );
 }
 
 // ----------------------------------------------------------------
@@ -245,13 +244,47 @@ class DisneyClearcoat : public BxDF_T<DisneyClearcoat,
 	}
 };
 
+class DisneyFresnel : public Fresnel
+{
+	const float3 R0;
+	const float metallic, eta;
+
+  public:
+	__device__ DisneyFresnel( const float3 R0, const float metallic, const float eta )
+		: R0( R0 ), metallic( metallic ), eta( eta )
+	{
+	}
+
+	__device__ float3 Evaluate( float cosI ) const override
+	{
+		return pbrt_Lerp( metallic,
+						  make_float3( FrDielectric( cosI, 1.f, eta ) ),
+						  FrSchlick( R0, cosI ) );
+	}
+};
+
+class DisneyMicrofacetDistribution : public TrowbridgeReitzDistribution</* sampleVisibleArea */>
+{
+  public:
+	__device__ DisneyMicrofacetDistribution( float alphax, float alphay )
+		: TrowbridgeReitzDistribution( alphax, alphay ) {}
+
+	__device__ float G( const float3& wo, const float3& wi ) const override
+	{
+		// Disney uses the separable masking-shadowing model.
+		return G1( wo ) * G1( wi );
+	}
+};
+
+using DisneyMicrofacetReflection = MicrofacetReflection<DisneyMicrofacetDistribution, DisneyFresnel>;
+
 // ----------------------------------------------------------------
 
 /**
  * DisneyGltf: Disney material expressed as PBRT BxDF stack.
  * Material input data does not match it entirely, so be cautious.
  */
-class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen, DisneyClearcoat>
+class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen, DisneyClearcoat, DisneyMicrofacetReflection>
 {
   public:
 	__device__ void Setup(
@@ -277,13 +310,20 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyR
 
 		SetupTBN( T, iN );
 
+		const float metallicWeight = METALLIC;
 		const float strans = TRANSMISSION;
-		const float diffuseWeight = ( 1.f - METALLIC ) * ( 1.f - strans );
+		const float diffuseWeight = ( 1.f - metallicWeight ) * ( 1.f - strans );
+		const float rough = ROUGHNESS;
+		const float e = ETA * 2.f; // Multiplied by .5 in host_material
 		const float3 c = shadingData.color;
 
 		// WRONG! This should be _diffuse_ transmission, which is different
 		// from _specular_ transmission
 		const float dt = TRANSMISSION / 2;
+
+		const float lum = 0.212671f * c.x + 0.715160f * c.y + 0.072169f * c.z;
+		// normalize lum. to isolate hue+sat
+		const float3 Ctint = lum > 0 ? ( c / lum ) : make_float3( 1.f );
 
 		if ( diffuseWeight > 0 )
 		{
@@ -315,11 +355,7 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyR
 			}
 
 			// Retro-reflection.
-			bxdfs.emplace_back<DisneyRetro>( diffuseWeight * c, ROUGHNESS );
-
-			const float lum = 0.212671f * c.x + 0.715160f * c.y + 0.072169f * c.z;
-			// normalize lum. to isolate hue+sat
-			const float3 Ctint = lum > 0 ? ( c / lum ) : make_float3( 1.f );
+			bxdfs.emplace_back<DisneyRetro>( diffuseWeight * c, rough );
 
 			// Sheen (if enabled)
 			const float sheenWeight = SHEEN;
@@ -332,7 +368,18 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyR
 			}
 		}
 
-		// TODO: Add microfacets and fresnels
+		// Create the microfacet distribution for metallic and/or specular
+		// transmission.
+		const float aspect = std::sqrt( 1.f - ANISOTROPIC * .9f );
+		const float ax = std::max( .001f, sqr( rough ) / aspect );
+		const float ay = std::max( .001f, sqr( rough ) * aspect );
+		const DisneyMicrofacetDistribution distrib( ax, ay );
+
+		// Specular is Trowbridge-Reitz with a modified Fresnel function.
+		const float specTint = SPECTINT;
+		const float3 Cspec0 = pbrt_Lerp( metallicWeight, SchlickR0FromEta( e ) * pbrt_Lerp( specTint, make_float3( 1.f ), Ctint ), c );
+		const DisneyFresnel fresnel( Cspec0, metallicWeight, e );
+		bxdfs.emplace_back<DisneyMicrofacetReflection>( c, distrib, fresnel );
 
 		const float cc = CLEARCOAT;
 		if ( cc > 0 )
