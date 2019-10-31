@@ -112,7 +112,7 @@ class BSDFStackMaterial : public MaterialIntf
 		return make_float3( 1, 0, 1 );
 	}
 
-	__device__ float3 Evaluate( const float3 /* iN */, const float3 /* Tinit */,
+	__device__ float3 Evaluate( const float3 iN, const float3 /* Tinit */,
 								const float3 woWorld, const float3 wiWorld,
 								float& pdf ) const override
 	{
@@ -120,14 +120,18 @@ class BSDFStackMaterial : public MaterialIntf
 
 		pdf = Pdf( wo, wi );
 
+		const bool reflect = dot( wiWorld, iN ) * dot( woWorld, iN ) > 0;
+		const BxDFType reflectFlag = reflect ? BxDFType::BSDF_REFLECTION : BxDFType::BSDF_TRANSMISSION;
+
 		float3 r = make_float3( 0.f );
 		for ( const auto& bxdf : bxdfs )
-			// TODO: Match based on reflect/transmit!
-			r += bxdf.f( wo, wi );
+			if ( bxdf.HasFlags( reflectFlag ) )
+				r += bxdf.f( wo, wi );
+
 		return r;
 	}
 
-	__device__ float3 Sample( float3 /* iN */, const float3 /* N */, const float3 /* Tinit */,
+	__device__ float3 Sample( float3 iN, const float3 /* N */, const float3 /* Tinit */,
 							  const float3 woWorld, const float distance,
 							  float r3, float r4,
 							  float3& wiWorld, float& pdf,
@@ -138,7 +142,9 @@ class BSDFStackMaterial : public MaterialIntf
 
 		const float3 wo = WorldToLocal( woWorld );
 
-		// TODO: Select bsdf based on comp !!AND!! match type
+#if IMPLEMENTED_SELECT_BXDF
+		// TODO: pass requested BxDFType and filter matching bxdfs.
+#endif
 
 		const int matchingComps = /* NumBxDFs( type ) */ (int)bxdfs.size();
 
@@ -152,14 +158,19 @@ class BSDFStackMaterial : public MaterialIntf
 		r3 = min( r3 * matchingComps - comp, 1.f - EPSILON );
 
 		const BxDF* bxdf = nullptr;
+#if IMPLEMENTED_SELECT_BXDF
 		int count = comp;
 		for ( const auto& bxdf_i : bxdfs )
-			if ( /* bxdf_i.MatchesFlags( type ) && */ count-- == 0 )
+			if ( bxdf_i.MatchesFlags( type ) && count-- == 0 )
 			{
 				bxdf = &bxdf_i;
 				break;
 			}
+
 		assert( bxdf );
+#else
+		bxdf = &bxdfs[comp];
+#endif
 
 		sampledType = bxdf->type;
 		float3 wi;
@@ -172,7 +183,42 @@ class BSDFStackMaterial : public MaterialIntf
 			return make_float3( 0.f );
 		}
 
+		// If the selected bxdf is specular (and thus with
+		// a specifically chosen direction, wi)
+		// this is the only bxdf that is supposed to be sampled.
+		if ( bxdf->HasFlags( BxDFType::BSDF_SPECULAR ) )
+			return f;
+
+		if ( matchingComps > 1 )
+		{
+			// TODO: Interpolated normal or geometric normal?
+			const bool reflect = dot( wiWorld, iN ) * dot( woWorld, iN ) > 0;
+			const BxDFType reflectFlag = reflect
+											 ? BxDFType::BSDF_REFLECTION
+											 : BxDFType::BSDF_TRANSMISSION;
+
+			for ( const auto& bxdf_i : bxdfs )
+				if ( bxdf != &bxdf_i
+#if IMPLEMENTED_SELECT_BXDF
+					 && bxdf_i.MatchesFlags( type )
+#endif
+				)
+				{
+					// Compute overall PDF with all matching _BxDF_s
+					pdf += bxdf_i.Pdf( wo, wi );
+
+					// Compute value of BSDF for sampled direction
+
+					// PBRT Resets f to zero and evaluates all bxdfs again.
+					// We however keep the evaluation of `bxdf`, just like
+					// PBRT does in the pdf sum calculation.
+					if ( bxdf_i.HasFlags( reflectFlag ) )
+						f += bxdf_i.f( wo, wi );
+				}
+
+			pdf /= matchingComps;
+		}
+
 		return f;
-		// TODO: Calculate pdf and f over all MATCHING brdfs if stack.types[comp] is _not_ specular
 	}
 };
