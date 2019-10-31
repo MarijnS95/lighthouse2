@@ -87,6 +87,11 @@ LH2_DEVFUNC bool SameHemisphere( const float3& w, const float3& wp )
 
 // ----------------------------------------------------------------
 
+LH2_DEVFUNC float3 Faceforward( const float3& v, const float3& v2 )
+{
+	return ( dot( v, v2 ) < 0.f ) ? -v : v;
+}
+
 // PBRT Uses t-first. Provide a function for clarity.
 template <typename F, typename T>
 LH2_DEVFUNC T pbrt_Lerp( F t, T a, T b )
