@@ -20,6 +20,16 @@ class BxDF : public HasPlacementNewOperator
   public:
 	const BxDFType type;
 
+	__device__ bool MatchesFlags( BxDFType t ) const
+	{
+		return ( type & t ) == type;
+	}
+
+	__device__ bool HasFlags( BxDFType t ) const
+	{
+		return ( type & t ) == t;
+	}
+
 	__device__ virtual float3 f( const float3& wo, const float3& wi ) const = 0;
 
 	__device__ virtual float3 Sample_f( const float3 wo, float3& wi,
