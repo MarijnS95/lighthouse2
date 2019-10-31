@@ -58,10 +58,15 @@ class other_type_iterator
 template <typename Base, typename... Variants>
 class VariantStore
 {
-	using StorageType = typename StorageRequirement<Variants...>::type;
+	using Req = StorageRequirement<Variants...>;
+	using StorageType = typename Req::type;
 
 	static constexpr auto max_elements = 8;
-	StorageType stack[max_elements];
+
+	// For some reason the alignment of the type is not propagated
+	// to the use here, despite the static_assert not failing.
+	static_assert( alignof( StorageType ) == Req::stack_alignment );
+	alignas( Req::stack_alignment ) StorageType stack[max_elements];
 	size_t items = 0;
 
 	// Disable warnings about dropping type attributes
