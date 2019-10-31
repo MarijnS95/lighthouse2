@@ -66,7 +66,11 @@ class MicrofacetReflection : public BxDF_T<MicrofacetReflection<MicrofacetDistri
 		if ( cosThetaI == 0 || cosThetaO == 0 ) return make_float3( 0.f );
 		if ( wh.x == 0 && wh.y == 0 && wh.z == 0 ) return make_float3( 0.f );
 		wh = normalize( wh );
-		const auto F = fresnel.Evaluate( dot( wi, wh ) );
+		// For the Fresnel call, make sure that wh is in the same hemisphere
+		// as the surface normal, so that TIR is handled correctly.
+		// https://github.com/mmp/pbrt-v3/issues/229
+		const auto F = fresnel.Evaluate(
+			dot( wi, Faceforward( wh, make_float3( 0, 0, 1 ) ) ) );
 		return R * distribution.D( wh ) * distribution.G( wo, wi ) * F /
 			   ( 4 * cosThetaI * cosThetaO );
 	}
@@ -78,6 +82,7 @@ class MicrofacetReflection : public BxDF_T<MicrofacetReflection<MicrofacetDistri
 		// Sample microfacet orientation $\wh$ and reflected direction $\wi$
 		if ( wo.z == 0.f ) return make_float3( 0.f );
 		const auto wh = distribution.Sample_wh( wo, r0, r1 );
+		if ( dot( wo, wh ) < 0 ) return make_float3( 0.f ); // Should be rare
 		wi = pbrt_Reflect( wo, wh );
 		if ( !SameHemisphere( wo, wi ) ) return make_float3( 0.f );
 
