@@ -379,7 +379,8 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyR
 		const float specTint = SPECTINT;
 		const float3 Cspec0 = pbrt_Lerp( metallicWeight, SchlickR0FromEta( e ) * pbrt_Lerp( specTint, make_float3( 1.f ), Ctint ), c );
 		const DisneyFresnel fresnel( Cspec0, metallicWeight, e );
-		bxdfs.emplace_back<DisneyMicrofacetReflection>( c, distrib, fresnel );
+		// https://github.com/mmp/pbrt-v3/issues/224
+		bxdfs.emplace_back<DisneyMicrofacetReflection>( make_float3( 1.f ), distrib, fresnel );
 
 		const float cc = CLEARCOAT;
 		if ( cc > 0 )
