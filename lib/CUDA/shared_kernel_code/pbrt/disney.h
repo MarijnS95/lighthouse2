@@ -384,7 +384,17 @@ class DisneyGltf : public BSDFStackMaterial<
 		const float3 Cspec0 = pbrt_Lerp( metallicWeight, SchlickR0FromEta( e ) * pbrt_Lerp( specTint, make_float3( 1.f ), Ctint ), c );
 		const DisneyFresnel fresnel( Cspec0, metallicWeight, e );
 		// https://github.com/mmp/pbrt-v3/issues/224
+#if 1
+		// HACK! The fix for this issue replaces the color component with 1.f,
+		// which solves an incorrect reflection color, but makes the scene extremely
+		// overexposed. This could be an issue specific to stuffing a GLTF material
+		// into a PBRT BxDF expression.
+		bxdfs.emplace_back<DisneyMicrofacetReflection>(
+			pbrt_Lerp( metallicWeight, c, make_float3( 1.f ) ),
+			distrib, fresnel );
+#else
 		bxdfs.emplace_back<DisneyMicrofacetReflection>( make_float3( 1.f ), distrib, fresnel );
+#endif
 
 		const float cc = CLEARCOAT;
 		if ( cc > 0 )
