@@ -11,32 +11,13 @@
 
 #include "VariantStore.h"
 #include "bxdf.h"
+#include "tbn.h"
 
 template <typename... BxDFs>
 class BSDFStackMaterial : public MaterialIntf
 {
-	float3 T, B, N;
-
   protected:
 	VariantStore<BxDF, BxDFs...> bxdfs;
-
-	__device__ float3 WorldToLocal( const float3& v ) const
-	{
-		return make_float3( dot( v, T ), dot( v, B ), dot( v, N ) );
-	}
-
-	__device__ float3 LocalToWorld( const float3& v ) const
-	{
-		return T * v.x + B * v.y + N * v.z;
-	}
-
-	__device__ void SetupTBN( const float3& T, const float3& N )
-	{
-		// Setup TBN (Not using Tangent2World/World2Tangent because we already have T, besides N)
-		this->N = N;
-		this->B = normalize( cross( T, N ) );
-		this->T = cross( B, N );
-	}
 
 	// ----------------------------------------------------------------
 
@@ -84,8 +65,6 @@ class BSDFStackMaterial : public MaterialIntf
 			D, u, v, tri, instIdx, /* TODO: Extract smoothnormal information elsewhere */ true,
 			// Out:
 			N, iN, fN, T, w );
-
-		SetupTBN( T, iN );
 	}
 
 	__device__ bool IsEmissive() const override
@@ -107,11 +86,12 @@ class BSDFStackMaterial : public MaterialIntf
 		return make_float3( 1, 0, 1 );
 	}
 
-	__device__ float3 Evaluate( const float3 iN, const float3 /* Tinit */,
+	__device__ float3 Evaluate( const float3 iN, const float3 Tinit,
 								const float3 woWorld, const float3 wiWorld,
 								float& pdf ) const override
 	{
-		const float3 wo = WorldToLocal( woWorld ), wi = WorldToLocal( wiWorld );
+		const TBN tbn( Tinit, iN );
+		const float3 wo = tbn.WorldToLocal( woWorld ), wi = tbn.WorldToLocal( wiWorld );
 
 		pdf = Pdf( wo, wi );
 
@@ -126,7 +106,7 @@ class BSDFStackMaterial : public MaterialIntf
 		return r;
 	}
 
-	__device__ float3 Sample( float3 iN, const float3 /* N */, const float3 /* Tinit */,
+	__device__ float3 Sample( float3 iN, const float3 /* N */, const float3 Tinit,
 							  const float3 woWorld,
 							  float r3, float r4,
 							  float3& wiWorld, float& pdf,
@@ -135,7 +115,8 @@ class BSDFStackMaterial : public MaterialIntf
 		pdf = 0.f;
 		sampledType = BxDFType( 0 );
 
-		const float3 wo = WorldToLocal( woWorld );
+		const TBN tbn( Tinit, iN );
+		const float3 wo = tbn.WorldToLocal( woWorld );
 
 #if IMPLEMENTED_SELECT_BXDF
 		// TODO: pass requested BxDFType and filter matching bxdfs.
@@ -170,7 +151,7 @@ class BSDFStackMaterial : public MaterialIntf
 		sampledType = bxdf->type;
 		float3 wi;
 		auto f = bxdf->Sample_f( wo, wi, r3, r4, pdf, sampledType );
-		wiWorld = LocalToWorld( wi );
+		wiWorld = tbn.LocalToWorld( wi );
 
 		if ( pdf == 0 )
 		{
