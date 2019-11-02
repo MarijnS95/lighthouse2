@@ -308,8 +308,6 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyR
 						// Returns:
 						shadingData, N, iN, fN, T, waveLength );
 
-		SetupTBN( T, iN );
-
 		const float metallicWeight = METALLIC;
 		const float strans = TRANSMISSION;
 		const float diffuseWeight = ( 1.f - metallicWeight ) * ( 1.f - strans );
