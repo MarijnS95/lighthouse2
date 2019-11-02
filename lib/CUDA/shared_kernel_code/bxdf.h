@@ -37,9 +37,8 @@ class BxDF : public HasPlacementNewOperator
 										float& pdf, BxDFType& sampledType ) const
 	{
 		// Cosine-sample the hemisphere, flipping the direction if necessary
-		wi = DiffuseReflectionCosWeighted( r0, r1 );
+		wi = CosineSampleHemisphere( r0, r1 );
 		if ( wo.z < 0 ) wi.z *= -1;
-
 		pdf = Pdf( wo, wi );
 		return f( wo, wi );
 	}
