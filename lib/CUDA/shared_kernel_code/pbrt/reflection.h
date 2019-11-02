@@ -31,6 +31,36 @@
 
 #pragma once
 
+class LambertianTransmission : public BxDF_T<LambertianTransmission, BxDFType( BxDFType::BSDF_TRANSMISSION | BxDFType::BSDF_DIFFUSE )>
+{
+	const float3 T;
+
+  public:
+	__device__ LambertianTransmission( const float3& T ) : T( T )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		return T * INVPI;
+	}
+
+	__device__ float3 Sample_f( const float3 wo, float3& wi,
+								const float r0, const float r1,
+								float& pdf, BxDFType& sampledType ) const override
+	{
+		wi = CosineSampleHemisphere( r0, r1 );
+		if ( wo.z > 0 ) wi.z *= -1;
+		pdf = Pdf( wo, wi );
+		return f( wo, wi );
+	}
+
+	__device__ float Pdf( const float3& wo, const float3& wi ) const override
+	{
+		return !SameHemisphere( wo, wi ) ? AbsCosTheta( wi ) * INVPI : 0;
+	}
+};
+
 template <typename MicrofacetDistribution_T, typename Fresnel_T>
 class MicrofacetReflection : public BxDF_T<MicrofacetReflection<MicrofacetDistribution_T, Fresnel_T>,
 										   BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_GLOSSY )>
@@ -96,5 +126,87 @@ class MicrofacetReflection : public BxDF_T<MicrofacetReflection<MicrofacetDistri
 		if ( !SameHemisphere( wo, wi ) ) return 0.f;
 		const auto wh = normalize( wo + wi );
 		return distribution_Pdf( wo, wh );
+	}
+};
+
+template <typename MicrofacetDistribution_T>
+class MicrofacetTransmission : public BxDF_T<MicrofacetTransmission<MicrofacetDistribution_T>,
+											 BxDFType( BxDFType::BSDF_TRANSMISSION | BxDFType::BSDF_GLOSSY )>
+{
+	const float3 T;
+	const MicrofacetDistribution_T distribution;
+	const float etaA, etaB;
+	const TransportMode mode;
+
+  public:
+	__device__ MicrofacetTransmission( const float3& T,
+									   const MicrofacetDistribution_T& distribution,
+									   const float etaA,
+									   const float etaB,
+									   const TransportMode mode )
+		: T( T ),
+		  distribution( distribution ),
+		  etaA( etaA ),
+		  etaB( etaB ),
+		  //   fresnel( etaA, etaB ),
+		  mode( mode ){}
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		if ( SameHemisphere( wo, wi ) ) return make_float3( 0.f ); // transmission only
+
+		const float cosThetaO = CosTheta( wo );
+		const float cosThetaI = CosTheta( wi );
+		if ( cosThetaI == 0 || cosThetaO == 0 ) return make_float3( 0.f );
+
+		// Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
+		const float eta = CosTheta( wo ) > 0.f ? ( etaB / etaA ) : ( etaA / etaB );
+		float3 wh = normalize( wo + wi * eta );
+		if ( wh.z < 0 ) wh = -wh;
+
+		// float3 F = fresnel.Evaluate( dot( wo, wh ) );
+		float F = FrDielectric( dot( wo, wh ), etaA, etaB );
+
+		const float sqrtDenom = dot( wo, wh ) + eta * dot( wi, wh );
+		const float factor = ( mode == TransportMode::Radiance ) ? ( 1 / eta ) : 1;
+
+		return ( 1.f - F ) *
+			   std::abs( distribution.D( wh ) * distribution.G( wo, wi ) * eta * eta *
+						 AbsDot( wi, wh ) * AbsDot( wo, wh ) * factor * factor /
+						 ( cosThetaI * cosThetaO * sqrtDenom * sqrtDenom ) ) *
+			   T;
+	}
+
+	__device__ float3 Sample_f( const float3 wo, float3& wi,
+								const float r0, const float r1,
+								float& pdf, BxDFType& sampledType ) const override
+	{
+		// Sample microfacet orientation $\wh$ and reflected direction $\wi$
+		if ( wo.z == 0.f ) return make_float3( 0.f );
+		const auto wh = distribution.Sample_wh( wo, r0, r1 );
+		if ( dot( wo, wh ) < 0 ) return make_float3( 0.f ); // Should be rare
+
+		const float eta = CosTheta( wo ) > 0 ? ( etaA / etaB ) : ( etaB / etaA );
+		if ( !pbrt_Refract( wo, wh, eta, wi ) )
+			return make_float3( 0.f );
+		pdf = Pdf( wo, wi );
+		return f( wo, wi );
+	}
+
+	__device__ float Pdf( const float3& wo, const float3& wi ) const override
+	{
+		if ( SameHemisphere( wo, wi ) ) return 0.f;
+
+		// Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
+		const float eta = CosTheta( wo ) > 0 ? ( etaB / etaA ) : ( etaA / etaB );
+		const float3 wh = normalize( wo + wi * eta );
+
+		// Compute change of variables _dwh\_dwi_ for microfacet transmission
+		const float sqrtDenom = dot( wo, wh ) + eta * dot( wi, wh );
+		const float dwh_dwi =
+			std::abs( ( eta * eta * dot( wi, wh ) ) / ( sqrtDenom * sqrtDenom ) );
+		return distribution.Pdf( wo, wh ) * dwh_dwi;
 	}
 };

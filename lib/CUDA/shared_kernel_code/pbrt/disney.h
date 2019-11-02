@@ -284,18 +284,24 @@ using DisneyMicrofacetReflection = MicrofacetReflection<DisneyMicrofacetDistribu
  * DisneyGltf: Disney material expressed as PBRT BxDF stack.
  * Material input data does not match it entirely, so be cautious.
  */
-class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen, DisneyClearcoat, DisneyMicrofacetReflection>
+class DisneyGltf : public BSDFStackMaterial<
+					   DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen,
+					   DisneyClearcoat, DisneyMicrofacetReflection,
+					   MicrofacetTransmission<DisneyMicrofacetDistribution>,
+					   MicrofacetTransmission<TrowbridgeReitzDistribution<>>,
+					   LambertianTransmission>
 {
   public:
 	__device__ void Setup(
-		const float3 D,					   // IN:	incoming ray direction, used for consistent normals
-		const float u, const float v,	  //		barycentric coordinates of intersection point
-		const float coneWidth,			   //		ray cone width, for texture LOD
-		const CoreTri4& tri,			   //		triangle data
-		const int instIdx,				   //		instance index, for normal transform
-		float3& N, float3& iN, float3& fN, //		geometric normal, interpolated normal, final normal (normal mapped)
-		float3& T,						   //		tangent vector
-		const float waveLength = -1.0f	 // IN:	wavelength (optional)
+		const float3 D,									   // IN:	incoming ray direction, used for consistent normals
+		const float u, const float v,					   //		barycentric coordinates of intersection point
+		const float coneWidth,							   //		ray cone width, for texture LOD
+		const CoreTri4& tri,							   //		triangle data
+		const int instIdx,								   //		instance index, for normal transform
+		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
+		float3& T,										   //		tangent vector
+		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
+		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		) override
 	{
 		// metallic: Controls how "metal" the object appears. Higher values reduce diffuse scattering and shift the highlight color towards the material's color. Range: [0,1].
@@ -384,6 +390,33 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyR
 		if ( cc > 0 )
 			bxdfs.emplace_back<DisneyClearcoat>( cc, pbrt_Lerp( CLEARCOATGLOSS, .1f, .001f ) );
 
-		// TODO: BTDF
+		// BTDF
+		if ( strans > 0 )
+		{
+			// Walter et al's model, with the provided transmissive term scaled
+			// by sqrt(color), so that after two refractions, we're back to the
+			// provided color.
+			const float3 s = make_float3( std::sqrt( c.x ), std::sqrt( c.y ), std::sqrt( c.z ) );
+			const float3 T = strans * s;
+			if ( thin )
+			{
+				// Scale roughness based on IOR (Burley 2015, Figure 15).
+				const float rscaled = ( .65f * e - .35f ) * rough;
+				const float ax = std::max( .001f, sqr( rscaled ) / aspect );
+				const float ay = std::max( .001f, sqr( rscaled ) * aspect );
+				const TrowbridgeReitzDistribution<> scaledDistrib( ax, ay );
+				bxdfs.emplace_back<MicrofacetTransmission<
+					std::remove_const_t<decltype( scaledDistrib )>>>( T, scaledDistrib, 1.f, e, mode );
+			}
+			else
+				bxdfs.emplace_back<MicrofacetTransmission<
+					std::remove_const_t<decltype( distrib )>>>( T, distrib, 1.f, e, mode );
+		}
+
+		if ( thin )
+		{
+			// Lambertian, weighted by (1 - diffTrans)
+			bxdfs.emplace_back<LambertianTransmission>( dt * c );
+		}
 	}
 };
