@@ -14,21 +14,10 @@ using namespace pbrt;
 
 class BxDF : public HasPlacementNewOperator
 {
-  protected:
-	__device__ BxDF( BxDFType type ) : type( type ) {}
-
   public:
-	const BxDFType type;
-
-	__device__ bool MatchesFlags( BxDFType t ) const
-	{
-		return ( type & t ) == type;
-	}
-
-	__device__ bool HasFlags( BxDFType t ) const
-	{
-		return ( type & t ) == t;
-	}
+	__device__ virtual bool MatchesFlags( BxDFType t ) const = 0;
+	__device__ virtual bool HasFlags( BxDFType t ) const = 0;
+	__device__ virtual BxDFType GetType() const = 0;
 
 	__device__ virtual float3 f( const float3& wo, const float3& wi ) const = 0;
 
@@ -55,5 +44,22 @@ template <typename Derived, BxDFType _type>
 class BxDF_T : public BxDF
 {
   protected:
-	__device__ BxDF_T() : BxDF( _type ) {}
+	// TODO: We do not currently store the type, but this _MUST_ happen
+	// when evaluating BxDFs in different ways.
+	// __device__ BxDF_T() : BxDF( _type ) {}
+
+	__device__ bool MatchesFlags( const BxDFType t ) const override
+	{
+		return ( _type & t ) == _type;
+	}
+
+	__device__ bool HasFlags( const BxDFType t ) const override
+	{
+		return ( _type & t ) == t;
+	}
+
+	__device__ BxDFType GetType() const override
+	{
+		return _type;
+	}
 };

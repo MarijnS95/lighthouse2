@@ -167,7 +167,7 @@ class BSDFStackMaterial : public MaterialIntf
 		bxdf = &bxdfs[comp];
 #endif
 
-		sampledType = bxdf->type;
+		sampledType = bxdf->GetType();
 		float3 wi;
 		auto f = bxdf->Sample_f( wo, wi, r3, r4, pdf, sampledType );
 		wiWorld = LocalToWorld( wi );
