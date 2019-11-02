@@ -17,18 +17,25 @@ enum /* class */ BxDFType : int
 			   BSDF_TRANSMISSION,
 };
 
+enum class TransportMode
+{
+	Radiance,
+	Importance,
+};
+
 class MaterialIntf : public HasPlacementNewOperator
 {
   public:
 	__device__ virtual void Setup(
-		const float3 D,					   // IN:	incoming ray direction, used for consistent normals
-		const float u, const float v,	  //		barycentric coordinates of intersection point
-		const float coneWidth,			   //		ray cone width, for texture LOD
-		const CoreTri4& tri,			   //		triangle data
-		const int instIdx,				   //		instance index, for normal transform
-		float3& N, float3& iN, float3& fN, //		geometric normal, interpolated normal, final normal (normal mapped)
-		float3& T,						   //		tangent vector
-		const float waveLength = -1.0f	 // IN:	wavelength (optional)
+		const float3 D,									   // IN:	incoming ray direction, used for consistent normals
+		const float u, const float v,					   //		barycentric coordinates of intersection point
+		const float coneWidth,							   //		ray cone width, for texture LOD
+		const CoreTri4& tri,							   //		triangle data
+		const int instIdx,								   //		instance index, for normal transform
+		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
+		float3& T,										   //		tangent vector
+		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
+		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		) = 0;
 	__device__ virtual bool IsEmissive() const = 0;
 	__device__ virtual bool IsAlpha() const = 0;

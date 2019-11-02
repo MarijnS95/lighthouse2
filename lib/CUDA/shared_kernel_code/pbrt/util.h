@@ -99,6 +99,29 @@ LH2_DEVFUNC T pbrt_Lerp( F t, T a, T b )
 	return lerp( a, b, t );
 }
 
+LH2_DEVFUNC bool pbrt_Refract( const float3& wi, const float3& n, const float eta,
+							   float3& wt )
+{
+	// OptiX math header implementation:
+	// return refract( wt, wi, n, eta );
+
+	// Compute $\cos \theta_\roman{t}$ using Snell's law
+	const float cosThetaI = dot( n, wi );
+	const float sin2ThetaI = std::max( 0.f, 1.f - cosThetaI * cosThetaI );
+	const float sin2ThetaT = eta * eta * sin2ThetaI;
+
+	// Handle total internal reflection for transmission
+	if ( sin2ThetaT >= 1.f ) return false;
+	const float cosThetaT = std::sqrt( 1.f - sin2ThetaT );
+	wt = eta * -wi + ( eta * cosThetaI - cosThetaT ) * n;
+	return true;
+}
+
+LH2_DEVFUNC float3 CosineSampleHemisphere( const float r0, const float r1 )
+{
+	return DiffuseReflectionCosWeighted( r0, r1 );
+}
+
 LH2_DEVFUNC float AbsDot( const float3& v1, const float3& v2 )
 {
 	return std::abs( dot( v1, v2 ) );

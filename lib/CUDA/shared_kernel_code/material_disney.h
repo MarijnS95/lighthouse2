@@ -4,14 +4,15 @@ class DisneyMaterial : public MaterialIntf
 
   public:
 	__device__ void Setup(
-		const float3 D,					   // IN:	incoming ray direction, used for consistent normals
-		const float u, const float v,	  //		barycentric coordinates of intersection point
-		const float coneWidth,			   //		ray cone width, for texture LOD
-		const CoreTri4& tri,			   //		triangle data
-		const int instIdx,				   //		instance index, for normal transform
-		float3& N, float3& iN, float3& fN, //		geometric normal, interpolated normal, final normal (normal mapped)
-		float3& T,						   //		tangent vector
-		const float waveLength = -1.0f	 // IN:	wavelength (optional)
+		const float3 D,									   // IN:	incoming ray direction, used for consistent normals
+		const float u, const float v,					   //		barycentric coordinates of intersection point
+		const float coneWidth,							   //		ray cone width, for texture LOD
+		const CoreTri4& tri,							   //		triangle data
+		const int instIdx,								   //		instance index, for normal transform
+		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
+		float3& T,										   //		tangent vector
+		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
+		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		) override
 	{
 		GetShadingData( D, u, v, coneWidth, tri, instIdx, shadingData, N, iN, fN, T, waveLength );
