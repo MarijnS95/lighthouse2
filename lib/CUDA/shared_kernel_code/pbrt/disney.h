@@ -94,6 +94,8 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse>
 
 		GetShadingData( D, u, v, coneWidth, tri, instIdx, shadingData, N, iN, fN, T, waveLength );
 
+		SetupTBN( T, iN );
+
 		float strans = TRANSMISSION;
 		float diffuseWeight = ( 1.f - METALLIC ) * ( 1.f - strans );
 		const float3 c = shadingData.color;
