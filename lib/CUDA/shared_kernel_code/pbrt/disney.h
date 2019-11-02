@@ -281,16 +281,21 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse, DisneyFakeSS, DisneyR
 		const float diffuseWeight = ( 1.f - METALLIC ) * ( 1.f - strans );
 		const float3 c = shadingData.color;
 
+		// WRONG! This should be _diffuse_ transmission, which is different
+		// from _specular_ transmission
+		const float dt = TRANSMISSION / 2;
+
 		if ( diffuseWeight > 0 )
 		{
 			if ( thin )
 			{
-				// TODO: use thin, difftrans and flatness properties
-				const float3 s = make_float3( sqrt( c.x ), sqrt( c.y ), sqrt( c.z ) );
-				// TODO: Weight with flatness!
+				const float flat = -1337.f; // TODO: Evaluate from texture/value
+				const float3 thin_color = ( 1 - dt ) * diffuseWeight * c;
 
-				bxdfs.emplace_back<DisneyDiffuse>( diffuseWeight * s );
-				bxdfs.emplace_back<DisneyFakeSS>( diffuseWeight * s, ROUGHNESS );
+				// Blend between DisneyDiffuse and fake subsurface based on
+				// flatness.  Additionally, weight using diffTrans.
+				bxdfs.emplace_back<DisneyDiffuse>( ( 1 - flat ) * thin_color );
+				bxdfs.emplace_back<DisneyFakeSS>( flat * thin_color, ROUGHNESS );
 			}
 			else
 			{
