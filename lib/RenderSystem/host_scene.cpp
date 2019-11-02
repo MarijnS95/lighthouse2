@@ -122,8 +122,7 @@ void HostScene::DeserializeMaterials( const char* xmlFile )
 	if (!countElement) return;
 	int materialCount;
 	countElement->QueryIntText( &materialCount );
-	if (materialCount != materials.size()) return;
-	for (int i = 0; i < materialCount; i++)
+	for (int i = 0; i < std::min((int)materials.size(), materialCount); i++)
 	{
 		// find the entry for the material
 		HostMaterial* m /* for brevity */ = materials[i];
