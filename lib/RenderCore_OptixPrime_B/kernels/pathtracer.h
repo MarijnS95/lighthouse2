@@ -119,10 +119,6 @@ void shadeKernel( float4* accumulator, const uint stride,
 	material.Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, N, iN, fN, T );
 #endif
 
-	// Setup TBN (Not using Tangent2World/World2Tangent because we already have T, besides N)
-	const float3 B = normalize( cross( T, iN ) );
-	const float3 Tfinal = cross( B, iN );
-
 	// we need to detect alpha in the shading code.
 	if (material.IsAlpha())
 	{
@@ -170,11 +166,6 @@ void shadeKernel( float4* accumulator, const uint stride,
 		return;
 	}
 
-	// Pass localized normals to material:
-	float3 D_local = D * -1.f;
-	if ( material.LocalSpace() )
-		D_local = make_float3( dot( D_local, Tfinal ), dot( D_local, B ), dot( D_local, iN ) );
-
 	// initialize seed based on pixel index
 	uint seed = WangHash( pathIdx + R0 /* well-seeded xor32 is all you need */ );
 
@@ -213,10 +204,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 		if (NdotL > 0 && dot( fN, L ) > 0 && lightPdf > 0)
 		{
 			float bsdfPdf;
-			float3 L_local = L;
-			if ( material.LocalSpace() )
-				L_local = make_float3( dot( L, Tfinal ), dot( L, B ), dot( L, iN ) );
-			const float3 sampledBSDF = material.Evaluate( fN, T, D_local, L_local, bsdfPdf );
+			const float3 sampledBSDF = material.Evaluate( fN, T, D * -1.f, L, bsdfPdf );
 			if (bsdfPdf > 0)
 			{
 				// calculate potential contribution
@@ -254,11 +242,8 @@ void shadeKernel( float4* accumulator, const uint stride,
 	}
 
 	materials::BxDFType sampledType;
-	const float3 bsdf = material.Sample( fN, N, T, D_local, HIT_T, r3, r4,
+	const float3 bsdf = material.Sample( fN, N, T, D * -1.f, HIT_T, r3, r4,
 										 R, newBsdfPdf, sampledType );
-
-	if ( material.LocalSpace() )
-		R = Tfinal * R.x + B * R.y + iN * R.z;
 
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
 
