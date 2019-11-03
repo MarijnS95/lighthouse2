@@ -66,7 +66,8 @@ class VariantStore
 	using Req = StorageRequirement<Variants...>;
 	using StorageType = typename Req::type;
 
-	static constexpr auto max_elements = 8;
+	// static constexpr auto max_elements = 8;
+	static constexpr auto max_elements = sizeof...(Variants);
 
 	// For some reason the alignment of the type is not propagated
 	// to the use here, despite the static_assert not failing.
