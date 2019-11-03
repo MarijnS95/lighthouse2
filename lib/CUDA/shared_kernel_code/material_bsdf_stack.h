@@ -55,6 +55,7 @@ class BSDFStackMaterial : public MaterialIntf
 		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
 		float3& T,										   //		tangent vector
 		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
+		const bool allowMultipleLobes = true,			   // IN:	Integrator samples multiple lobes (optional)
 		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		) override
 	{
@@ -207,5 +208,41 @@ class BSDFStackMaterial : public MaterialIntf
 		}
 
 		return f;
+	}
+};
+
+/**
+ * Helper class that abstracts away the _massive_ setup function overhead
+ */
+template <typename CoreMaterialProperties, typename... BxDFs>
+class SimpleMaterial : public BSDFStackMaterial<BxDFs...>
+{
+  protected:
+	__device__ virtual void ComputeScatteringFunctions( const CoreMaterialProperties& props,
+														const bool allowMultipleLobes,
+														const TransportMode mode ) = 0;
+
+  public:
+	__device__ void Setup(
+		const float3 D,									   // IN:	incoming ray direction, used for consistent normals
+		const float u, const float v,					   //		barycentric coordinates of intersection point
+		const float coneWidth,							   //		ray cone width, for texture LOD
+		const CoreTri4& tri,							   //		triangle data
+		const int instIdx,								   //		instance index, for normal transform
+		const int materialInstance,						   //		Material instance id/location
+		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
+		float3& T,										   //		tangent vector
+		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
+		const bool allowMultipleLobes = true,			   // IN:	Integrator samples multiple lobes (optional)
+		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
+		)
+		/* Don't allow overriding this function any further */ final override
+	{
+		BSDFStackMaterial<BxDFs...>::Setup( D, u, v, coneWidth, tri, instIdx, materialInstance,
+											// Output
+											N, iN, fN, T, waveLength, allowMultipleLobes, mode );
+
+		const auto props = LoadMaterial<CoreMaterialProperties>( materialInstance );
+		ComputeScatteringFunctions( props, allowMultipleLobes, mode );
 	}
 };

@@ -1,0 +1,21 @@
+#pragma once
+
+#define FLOAT3( name, extra_name ) \
+	union {                        \
+		float4 name##_float4;      \
+		struct                     \
+		{                          \
+			float3 name;           \
+			float extra_name;      \
+		};                         \
+	}
+
+struct Glass
+{
+	FLOAT3( R, urough );
+	FLOAT3( T, vrough );
+
+	float eta;
+
+	bool remapRoughness;
+};

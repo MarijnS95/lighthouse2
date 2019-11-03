@@ -14,8 +14,9 @@
 */
 
 // generic includes
-#include <stdio.h>
 #include <algorithm>
+#include <cstdint>
+#include <cstdio>
 
 // custom types
 typedef unsigned int uint;
@@ -31,6 +32,7 @@ typedef unsigned char uchar;
 #include "../core_settings.h"
 #include "common_settings.h"
 #include "common_classes.h"
+#include <common_materials.h>
 #if __CUDA_ARCH__ >= 700
 #define THREADMASK	__activemask() // volta, turing
 #else

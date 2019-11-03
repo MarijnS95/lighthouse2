@@ -251,7 +251,8 @@ enum class MaterialType : char
 	// Based on PBRT
 	PBRT_DISNEY,
 
-	// TODO: More PBRT
+	// PBRT Common materials:
+	PBRT_GLASS,
 };
 
 struct CoreMaterialDesc

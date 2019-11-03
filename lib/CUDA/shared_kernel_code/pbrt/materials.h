@@ -11,5 +11,6 @@ namespace pbrt
 // clang-format on
 
 #include "./disney.h"
+#include "./glass.h"
 
 }; // namespace pbrt
