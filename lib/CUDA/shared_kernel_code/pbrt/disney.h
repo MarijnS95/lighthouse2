@@ -106,15 +106,15 @@ class DisneyGltf : public BSDFStackMaterial<DisneyDiffuse>
 				const float3 s = make_float3( sqrt( c.x ), sqrt( c.y ), sqrt( c.z ) );
 				// TODO: Weight with flatness!
 
-				// new ( Reserve() ) DisneyDiffuse( diffuseWeight * s );
-				// new ( Reserve() ) DisneyFakeSS( diffuseWeight * s );
+				// new ( bxdfs.Reserve() ) DisneyDiffuse( diffuseWeight * s );
+				// new ( bxdfs.Reserve() ) DisneyFakeSS( diffuseWeight * s );
 			}
 			else
 			{
 				if ( /* scatterdistance == 0 */ true )
 				{
 					// Add( stack, BxDF_INSTANCE_DISNEY_DIFFUSE, diffuseWeight * c );
-					new ( Reserve() ) DisneyDiffuse( diffuseWeight * c );
+					new ( bxdfs.Reserve() ) DisneyDiffuse( diffuseWeight * c );
 				}
 				else
 				{
