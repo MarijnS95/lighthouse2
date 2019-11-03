@@ -283,7 +283,7 @@ LH2_DEVFUNC float3 SafeOrigin( const float3& O, const float3& R, const float3& N
 	// offset outgoing ray direction along R and / or N: along N when strongly parallel to the origin surface; mostly along R otherwise
 	const float parallel = 1 - fabs( dot( N, R ) );
 	const float v = parallel * parallel;
-#if 0
+#if 1
 	// we can go slightly into the surface when iN != N; negate the offset along N in that case
 	const float side = dot( N, R ) < 0 ? -1 : 1;
 #else
