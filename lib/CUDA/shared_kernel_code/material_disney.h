@@ -41,6 +41,7 @@ class DisneyMaterial : public MaterialIntf
 
 	__device__ float3 Evaluate( const float3 iN, const float3 T,
 								const float3 wo, const float3 wi,
+								const BxDFType flags,
 								float& pdf ) const override
 	{
 		return EvaluateBSDF( shadingData, iN, T, wo, wi, pdf ) * ROUGHNESS;
@@ -51,6 +52,7 @@ class DisneyMaterial : public MaterialIntf
 	__device__ float3 Sample( float3 iN, const float3 N, const float3 T,
 							  const float3 wo, const float distance,
 							  const float r3, const float r4,
+							  const BxDFType flags,
 							  float3& wi, float& pdf,
 							  BxDFType& sampledType ) const override
 	{
@@ -59,8 +61,8 @@ class DisneyMaterial : public MaterialIntf
 
 		sampledType = specular
 						  ? BxDFType::BSDF_SPECULAR
-						  : /* TODO: Unknown, only specular is necessary: */
-						  BxDFType( 0 );
+						  /* TODO: Unknown, only specular is necessary: */
+						  : BxDFType( 0 );
 
 		return f;
 	}
