@@ -22,16 +22,17 @@ class BSDFStackMaterial : public MaterialIntf
 	// ----------------------------------------------------------------
 
   private:
-	__device__ float Pdf( const float3 wo, const float3 wi ) const
+	__device__ float Pdf( const float3 wo, const float3 wi,
+						  const BxDFType flags ) const
 	{
 		int matches = (int)bxdfs.size();
 		float pdf = 0.f;
 		for ( const auto& bxdf : bxdfs )
 		{
-			if ( true ) // TODO: Implement type matching here, if necessary
+			if ( bxdf.MatchesFlags( flags ) )
 				pdf += bxdf.Pdf( wo, wi );
 			else
-				matches -= 1;
+				--matches;
 		}
 
 		return matches > 0 ? pdf / matches : 0.f;
@@ -89,20 +90,35 @@ class BSDFStackMaterial : public MaterialIntf
 
 	__device__ float3 Evaluate( const float3 iN, const float3 Tinit,
 								const float3 woWorld, const float3 wiWorld,
+								const BxDFType flags,
 								float& pdf ) const override
 	{
 		const TBN tbn( Tinit, iN );
 		const float3 wo = tbn.WorldToLocal( woWorld ), wi = tbn.WorldToLocal( wiWorld );
 
-		pdf = Pdf( wo, wi );
-
 		const bool reflect = dot( wiWorld, iN ) * dot( woWorld, iN ) > 0;
 		const BxDFType reflectFlag = reflect ? BxDFType::BSDF_REFLECTION : BxDFType::BSDF_TRANSMISSION;
 
+		// pdf = Pdf( wo, wi, flags );
+		// NOTE: Instead of calling a separate function, we are already iterating
+		// over and matching bxdfs, so might as well do the sum here.
+		pdf = 0.f;
+		int matches = (int)bxdfs.size();
+
 		float3 r = make_float3( 0.f );
 		for ( const auto& bxdf : bxdfs )
-			if ( bxdf.HasFlags( reflectFlag ) )
-				r += bxdf.f( wo, wi );
+			if ( bxdf.MatchesFlags( flags ) )
+			{
+				if ( bxdf.HasFlags( reflectFlag ) )
+					r += bxdf.f( wo, wi );
+
+				pdf += bxdf.Pdf( wo, wi );
+			}
+			else
+				--matches;
+
+		if ( matches > 0 )
+			pdf /= (float)matches;
 
 		return r;
 	}
@@ -110,20 +126,21 @@ class BSDFStackMaterial : public MaterialIntf
 	__device__ float3 Sample( float3 iN, const float3 /* N */, const float3 Tinit,
 							  const float3 woWorld, const float distance,
 							  float r3, float r4,
+							  const BxDFType type,
 							  float3& wiWorld, float& pdf,
 							  BxDFType& sampledType ) const override
 	{
+
 		pdf = 0.f;
 		sampledType = BxDFType( 0 );
 
 		const TBN tbn( Tinit, iN );
 		const float3 wo = tbn.WorldToLocal( woWorld );
 
-#if IMPLEMENTED_SELECT_BXDF
-		// TODO: pass requested BxDFType and filter matching bxdfs.
-#endif
-
-		const int matchingComps = /* NumBxDFs( type ) */ (int)bxdfs.size();
+		int matchingComps = (int)bxdfs.size();
+		for ( const auto& bxdf : bxdfs )
+			if ( !bxdf.MatchesFlags( type ) )
+				--matchingComps;
 
 		if ( !matchingComps )
 			return make_float3( 0.f );
@@ -135,7 +152,6 @@ class BSDFStackMaterial : public MaterialIntf
 		r3 = min( r3 * matchingComps - comp, 1.f - EPSILON );
 
 		const BxDF* bxdf = nullptr;
-#if IMPLEMENTED_SELECT_BXDF
 		int count = comp;
 		for ( const auto& bxdf_i : bxdfs )
 			if ( bxdf_i.MatchesFlags( type ) && count-- == 0 )
@@ -145,9 +161,6 @@ class BSDFStackMaterial : public MaterialIntf
 			}
 
 		assert( bxdf );
-#else
-		bxdf = &bxdfs[comp];
-#endif
 
 		sampledType = bxdf->type;
 		float3 wi;
@@ -175,11 +188,7 @@ class BSDFStackMaterial : public MaterialIntf
 											 : BxDFType::BSDF_TRANSMISSION;
 
 			for ( const auto& bxdf_i : bxdfs )
-				if ( bxdf != &bxdf_i
-#if IMPLEMENTED_SELECT_BXDF
-					 && bxdf_i.MatchesFlags( type )
-#endif
-				)
+				if ( bxdf != &bxdf_i && bxdf_i.MatchesFlags( type ) )
 				{
 					// Compute overall PDF with all matching _BxDF_s
 					pdf += bxdf_i.Pdf( wo, wi );
