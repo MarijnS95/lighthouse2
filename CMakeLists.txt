@@ -72,6 +72,10 @@ if(CMAKE_CUDA_COMPILER)
 	# Allow constexpr usage on the device, without __device__ (eg. std::max):
 	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
 
+	# https://docs.nvidia.com/cuda/cuda-memcheck/index.html#compilation-options
+	# Add lineinfo and symbols to the assembly, for improved debugging.
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo -Xcompiler -rdynamic")
+
 	# Include CUDA support headers:
 	add_subdirectory("lib/CUDA")
 
