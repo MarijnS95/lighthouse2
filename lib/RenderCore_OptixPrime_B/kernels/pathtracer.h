@@ -123,6 +123,11 @@ void shadeKernel( float4* accumulator, const uint stride,
 	const float3 I = RAY_O + HIT_T * D;
 	const float coneWidth = spreadAngle * HIT_T;
 
+	// TODO: PBRT Always has this as false
+	// TODO: Figure out where PBRT accounts for specular reflection/transmission
+	bool specular = false;
+	materials::BxDFType bsdfFlags = specular ? materials::BSDF_ALL : materials::BSDF_ALL_EXCEPT_SPECULAR;
+
 	// Switch between a directly-inlinable material, versus virtual material class:
 #if 1
 	materials::MaterialStore inplace_material;
@@ -207,7 +212,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 		if (NdotL > 0 && dot( fN, L ) > 0 && lightPdf > 0)
 		{
 			float bsdfPdf;
-			const float3 sampledBSDF = material.Evaluate( fN, T, D * -1.f, L, bsdfPdf );
+			const float3 sampledBSDF = material.Evaluate( fN, T, D * -1.f, L, bsdfFlags, bsdfPdf );
 			if (bsdfPdf > 0)
 			{
 				// calculate potential contribution
@@ -245,7 +250,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	}
 
 	materials::BxDFType sampledType;
-	const float3 bsdf = material.Sample( fN, N, T, D * -1.f, r3, r4,
+	const float3 bsdf = material.Sample( fN, N, T, D * -1.f, r3, r4, bsdfFlags,
 										 R, newBsdfPdf, sampledType );
 
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
