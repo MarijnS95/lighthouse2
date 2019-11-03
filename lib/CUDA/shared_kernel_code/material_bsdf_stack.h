@@ -2,60 +2,25 @@
 
 // #define NDEBUG
 
-#include <assert.h>
-
+#include "VariantStore.h"
 #include "bxdf.h"
 
 template <typename... BxDFs>
 class BSDFStackMaterial : public MaterialIntf
 {
-	using BSDFStorageType = typename StorageRequirement<BxDFs...>::type;
-
-	static constexpr auto max_elements = 8;
-	BSDFStorageType stack[max_elements];
-	int items = 0;
-
-  public:
-	__device__ BxDF& operator[]( size_t idx )
-	{
-		assert( idx < items );
-		return *(BxDF*)( stack + idx );
-	}
-
-	__device__ const BxDF& operator[]( size_t idx ) const
-	{
-		assert( idx < items );
-		return *(const BxDF*)( stack + idx );
-	}
-
-	__device__ void* Reserve()
-	{
-		assert( items < max_elements );
-		return stack + items++;
-	}
-
-	// Pass type to copy proper size:
-	template <typename T>
-	__device__ void Add( const T& bxdf )
-	{
-#if 0
-		assert( items < max_elements );
-		(T&)stack[items++] = bxdf;
-#else
-		*(T*)Reserve() = bxdf;
-#endif
-	}
+  protected:
+	VariantStore<BxDF, BxDFs...> bxdfs;
 
 	// ----------------------------------------------------------------
 
 	__device__ float Pdf( const float NDotV, const float NDotL ) const
 	{
-		int matches = items;
+		int matches = (int)bxdfs.size();
 		float pdf = 0.f;
-		for ( int i = 0; i < items; ++i )
+		for ( const auto& bxdf : bxdfs )
 		{
 			if ( true ) // TODO: Implement type matching here, if necessary
-				pdf += ( *this )[i].Pdf( NDotV, NDotL );
+				pdf += bxdf.Pdf( NDotV, NDotL );
 			else
 				matches -= 1;
 		}
@@ -65,7 +30,7 @@ class BSDFStackMaterial : public MaterialIntf
 
 	// ----------------------------------------------------------------
 	// Overrides:
-
+  public:
 	/**
 	 * Create BxDF stack
 	 */
@@ -121,9 +86,10 @@ class BSDFStackMaterial : public MaterialIntf
 		// };
 
 		float3 r = make_float3( 0.f );
-		for ( int i = 0; i < items; ++i )
+		for ( const auto& bxdf : bxdfs )
+			// for (int i=0;i<bxdfs.size();++i)
 			// TODO: Match based on reflect/transmit!
-			r += ( *this )[i].f( NDotV, NDotL );
+			r += bxdf.f( NDotV, NDotL );
 		return r;
 	}
 
@@ -140,7 +106,7 @@ class BSDFStackMaterial : public MaterialIntf
 
 		// TODO: Select bsdf based on comp !!AND!! match type
 
-		const int matchingComps = /* NumBxDFs( type ) */ items;
+		const int matchingComps = /* NumBxDFs( type ) */ (int)bxdfs.size();
 
 		if ( !matchingComps )
 			return make_float3( 0.f );
@@ -153,18 +119,16 @@ class BSDFStackMaterial : public MaterialIntf
 
 		const BxDF* bxdf = nullptr;
 		int count = comp;
-		for ( int i = 0; i < items; ++i )
-			if ( /* (*this)[i].MatchesFlags( type ) && */ count-- == 0 )
+		for ( const auto& bxdf_i : bxdfs )
+			if ( /* bxdf_i.MatchesFlags( type ) && */ count-- == 0 )
 			{
-				bxdf = &( *this )[i];
+				bxdf = &bxdf_i;
 				break;
 			}
 		assert( bxdf );
 
 		sampledType = bxdf->type;
 		auto f = bxdf->Sample_f( NDotV, wi, r3, r4, pdf, sampledType );
-
-		// wi = wiForType( stack.types[comp], r3, r4 );
 
 		// const float NDotL = dot( iN, wi );
 
