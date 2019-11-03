@@ -106,8 +106,8 @@ void shadeKernel( float4* accumulator, const uint stride,
 
 	// TODO: PBRT Always has this as false
 	// TODO: Figure out where PBRT accounts for specular reflection/transmission
-	bool specular = false;
-	materials::BxDFType bsdfFlags = specular ? materials::BSDF_ALL : materials::BSDF_ALL_EXCEPT_SPECULAR;
+	const bool specular = true;
+	const materials::BxDFType bsdfFlags = specular ? materials::BSDF_ALL : materials::BSDF_ALL_EXCEPT_SPECULAR;
 
 	const int materialIndex = GET_TRI_MATERIAL( instanceTriangles[PRIMIDX].v4 );
 	const CoreMaterialDesc matDesc = materialDescriptions[materialIndex];
