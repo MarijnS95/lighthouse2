@@ -302,6 +302,7 @@ class DisneyGltf : public BSDFStackMaterial<
 		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
 		float3& T,										   //		tangent vector
 		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
+		const bool allowMultipleLobes = true,			   // IN:	Integrator samples multiple lobes (optional)
 		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		) override
 	{
