@@ -5,7 +5,6 @@
 namespace materials
 {
 
-// BSDF Declarations
 enum /* class */ BxDFType : int
 {
 	BSDF_REFLECTION = 1 << 0,
@@ -15,6 +14,7 @@ enum /* class */ BxDFType : int
 	BSDF_SPECULAR = 1 << 4,
 	BSDF_ALL = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR | BSDF_REFLECTION |
 			   BSDF_TRANSMISSION,
+	BSDF_ALL_EXCEPT_SPECULAR = BSDF_ALL & ~BSDF_SPECULAR,
 };
 
 enum class TransportMode
@@ -45,9 +45,12 @@ class MaterialIntf : public HasPlacementNewOperator
 	__device__ virtual float3 Color() const = 0;
 
 	__device__ virtual float3 Evaluate( const float3 iN, const float3 T,
-										const float3 woWorld, const float3 wiWorld, float& pdf ) const = 0;
+										const float3 woWorld, const float3 wiWorld,
+										const BxDFType flags,
+										float& pdf ) const = 0;
 	__device__ virtual float3 Sample( float3 iN, const float3 N, const float3 T,
 									  const float3 woWorld, const float r3, const float r4,
+									  const BxDFType flags,
 									  float3& wiWorld, float& pdf,
 									  BxDFType& sampledType ) const = 0;
 };
