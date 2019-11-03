@@ -250,3 +250,11 @@ LH2_DEVFUNC float FrDielectric( float cosThetaI, float etaI, float etaT )
 				  ( ( etaI * cosThetaI ) + ( etaT * cosThetaT ) );
 	return ( Rparl * Rparl + Rperp * Rperp ) / 2;
 }
+
+// ----------------------------------------------------------------
+// float3 additions
+
+LH2_DEVFUNC bool IsBlack( const float3& v )
+{
+	return v.x + v.y + v.z == 0.f;
+}

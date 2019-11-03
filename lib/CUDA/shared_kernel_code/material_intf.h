@@ -36,6 +36,7 @@ class MaterialIntf : public HasPlacementNewOperator
 		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
 		float3& T,										   //		tangent vector
 		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
+		const bool allowMultipleLobes = true,			   // IN:	Integrator samples multiple lobes (optional)
 		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		) = 0;
 
@@ -66,7 +67,9 @@ class MaterialIntf : public HasPlacementNewOperator
 #include "pbrt/materials.h"
 
 // WARNING: When adding a new material type, it _MUST_ be listed here!
-using MaterialStoreReq = StorageRequirement<pbrt::DisneyGltf, DisneyMaterial>;
+using MaterialStoreReq = StorageRequirement<DisneyMaterial,
+											pbrt::DisneyGltf,
+											pbrt::Glass>;
 using MaterialStore = MaterialStoreReq::type;
 
 // NOTE: Materialstore is a pointer-type (array) by design
@@ -102,6 +105,9 @@ LH2_DEVFUNC MaterialIntf* GetMaterial( MaterialStore inplace, const CoreMaterial
 		// case MaterialType::PBRT_DISNEY:
 		// TODO:
 		// 	return CreateMaterial<PbrtDisneyMaterial>( inplace );
+
+	case MaterialType::PBRT_GLASS:
+		return CreateMaterial<pbrt::Glass>( inplace );
 	}
 
 	// Unknown material:
