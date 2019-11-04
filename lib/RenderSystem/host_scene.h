@@ -67,7 +67,7 @@ public:
 	static vector<HostSkin*> skins;
 	static vector<HostAnimation*> animations;
 	static vector<int> instances; // list of indices of nodes that point to a mesh
-	static vector<HostMaterial*> materials;
+	static vector<DynamicHostMaterial*> materials;
 	static vector<HostTexture*> textures;
 	static vector<HostAreaLight*> areaLights;
 	static vector<HostPointLight*> pointLights;

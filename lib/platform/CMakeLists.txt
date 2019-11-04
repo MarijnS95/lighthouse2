@@ -4,7 +4,9 @@ file(GLOB sources "*.cpp")
 file(GLOB headers "*.h")
 add_library(${PROJECT_NAME} ${sources} ${headers})
 set_target_properties(${PROJECT_NAME} PROPERTIES
-	CXX_STANDARD 11
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF
 	POSITION_INDEPENDENT_CODE ON
 )
 

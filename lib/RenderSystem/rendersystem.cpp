@@ -88,29 +88,31 @@ void RenderSystem::SynchronizeMaterials()
 		materialsDirty = true;
 		// if the change is/includes a change of the material alpha flag, mark all
 		// meshes using this material as dirty as well.
-		if (material->AlphaChanged()) for (auto mesh : scene->meshes)
-		{
-			for (int s = (int)mesh->materialList.size(), i = 0; i < s; i++) if (mesh->materialList[i] == material->ID)
-			{
-				mesh->MarkAsDirty();
-				break;
-			}
-		}
+		// if (material->AlphaChanged())
+		// for (auto mesh : scene->meshes)
+		// {
+		// 	for (int s = (int)mesh->materialList.size(), i = 0; i < s; i++) if (mesh->materialList[i] == material->ID)
+		// 	{
+		// 		mesh->MarkAsDirty();
+		// 		break;
+		// 	}
+		// }
 	}
 	if (materialsDirty)
 	{
 		// send material data to core
-		vector<CoreMaterial> gpuMaterial;
-		vector<CoreMaterialEx> gpuMaterialEx;
-		for (auto material : scene->materials)
-		{
-			CoreMaterial m;
-			CoreMaterialEx e;
-			material->ConvertTo( m, e );
-			gpuMaterial.push_back( m );
-			gpuMaterialEx.push_back( e );
-		}
-		core->SetMaterials( gpuMaterial.data(), gpuMaterialEx.data(), (int)gpuMaterial.size() );
+		// vector<CoreMaterial> gpuMaterial;
+		// vector<CoreMaterialEx> gpuMaterialEx;
+		// for (auto material : scene->materials)
+		// {
+		// 	CoreMaterial m;
+		// 	CoreMaterialEx e;
+		// 	material->ConvertTo( m, e );
+		// 	gpuMaterial.push_back( m );
+		// 	gpuMaterialEx.push_back( e );
+		// }
+		// core->SetMaterials( gpuMaterial.data(), gpuMaterialEx.data(), (int)gpuMaterial.size() );
+		core->SetMaterials( scene->materials );
 	}
 }
 

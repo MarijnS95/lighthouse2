@@ -287,7 +287,7 @@ void HostMesh::LoadGeometryFromOBJ( const string& fileName, const char* director
 			tri.invArea = 0; // todo
 			tri.alpha = make_float3( alphas[nidx0], tri.alpha.y = alphas[nidx1], tri.alpha.z = alphas[nidx2] );
 			// calculate triangle LOD data
-			HostMaterial* mat = HostScene::materials[tri.material];
+			HostMaterial* mat = (HostMaterial*)HostScene::materials[tri.material];
 			int textureID = mat->map[TEXTURE0].textureID;
 			if (textureID > -1)
 			{
@@ -598,18 +598,18 @@ void HostMesh::BuildFromIndexedData( const vector<int>& tmpIndices, const vector
 void HostMesh::BuildMaterialList()
 {
 	// mark all materials as 'not seen yet'
-	for (auto material : HostScene::materials) material->visited = false;
-	// add each material
-	materialList.clear();
-	for (auto tri : triangles)
-	{
-		HostMaterial* material = HostScene::materials[tri.material];
-		if (!material->visited)
-		{
-			material->visited = true;
-			materialList.push_back( material->ID );
-		}
-	}
+	// for (auto material : HostScene::materials) material->visited = false;
+	// // add each material
+	// materialList.clear();
+	// for (auto tri : triangles)
+	// {
+	// 	HostMaterial* material = HostScene::materials[tri.material];
+	// 	if (!material->visited)
+	// 	{
+	// 		material->visited = true;
+	// 		materialList.push_back( material->ID );
+	// 	}
+	// }
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -625,7 +625,7 @@ void HostMesh::UpdateAlphaFlags()
 	const uint triCount = (uint)triangles.size();
 	if (alphaFlags.size() != triCount) alphaFlags.resize( triCount, 0 );
 	for (uint i = 0; i < triCount; i++)
-		if (HostScene::materials[triangles[i].material]->flags & HostMaterial::HASALPHA)
+		if (((HostMaterial*)HostScene::materials[triangles[i].material])->flags & HostMaterial::HASALPHA)
 			alphaFlags[i] = 1;
 }
 
