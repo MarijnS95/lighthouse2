@@ -69,59 +69,60 @@ class MaterialIntf : public HasPlacementNewOperator
 #include "material_disney.h"
 #include "pbrt/materials.h"
 
-// WARNING: When adding a new material type, it _MUST_ be listed here!
-using MaterialStoreReq = StorageRequirement<DisneyMaterial,
-											pbrt::DisneyGltf,
-											pbrt::Glass,
-											pbrt::Substrate,
-											pbrt::Mirror>;
-using MaterialStore = MaterialStoreReq::type;
+template <MaterialType _MaterialType, typename _type>
+struct Case
+{
+	static constexpr auto MaterialType = _MaterialType;
+	using type = _type;
+};
+
+template <typename... Cases>
+struct MaterialSwitch
+{
+	using MaterialStoreReq = StorageRequirement<typename Cases::type...>;
+	using MaterialStore = typename MaterialStoreReq::type;
+
+	__device__ static MaterialIntf* run( MaterialStore inplace, const MaterialType type )
+	{
+#if 1
+		// initializer_list approach is pretty much as optimal as a hardcoded
+		// switch-case. std::max - while more readable - produces less optimal PTX
+		// https://cuda.godbolt.org/z/MxVcJY
+		MaterialIntf* res = nullptr;
+		std::initializer_list<MaterialIntf*>( {( type == Cases::MaterialType ? res = new ( inplace ) typename Cases::type() : nullptr )...} );
+		return res;
+#else
+		return std::max( {( type == Cases::MaterialType ? (MaterialIntf*)new ( inplace ) typename Cases::type() : nullptr )...} );
+#endif
+	}
+};
+
+/**
+ * List of supported materials and their enumeration value.
+ *
+ * If you add a new material, _list it here_.
+ */
+using Materials = MaterialSwitch<
+#if 1
+	// Implement the gltf-extracted material through PBRT BxDFs
+	Case<MaterialType::DISNEY, pbrt::DisneyGltf>,
+#else
+	Case<MaterialType::DISNEY, DisneyMaterial>,
+#endif
+	Case<MaterialType::PBRT_GLASS, pbrt::Glass>,
+	Case<MaterialType::PBRT_MIRROR, pbrt::Mirror>,
+	Case<MaterialType::PBRT_SUBSTRATE, pbrt::Substrate>,
+	>;
+
+using MaterialStore = Materials::MaterialStore;
 
 // NOTE: Materialstore is a pointer-type (array) by design
 static_assert( std::is_array<MaterialStore>::value, "MaterialStore must be an array" );
 static_assert( std::is_pointer<std::decay_t<MaterialStore>>::value, "Decayed material store must be an array" );
 
-/**
- * Inplace new wrapper that validates whether T fits in the MaterialStore
- */
-template <typename T>
-LH2_DEVFUNC MaterialIntf* CreateMaterial( MaterialStore inplace )
-{
-	static_assert( MaterialStoreReq::HasType<T>(), "Requested material does not fit in the MaterialStore!" );
-	return new ( inplace ) T();
-}
-
 LH2_DEVFUNC MaterialIntf* GetMaterial( MaterialStore inplace, const CoreMaterialDesc& matDesc )
 {
-	// Call placement new operator to set up vtables.
-
-	switch ( matDesc.type )
-	{
-	case MaterialType::DISNEY:
-		// Implement the gltf-extracted material through PBRT BxDFs
-		// (WARNING: No 1-1 mapping!)
-#if 1
-		return CreateMaterial<pbrt::DisneyGltf>( inplace );
-#else
-		return CreateMaterial<DisneyMaterial>( inplace );
-#endif
-		// case MaterialType::CUSTOM_BSDF:
-		// 	return CreateMaterial<BSDFMaterial>( inplace );
-		// case MaterialType::PBRT_DISNEY:
-		// TODO:
-		// 	return CreateMaterial<PbrtDisneyMaterial>( inplace );
-
-	case MaterialType::PBRT_GLASS:
-		return CreateMaterial<pbrt::Glass>( inplace );
-
-	case MaterialType::PBRT_MIRROR:
-		return CreateMaterial<pbrt::Mirror>( inplace );
-
-	case MaterialType::PBRT_SUBSTRATE:
-		return CreateMaterial<pbrt::Substrate>( inplace );
-	}
-
-	// Unknown material:
-	return nullptr;
+	// Evaluate templated switch case
+	return Materials::run( inplace, matDesc.type );
 }
 }; // namespace materials
