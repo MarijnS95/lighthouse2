@@ -187,7 +187,7 @@ void RenderCore::SetTarget( GLTexture* target, const uint spp )
 		delete shadowRayPotential;
 		delete shadowHitBuffer;
 		delete accumulator;
-		const uint maxShadowRays = maxPixels * spp * MAXPATHLENGTH; // upper limit; safe but wasteful
+		const uint maxShadowRays = maxPixels * spp; // upper limit; safe but wasteful
 		extensionHitBuffer = new CoreBuffer<Intersection>( maxPixels * spp, ON_DEVICE );
 		shadowRayBuffer = new CoreBuffer<Ray4>( maxShadowRays, ON_DEVICE );
 		shadowRayPotential = new CoreBuffer<float4>( maxShadowRays, ON_DEVICE ); // .w holds pixel index
