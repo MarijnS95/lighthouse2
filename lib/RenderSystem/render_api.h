@@ -52,8 +52,8 @@ public:
 	Camera* GetCamera();
 	RenderSettings* GetSettings();
 	int GetTriangleMaterialID( const int coreInstId, const int coreTriId );
-	HostMaterial* GetTriangleMaterial( const int coreInstId, const int coreTriId );
-	HostMaterial* GetMaterial( const int matId );
+	DynamicHostMaterial*& GetTriangleMaterial( const int coreInstId, const int coreTriId );
+	DynamicHostMaterial*& GetMaterial( const int matId );
 	int FindNode( const char* name );
 	int FindMaterialID( const char* name );
 	int AddMaterial( const float3 color );

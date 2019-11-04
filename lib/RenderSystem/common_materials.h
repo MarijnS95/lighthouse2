@@ -1,5 +1,7 @@
 #pragma once
 
+typedef uint32_t CoreMaterialChunk;
+
 namespace common
 {
 namespace materials

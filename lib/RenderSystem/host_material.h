@@ -22,38 +22,42 @@ namespace lighthouse2
 //  |  HostMaterial                                                               |
 //  |  Host-side material definition.                                       LH2'19|
 //  +-----------------------------------------------------------------------------+
-class HostMaterial
+class HostMaterial : public DynamicHostMaterial_T<HostMaterial, MaterialType::DISNEY>
 {
-public:
+  public:
 	struct MapProps
 	{
-		int textureID = -1;						// texture ID; -1 denotes empty slot
-		float valueScale = 1;					// texture value scale, only sensible for normal maps
-		float2 uvscale = make_float2( 1 );		// uv coordinate scale
-		float2 uvoffset = make_float2( 0 );		// uv coordinate offset
+		int textureID = -1;					// texture ID; -1 denotes empty slot
+		float valueScale = 1;				// texture value scale, only sensible for normal maps
+		float2 uvscale = make_float2( 1 );  // uv coordinate scale
+		float2 uvoffset = make_float2( 0 ); // uv coordinate offset
 	};
 	// constructor / destructor
 	HostMaterial() = default;
 	// methods
+	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener ) const override;
+	void CollectMaps( CoreMaterialEx& gpuMatEx ) const override;
+
 	void ConvertFrom( const tinyobjMaterial& );
 	void ConvertFrom( const tinygltfMaterial&, const tinygltfModel&, const int textureBase );
-	void ConvertTo( CoreMaterial&, CoreMaterialEx& ) const;
+	void ConvertTo( CoreMaterial& ) const;
+
 	// data members
 	enum
 	{
-		SMOOTH = 1,								// material uses normal interpolation
-		HASALPHA = 2,							// material textures use alpha channel
-		ANISOTROPIC = 4,						// material has anisotropic roughness
-		FROM_MTL = 128,							// changes are persistent for these, not for others
-		ISCONDUCTOR = 256,						// rough conductor
-		ISDIELECTRIC = 512						// rough dielectric. If 256 and 512 not specified: diffuse.
+		SMOOTH = 1,		   // material uses normal interpolation
+		HASALPHA = 2,	  // material textures use alpha channel
+		ANISOTROPIC = 4,   // material has anisotropic roughness
+		FROM_MTL = 128,	// changes are persistent for these, not for others
+		ISCONDUCTOR = 256, // rough conductor
+		ISDIELECTRIC = 512 // rough dielectric. If 256 and 512 not specified: diffuse.
 	};
 	// identifier and name
-	string name = "unnamed";					// material name, not for unique identification
-	string origin;								// origin: file from which the data was loaded, with full path
-	int ID = -1;								// unique integer ID of this material
-	uint flags = SMOOTH;						// material properties
-	uint refCount = 1;							// the number of models that use this material
+	string name = "unnamed"; // material name, not for unique identification
+	string origin;			 // origin: file from which the data was loaded, with full path
+	int ID = -1;			 // unique integer ID of this material
+	uint flags = SMOOTH;	 // material properties
+	uint refCount = 1;		 // the number of models that use this material
 	// maps and colors
 	float3 color = make_float3( 1 );
 	float3 absorption = make_float3( 0 );
@@ -73,20 +77,21 @@ public:
 	float custom1 = 0.0f;
 	float custom2 = 0.0f;
 	float custom3 = 0.0f;
-	MapProps map[11];							// bitmap data
+	MapProps map[11]; // bitmap data
 	// field for the BuildMaterialList method of HostMesh
-	bool visited = false;						// last mesh that checked this material
+	bool visited = false; // last mesh that checked this material
 	bool AlphaChanged()
 	{
 		// A change to the alpha flag should trigger a change to any mesh using this flag as
 		// well. This method allows us to track this.
-		const bool changed = (flags & HASALPHA) != (prevFlags & HASALPHA);
+		const bool changed = ( flags & HASALPHA ) != ( prevFlags & HASALPHA );
 		prevFlags = flags;
 		return changed;
 	}
-private:
-	uint prevFlags = SMOOTH;					// initially identical to flags
-	TRACKCHANGES;								// add Changed(), MarkAsDirty() methods, see system.h
+
+  private:
+	uint prevFlags = SMOOTH; // initially identical to flags
+	TRACKCHANGES;			 // add Changed(), MarkAsDirty() methods, see system.h
 };
 
 } // namespace lighthouse2

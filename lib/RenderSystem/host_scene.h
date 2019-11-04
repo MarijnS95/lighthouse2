@@ -91,7 +91,7 @@ public:
 	static vector<HostMesh*> meshPool;
 	static vector<HostSkin*> skins;
 	static vector<HostAnimation*> animations;
-	static vector<HostMaterial*> materials;
+	static vector<DynamicHostMaterial*> materials;
 	static vector<HostTexture*> textures;
 	static vector<HostAreaLight*> areaLights;
 	static vector<HostPointLight*> pointLights;

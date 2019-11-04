@@ -59,7 +59,8 @@ public:
 	// passing data. Note: RenderCore always copies what it needs; the passed data thus remains the
 	// property of the caller, and can be safely deleted or modified as soon as these calls return.
 	void SetTextures( const CoreTexDesc* tex, const int textureCount );
-	void SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount ); // textures must be in sync when calling this
+	// void SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount ); // textures must be in sync when calling this
+	void SetMaterials( const std::vector<DynamicHostMaterial*>& materials ) override;
 	void SetLights( const CoreLightTri* areaLights, const int areaLightCount,
 		const CorePointLight* pointLights, const int pointLightCount,
 		const CoreSpotLight* spotLights, const int spotLightCount,
@@ -74,7 +75,6 @@ public:
 	void UpdateToplevel();
 	int4 GetScreenParams();
 	void SetProbePos( const int2 pos );
-	CoreMaterial& GetCoreMaterial( int materialIdx ) { return materialBuffer->HostPtr()[materialIdx]; }
 	CoreStats GetCoreStats() const override;
 
 	// internal methods
@@ -91,10 +91,9 @@ private:
 	vector<CoreInstance*> instances;					// list of instances: model id plus transform
 	bool instancesDirty = true;						// we need to sync the instance array to the device
 	InteropTexture renderTarget;					// CUDA will render to this texture
-	CoreBuffer<CoreMaterial>* materialBuffer = 0;	// material array
+	CoreBuffer<CoreMaterialChunk>* materialBuffer = 0;	// material array
 	CoreBuffer<CoreMaterialDesc>*
 		materialDescBuffer = 0;						// material descriptors
-	CoreMaterial* hostMaterialBuffer = 0;			// core-managed host-side copy of the materials for alpha tris
 	CoreBuffer<CoreLightTri>* areaLightBuffer;		// area lights
 	CoreBuffer<CorePointLight>* pointLightBuffer;	// point lights
 	CoreBuffer<CoreSpotLight>* spotLightBuffer;		// spot lights

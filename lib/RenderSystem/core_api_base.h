@@ -97,7 +97,8 @@ public:
 	// SetTextures: update the texture data in the RenderCore using the supplied data.
 	virtual void SetTextures( const CoreTexDesc* tex, const int textureCount ) = 0;
 	// SetMaterials: update the material list used by the RenderCore. Textures referenced by the materials must be set in advance.
-	virtual void SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount ) = 0;
+	// virtual void SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount ) = 0;
+	virtual void SetMaterials( const std::vector<DynamicHostMaterial*>& materials ) = 0;
 	// SetLights: update the point lights, spot lights and directional lights.
 	virtual void SetLights( const CoreLightTri* areaLights, const int areaLightCount,
 		const CorePointLight* pointLights, const int pointLightCount,

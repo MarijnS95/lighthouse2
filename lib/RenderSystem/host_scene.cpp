@@ -22,7 +22,7 @@ vector<HostNode*> HostScene::nodePool;
 vector<HostMesh*> HostScene::meshPool;
 vector<HostSkin*> HostScene::skins;
 vector<HostAnimation*> HostScene::animations;
-vector<HostMaterial*> HostScene::materials;
+vector<DynamicHostMaterial*> HostScene::materials;
 vector<HostTexture*> HostScene::textures;
 vector<HostAreaLight*> HostScene::areaLights;
 vector<HostPointLight*> HostScene::pointLights;
@@ -66,44 +66,49 @@ void HostScene::SerializeMaterials( const char* xmlFile )
 	((XMLElement*)root->InsertEndChild( doc.NewElement( "material_count" ) ))->SetText( materialCount );
 	for (uint s = (uint)materials.size(), i = 0; i < s; i++)
 	{
+		auto material = dynamic_cast<HostMaterial*>(materials[i]);
+
+		if (!material)
+			continue;
+
 		// skip materials that were created at runtime
-		if ((materials[i]->flags & HostMaterial::FROM_MTL) == 0) continue;
+		if ((material->flags & HostMaterial::FROM_MTL) == 0) continue;
 		// create a new entry for the material
 		char entryName[128];
 		snprintf( entryName, sizeof( entryName ), "material_%i", i );
 		XMLNode* materialEntry = doc.NewElement( entryName );
 		root->InsertEndChild( materialEntry );
 		// store material properties
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "name" ) ))->SetText( materials[i]->name.c_str() );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "origin" ) ))->SetText( materials[i]->origin.c_str() );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "id" ) ))->SetText( materials[i]->ID );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "flags" ) ))->SetText( materials[i]->flags );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "name" ) ))->SetText( material->name.c_str() );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "origin" ) ))->SetText( material->origin.c_str() );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "id" ) ))->SetText( material->ID );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "flags" ) ))->SetText( material->flags );
 		XMLElement* diffuse = doc.NewElement( "color" );
-		diffuse->SetAttribute( "b", materials[i]->color.z );
-		diffuse->SetAttribute( "g", materials[i]->color.y );
-		diffuse->SetAttribute( "r", materials[i]->color.x );
+		diffuse->SetAttribute( "b", material->color.z );
+		diffuse->SetAttribute( "g", material->color.y );
+		diffuse->SetAttribute( "r", material->color.x );
 		(XMLElement*)materialEntry->InsertEndChild( diffuse );
 		XMLElement* absorption = doc.NewElement( "absorption" );
-		absorption->SetAttribute( "b", materials[i]->absorption.z );
-		absorption->SetAttribute( "g", materials[i]->absorption.y );
-		absorption->SetAttribute( "r", materials[i]->absorption.x );
+		absorption->SetAttribute( "b", material->absorption.z );
+		absorption->SetAttribute( "g", material->absorption.y );
+		absorption->SetAttribute( "r", material->absorption.x );
 		(XMLElement*)materialEntry->InsertEndChild( absorption );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "metallic" ) ))->SetText( materials[i]->metallic );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "subsurface" ) ))->SetText( materials[i]->subsurface );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "specular" ) ))->SetText( materials[i]->specular );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "roughness" ) ))->SetText( materials[i]->roughness );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "specularTint" ) ))->SetText( materials[i]->specularTint );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "anisotropic" ) ))->SetText( materials[i]->anisotropic );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "sheen" ) ))->SetText( materials[i]->sheen );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "sheenTint" ) ))->SetText( materials[i]->sheenTint );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "clearcoat" ) ))->SetText( materials[i]->clearcoat );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "clearcoatGloss" ) ))->SetText( materials[i]->clearcoatGloss );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "transmission" ) ))->SetText( materials[i]->transmission );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "eta" ) ))->SetText( materials[i]->eta );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom0" ) ))->SetText( materials[i]->custom0 );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom1" ) ))->SetText( materials[i]->custom1 );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom2" ) ))->SetText( materials[i]->custom2 );
-		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom3" ) ))->SetText( materials[i]->custom3 );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "metallic" ) ))->SetText( material->metallic );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "subsurface" ) ))->SetText( material->subsurface );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "specular" ) ))->SetText( material->specular );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "roughness" ) ))->SetText( material->roughness );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "specularTint" ) ))->SetText( material->specularTint );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "anisotropic" ) ))->SetText( material->anisotropic );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "sheen" ) ))->SetText( material->sheen );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "sheenTint" ) ))->SetText( material->sheenTint );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "clearcoat" ) ))->SetText( material->clearcoat );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "clearcoatGloss" ) ))->SetText( material->clearcoatGloss );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "transmission" ) ))->SetText( material->transmission );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "eta" ) ))->SetText( material->eta );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom0" ) ))->SetText( material->custom0 );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom1" ) ))->SetText( material->custom1 );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom2" ) ))->SetText( material->custom2 );
+		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom3" ) ))->SetText( material->custom3 );
 	}
 	doc.SaveFile( xmlFile );
 }
@@ -126,7 +131,10 @@ void HostScene::DeserializeMaterials( const char* xmlFile )
 	for (int i = 0; i < materialCount; i++)
 	{
 		// find the entry for the material
-		HostMaterial* m /* for brevity */ = materials[i];
+		HostMaterial* m = dynamic_cast<HostMaterial*>( materials[i] );
+		if (!m)
+			continue;
+
 		char entryName[128];
 		snprintf( entryName, sizeof( entryName ), "material_%i", i );
 		XMLNode* entry = root->FirstChildElement( entryName );
@@ -282,7 +290,7 @@ int HostScene::AddScene( const char* sceneFile, const char* dir, const mat4& tra
 	for (size_t s = gltfModel.materials.size(), i = 0; i < s; i++)
 	{
 		tinygltf::Material& gltfMaterial = gltfModel.materials[i];
-		HostMaterial* material = new HostMaterial();
+		auto material = new HostMaterial();
 		material->ID = (int)i + materialBase;
 		material->origin = cleanFileName;
 		material->ConvertFrom( gltfMaterial, gltfModel, textureBase );
@@ -480,15 +488,16 @@ int HostScene::FindOrCreateTexture( const string& origin, const uint modFlags )
 int HostScene::FindOrCreateMaterial( const string& name )
 {
 	// search list for existing texture
-	for (auto material : materials) if (material->name.compare( name ) == 0)
-	{
-		material->refCount++;
-		return material->ID;
-	}
-	// nothing found, create a new texture
-	const int newID = AddMaterial( make_float3( 0 ) );
-	materials[newID]->name = name;
-	return newID;
+	// for (auto material : materials) if (material->name.compare( name ) == 0)
+	// {
+	// 	material->refCount++;
+	// 	return material->ID;
+	// }
+	// // nothing found, create a new texture
+	// const int newID = AddMaterial( make_float3( 0 ) );
+	// materials[newID]->name = name;
+	// return newID;
+	return -1;
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -497,7 +506,7 @@ int HostScene::FindOrCreateMaterial( const string& name )
 //  +-----------------------------------------------------------------------------+
 int HostScene::FindMaterialID( const char* name )
 {
-	for (auto material : materials) if (material->name.compare( name ) == 0) return material->ID;
+	// for (auto material : materials) if (material->name.compare( name ) == 0) return material->ID;
 	return -1;
 }
 
@@ -560,7 +569,7 @@ int HostScene::CreateTexture( const string& origin, const uint modFlags )
 //  +-----------------------------------------------------------------------------+
 int HostScene::AddMaterial( const float3 color )
 {
-	HostMaterial* material = new HostMaterial();
+	auto material = new HostMaterial();
 	material->color = color;
 	material->ID = (int)materials.size();
 	materials.push_back( material );

@@ -14,7 +14,6 @@ if(MSVC)
 	# Prevent CUDA projects from inheriting this flag.
 	target_compile_options(${PROJECT_NAME} PRIVATE /MP)
 endif()
-
 # External dependencies, PUBLIC because exposed through header:
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	tinyxml2
