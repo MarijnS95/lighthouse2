@@ -31,6 +31,12 @@
 
 #pragma once
 
+// TODO: Add compile-test for hexadecimal floating point constants, then use:
+// static constexpr float FloatOneMinusEpsilon = 0x1.fffffep-1;
+// Cannot use `static constexpr' unfortunately:
+// https://stackoverflow.com/questions/39771489/nvcc-compiler-recognizes-static-constexpr-as-undefined-in-device-code
+#define OneMinusEpsilon ( 1.f - EPSILON )
+
 // This file contains PBRT-specific functions
 
 // BSDF Inline Functions
@@ -153,6 +159,8 @@ LH2_DEVFUNC float SphericalPhi( const float3& v )
 }
 
 // ----------------------------------------------------------------
+
+LH2_DEVFUNC float Radians( float deg ) { return ( PI / 180.f ) * deg; }
 
 LH2_DEVFUNC float ErfInv( float x )
 {
