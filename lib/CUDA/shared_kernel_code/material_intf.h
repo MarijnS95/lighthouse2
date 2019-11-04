@@ -69,7 +69,8 @@ class MaterialIntf : public HasPlacementNewOperator
 // WARNING: When adding a new material type, it _MUST_ be listed here!
 using MaterialStoreReq = StorageRequirement<DisneyMaterial,
 											pbrt::DisneyGltf,
-											pbrt::Glass>;
+											pbrt::Glass,
+											pbrt::Substrate>;
 using MaterialStore = MaterialStoreReq::type;
 
 // NOTE: Materialstore is a pointer-type (array) by design
@@ -108,6 +109,9 @@ LH2_DEVFUNC MaterialIntf* GetMaterial( MaterialStore inplace, const CoreMaterial
 
 	case MaterialType::PBRT_GLASS:
 		return CreateMaterial<pbrt::Glass>( inplace );
+
+	case MaterialType::PBRT_SUBSTRATE:
+		return CreateMaterial<pbrt::Substrate>( inplace );
 	}
 
 	// Unknown material:
