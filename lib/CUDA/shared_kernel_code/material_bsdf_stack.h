@@ -154,7 +154,7 @@ class BSDFStackMaterial : public MaterialIntf
 		const int comp = min( (int)floor( r3 * matchingComps ), matchingComps - 1 );
 
 		// Rescale r3:
-		r3 = min( r3 * matchingComps - comp, 1.f - EPSILON );
+		r3 = min( r3 * matchingComps - comp, OneMinusEpsilon );
 
 		const BxDF* bxdf = nullptr;
 		int count = comp;

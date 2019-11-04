@@ -31,6 +31,204 @@
 
 #pragma once
 
+template <typename _BxDF>
+class ScaledBxDF : public BxDF_T<ScaledBxDF<_BxDF>,
+								 _BxDF::type>
+{
+	const _BxDF bxdf;
+	const float3 scale;
+
+  public:
+	__device__ ScaledBxDF( const BxDF& bxdf, const float3& scale )
+		: bxdf( bxdf ), scale( scale ) {}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		return scale * bxdf.f( wo, wi );
+	}
+
+	__device__ float3 Sample_f( const float3 wo, float3& wi,
+								const float r0, const float r1,
+								float& pdf, BxDFType& sampledType ) const override
+	{
+		return scale * bxdf.Sample_f( wo, wi, r0, r1, pdf, sampledType );
+	}
+
+	__device__ float Pdf( const float3& wo, const float3& wi ) const override
+	{
+		return bxdf.Pdf( wo, wi );
+	}
+};
+
+template <typename Fresnel_T>
+class SpecularReflection : public BxDF_T<SpecularReflection<Fresnel_T>,
+										 BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_SPECULAR )>
+{
+	const float3 R;
+	const Fresnel_T fresnel;
+
+  public:
+	__device__ SpecularReflection( const float3& R, const Fresnel_T& fresnel ) : R( R ), fresnel( fresnel )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		return make_float3( 0.f );
+	}
+
+	__device__ float3 Sample_f( const float3 wo, float3& wi,
+								const float r0, const float r1,
+								float& pdf, BxDFType& sampledType ) const override
+	{
+		// Compute perfect specular reflection direction
+		wi = make_float3( -wo.x, -wo.y, wo.z );
+		pdf = 1.f;
+		return fresnel.Evaluate( CosTheta( wi ) ) * R / AbsCosTheta( wi );
+	}
+
+	__device__ float Pdf( const float3& wo, const float3& wi ) const override
+	{
+		return 0.f;
+	}
+};
+
+class SpecularTransmission : public BxDF_T<SpecularTransmission,
+										   BxDFType( BxDFType::BSDF_TRANSMISSION | BxDFType::BSDF_SPECULAR )>
+{
+	const float3 T;
+	const float etaA, etaB;
+	const TransportMode mode;
+
+  public:
+	__device__ SpecularTransmission( const float3& T,
+									 const float etaA, const float etaB,
+									 const TransportMode mode )
+		: T( T ),
+		  etaA( etaA ),
+		  etaB( etaB ),
+		  mode( mode )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		return make_float3( 0.f );
+	}
+
+	__device__ float3 Sample_f( const float3 wo, float3& wi,
+								const float r0, const float r1,
+								float& pdf, BxDFType& sampledType ) const override
+	{
+		// Figure out which $\eta$ is incident and which is transmitted
+		const bool entering = CosTheta( wo ) > 0;
+		const float etaI = entering ? etaA : etaB;
+		const float etaT = entering ? etaB : etaA;
+
+		// Compute ray direction for specular transmission
+		if ( !pbrt_Refract( wo, Faceforward( make_float3( 0, 0, 1 ), wo ), etaI / etaT, wi ) )
+			return make_float3( 0.f );
+		pdf = 1.f;
+
+		float f = 1.f - FrDielectric( CosTheta( wi ), etaA, etaB );
+		// Account for non-symmetry with transmission to different medium
+		if ( mode == TransportMode::Radiance ) f *= ( etaI * etaI ) / ( etaT * etaT );
+		return ( T * f / AbsCosTheta( wi ) );
+	}
+
+	__device__ float Pdf( const float3& wo, const float3& wi ) const override
+	{
+		return 0.f;
+	}
+};
+
+class FresnelSpecular : public BxDF_T<FresnelSpecular,
+									  BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_TRANSMISSION | BxDFType::BSDF_SPECULAR )>
+{
+	const float3 R, T;
+	const float etaA, etaB;
+	const TransportMode mode;
+
+  public:
+	__device__ FresnelSpecular( const float3& R,
+								const float3& T,
+								const float etaA, const float etaB,
+								const TransportMode mode )
+		: R( R ),
+		  T( T ),
+		  etaA( etaA ),
+		  etaB( etaB ),
+		  mode( mode )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		return make_float3( 0.f );
+	}
+
+	__device__ float3 Sample_f( const float3 wo, float3& wi,
+								const float r0, const float r1,
+								float& pdf, BxDFType& sampledType ) const override
+	{
+		const float F = FrDielectric( CosTheta( wo ), etaA, etaB );
+		if ( r0 < F )
+		{
+			// Compute specular reflection for _FresnelSpecular_
+
+			// Compute perfect specular reflection direction
+			wi = make_float3( -wo.x, -wo.y, wo.z );
+			sampledType = BxDFType( BSDF_SPECULAR | BSDF_REFLECTION );
+			pdf = F;
+			return F * R / AbsCosTheta( wi );
+		}
+		else
+		{
+			// Compute specular transmission for _FresnelSpecular_
+
+			// Figure out which $\eta$ is incident and which is transmitted
+			bool entering = CosTheta( wo ) > 0;
+			const float etaI = entering ? etaA : etaB;
+			const float etaT = entering ? etaB : etaA;
+
+			// Compute ray direction for specular transmission
+			if ( !pbrt_Refract( wo, Faceforward( make_float3( 0, 0, 1 ), wo ), etaI / etaT, wi ) )
+				return make_float3( 0 );
+			float3 ft = T * ( 1.f - F );
+
+			// Account for non-symmetry with transmission to different medium
+			if ( mode == TransportMode::Radiance )
+				ft *= ( etaI * etaI ) / ( etaT * etaT );
+			sampledType = BxDFType( BSDF_SPECULAR | BSDF_TRANSMISSION );
+
+			pdf = 1.f - F;
+			return ft / AbsCosTheta( wi );
+		}
+	}
+
+	__device__ float Pdf( const float3& wo, const float3& wi ) const override
+	{
+		return 0.f;
+	}
+};
+
+class LambertianReflection : public BxDF_T<LambertianReflection,
+										   BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_DIFFUSE )>
+{
+	const float3 R;
+
+  public:
+	__device__ LambertianReflection( const float3& R )
+		: R( R )
+	{
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		return R * INVPI;
+	}
+};
+
 class LambertianTransmission : public BxDF_T<LambertianTransmission, BxDFType( BxDFType::BSDF_TRANSMISSION | BxDFType::BSDF_DIFFUSE )>
 {
 	const float3 T;
@@ -58,6 +256,52 @@ class LambertianTransmission : public BxDF_T<LambertianTransmission, BxDFType( B
 	__device__ float Pdf( const float3& wo, const float3& wi ) const override
 	{
 		return !SameHemisphere( wo, wi ) ? AbsCosTheta( wi ) * INVPI : 0;
+	}
+};
+
+class OrenNayar : public BxDF_T<OrenNayar,
+								BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_DIFFUSE )>
+{
+	const float3 R;
+	float A, B;
+
+  public:
+	__device__ OrenNayar( const float3& R, float sigma )
+		: R( R )
+	{
+		sigma = Radians( sigma );
+		const float sigma2 = sigma * sigma;
+		A = 1.f - ( sigma2 / ( 2.f * ( sigma2 + 0.33f ) ) );
+		B = 0.45f * sigma2 / ( sigma2 + 0.09f );
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		const float sinThetaI = SinTheta( wi );
+		const float sinThetaO = SinTheta( wo );
+		// Compute cosine term of Oren-Nayar model
+		float maxCos = 0.f;
+		if ( sinThetaI > 1e-4 && sinThetaO > 1e-4 )
+		{
+			const float sinPhiI = SinPhi( wi ), cosPhiI = CosPhi( wi );
+			const float sinPhiO = SinPhi( wo ), cosPhiO = CosPhi( wo );
+			const float dCos = cosPhiI * cosPhiO + sinPhiI * sinPhiO;
+			maxCos = std::max( 0.f, dCos );
+		}
+
+		// Compute sine and tangent terms of Oren-Nayar model
+		float sinAlpha, tanBeta;
+		if ( AbsCosTheta( wi ) > AbsCosTheta( wo ) )
+		{
+			sinAlpha = sinThetaO;
+			tanBeta = sinThetaI / AbsCosTheta( wi );
+		}
+		else
+		{
+			sinAlpha = sinThetaI;
+			tanBeta = sinThetaO / AbsCosTheta( wo );
+		}
+		return R * INVPI * ( A + B * maxCos * sinAlpha * tanBeta );
 	}
 };
 
@@ -148,7 +392,6 @@ class MicrofacetTransmission : public BxDF_T<MicrofacetTransmission<MicrofacetDi
 		  distribution( distribution ),
 		  etaA( etaA ),
 		  etaB( etaB ),
-		  //   fresnel( etaA, etaB ),
 		  mode( mode ){}
 	{
 	}
@@ -166,7 +409,6 @@ class MicrofacetTransmission : public BxDF_T<MicrofacetTransmission<MicrofacetDi
 		float3 wh = normalize( wo + wi * eta );
 		if ( wh.z < 0 ) wh = -wh;
 
-		// float3 F = fresnel.Evaluate( dot( wo, wh ) );
 		float F = FrDielectric( dot( wo, wh ), etaA, etaB );
 
 		const float sqrtDenom = dot( wo, wh ) + eta * dot( wi, wh );
@@ -208,5 +450,76 @@ class MicrofacetTransmission : public BxDF_T<MicrofacetTransmission<MicrofacetDi
 		const float dwh_dwi =
 			std::abs( ( eta * eta * dot( wi, wh ) ) / ( sqrtDenom * sqrtDenom ) );
 		return distribution.Pdf( wo, wh ) * dwh_dwi;
+	}
+};
+
+template <typename MicrofacetDistribution_T>
+class FresnelBlend : public BxDF_T<FresnelBlend<MicrofacetDistribution_T>,
+								   BxDFType( BxDFType::BSDF_REFLECTION | BxDFType::BSDF_GLOSSY )>
+{
+	const float3 Rd, Rs;
+	const MicrofacetDistribution_T distribution;
+
+  public:
+	__device__ FresnelBlend( const float3& Rd, const float3& Rs,
+							 const MicrofacetDistribution_T& distribution )
+		: Rd( Rd ),
+		  Rs( Rs ),
+		  distribution( distribution )
+	{
+	}
+
+	LH2_DEVFUNC float pow5( float v ) { return ( v * v ) * ( v * v ) * v; };
+
+	__device__ float3 SchlickFresnel( float cosTheta ) const
+	{
+		return Rs + pow5( 1.f - cosTheta ) * ( make_float3( 1.f ) - Rs );
+	}
+
+	__device__ float3 f( const float3& wo, const float3& wi ) const override
+	{
+		const float3 diffuse = ( 28.f / ( 23.f * PI ) ) * Rd * ( make_float3( 1.f ) - Rs ) *
+							   ( 1 - pow5( 1 - .5f * AbsCosTheta( wi ) ) ) *
+							   ( 1 - pow5( 1 - .5f * AbsCosTheta( wo ) ) );
+		float3 wh = wi + wo;
+		if ( wh.x == 0 && wh.y == 0 && wh.z == 0 ) return make_float3( 0.f );
+		wh = normalize( wh );
+		const float3 specular =
+			distribution.D( wh ) /
+			( 4 * AbsDot( wi, wh ) * std::max( AbsCosTheta( wi ), AbsCosTheta( wo ) ) ) *
+			SchlickFresnel( dot( wi, wh ) );
+		return diffuse + specular;
+	}
+
+	__device__ float3 Sample_f( const float3 wo, float3& wi,
+								const float r0_orig, const float r1,
+								float& pdf, BxDFType& sampledType ) const override
+	{
+		float r0 = r0_orig;
+		if ( r0 < .5 )
+		{
+			r0 = std::min( 2.f * r0, OneMinusEpsilon );
+			// Cosine-sample the hemisphere, flipping the direction if necessary
+			wi = CosineSampleHemisphere( r0, r1 );
+			if ( wo.z < 0 ) wi.z *= -1;
+		}
+		else
+		{
+			r0 = std::min( 2.f * ( r0 - .5f ), OneMinusEpsilon );
+			// Sample microfacet orientation $\wh$ and reflected direction $\wi$
+			const float3 wh = distribution.Sample_wh( wo, r0, r1 );
+			wi = pbrt_Reflect( wo, wh );
+			if ( !SameHemisphere( wo, wi ) ) return make_float3( 0.f );
+		}
+		pdf = Pdf( wo, wi );
+		return f( wo, wi );
+	}
+
+	__device__ float Pdf( const float3& wo, const float3& wi ) const override
+	{
+		if ( !SameHemisphere( wo, wi ) ) return 0.f;
+		const float3 wh = normalize( wo + wi );
+		const float pdf_wh = distribution.Pdf( wo, wh );
+		return .5f * ( AbsCosTheta( wi ) * INVPI + pdf_wh / ( 4.f * dot( wo, wh ) ) );
 	}
 };
