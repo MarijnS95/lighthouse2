@@ -20,6 +20,11 @@ struct Glass
 	bool remapRoughness;
 };
 
+struct Mirror
+{
+	float3 Kr;
+};
+
 struct Substrate
 {
 	FLOAT3( Kd, urough );
