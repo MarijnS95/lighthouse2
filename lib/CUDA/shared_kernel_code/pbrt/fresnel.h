@@ -38,3 +38,16 @@ class Fresnel
   public:
 	__device__ virtual float3 Evaluate( float cosI ) const = 0;
 };
+
+class FresnelDielectric : public Fresnel
+{
+	float etaI, etaT;
+
+  public:
+	__device__ FresnelDielectric( float etaI, float etaT ) : etaI( etaI ), etaT( etaT ) {}
+
+	__device__ float3 Evaluate( float cosThetaI ) const override
+	{
+		return make_float3( FrDielectric( cosThetaI, etaI, etaT ) );
+	}
+};
