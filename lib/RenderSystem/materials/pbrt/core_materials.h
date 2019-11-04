@@ -19,3 +19,11 @@ struct Glass
 
 	bool remapRoughness;
 };
+
+struct Substrate
+{
+	FLOAT3( Kd, urough );
+	FLOAT3( Ks, vrough );
+
+	bool remapRoughness;
+};
