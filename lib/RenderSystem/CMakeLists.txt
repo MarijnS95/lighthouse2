@@ -1,7 +1,7 @@
 project(RenderSystem)
 
-file(GLOB sources "*.cpp")
-file(GLOB headers "*.h")
+file(GLOB_RECURSE sources "*.cpp")
+file(GLOB_RECURSE headers "*.h")
 add_library(${PROJECT_NAME} ${sources} ${headers})
 target_compile_definitions(${PROJECT_NAME} PRIVATE RENDERSYSTEMBUILD)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<BOOL:${MSVC}>:/arch:AVX2>)
@@ -14,7 +14,6 @@ if(MSVC)
 	# Prevent CUDA projects from inheriting this flag.
 	target_compile_options(${PROJECT_NAME} PRIVATE /MP)
 endif()
-
 # External dependencies, PUBLIC because exposed through header:
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	tinyxml2

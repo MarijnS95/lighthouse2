@@ -84,9 +84,9 @@ void CoreAPI::SetTextures( const CoreTexDesc* tex, const int textureCount )
 	core->SetTextures( tex, textureCount );
 }
 
-void CoreAPI::SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount )
+void CoreAPI::SetMaterials( std::vector<HostMaterial*>& materials )
 {
-	core->SetMaterials( mat, matEx, materialCount );
+	core->SetMaterials( materials );
 }
 
 void CoreAPI::SetLights( const CoreLightTri* areaLights, const int areaLightCount,

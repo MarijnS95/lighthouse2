@@ -42,7 +42,8 @@ public:
 	// SetTextures: update the texture data in the RenderCore using the supplied data.
 	void SetTextures( const CoreTexDesc* tex, const int textureCount );
 	// SetMaterials: update the material list used by the RenderCore. Textures referenced by the materials must be set in advance.
-	void SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount );
+	// void SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount );
+	void SetMaterials( std::vector<HostMaterial*>& materials );
 	// SetLights: update the point lights, spot lights and directional lights.
 	void SetLights( const CoreLightTri* areaLights, const int areaLightCount,
 		const CorePointLight* pointLights, const int pointLightCount,

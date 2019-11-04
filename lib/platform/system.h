@@ -36,11 +36,14 @@
 using namespace std;
 using namespace half_float;
 
+#include <flattener.hpp>
+
 #include "immintrin.h"
 #include "emmintrin.h"
 #include "common_types.h"
 #include "common_settings.h"
 #include "common_classes.h"
+#include <materials/dynamic_host_material.h>
 #include <common_materials.h>
 #include <GLFW/glfw3.h>		// needed for Timer class
 

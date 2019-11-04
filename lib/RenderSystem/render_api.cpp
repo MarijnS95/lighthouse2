@@ -136,13 +136,13 @@ int RenderAPI::GetTriangleMaterialID( const int instId, const int triId )
 	return renderer->scene->GetTriangleMaterial( instId, triId );
 }
 
-HostMaterial* RenderAPI::GetTriangleMaterial( const int instId, const int triId )
+DynamicHostMaterial*& RenderAPI::GetTriangleMaterial( const int instId, const int triId )
 {
 	int matId = renderer->scene->GetTriangleMaterial( instId, triId );
 	return GetMaterial( matId );
 }
 
-HostMaterial* RenderAPI::GetMaterial( const int matId )
+DynamicHostMaterial*& RenderAPI::GetMaterial( const int matId )
 {
 	return renderer->scene->materials[matId];
 }
