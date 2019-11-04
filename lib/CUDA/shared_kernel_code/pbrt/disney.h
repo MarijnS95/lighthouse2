@@ -298,6 +298,7 @@ class DisneyGltf : public BSDFStackMaterial<
 		const float coneWidth,							   //		ray cone width, for texture LOD
 		const CoreTri4& tri,							   //		triangle data
 		const int instIdx,								   //		instance index, for normal transform
+		const int materialInstance,						   //		Material instance id/location
 		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
 		float3& T,										   //		tangent vector
 		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
@@ -310,7 +311,7 @@ class DisneyGltf : public BSDFStackMaterial<
 		ShadingData shadingData;
 		const bool thin = false;
 
-		GetShadingData( D, u, v, coneWidth, tri, instIdx,
+		GetShadingData( D, u, v, coneWidth, tri, instIdx, materialInstance,
 						// Returns:
 						shadingData, N, iN, fN, T, waveLength );
 

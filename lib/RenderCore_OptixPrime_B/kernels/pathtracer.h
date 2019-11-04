@@ -107,21 +107,24 @@ void shadeKernel( float4* accumulator, const uint stride,
 	bool specular = false;
 	materials::BxDFType bsdfFlags = specular ? materials::BSDF_ALL : materials::BSDF_ALL_EXCEPT_SPECULAR;
 
+	const int materialIndex = GET_TRI_MATERIAL( instanceTriangles[PRIMIDX].v4 );
+	const CoreMaterialDesc matDesc = materialDescriptions[materialIndex];
+
 	// Switch between a directly-inlinable material, versus virtual material class:
 #if 1
 	materials::MaterialStore inplace_material;
 
 	// GetMaterial returns a mutable pointer
 	// Justification: setup function is separate to prevent overcrowding GetMaterial+constructors
-	auto materialPtr = materials::GetMaterial( inplace_material, instanceTriangles[PRIMIDX] );
+	auto materialPtr = materials::GetMaterial( inplace_material, matDesc );
 	if ( !materialPtr )
 		// Should hardly ever happen
 		return;
-	materialPtr->Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, N, iN, fN, T );
+	materialPtr->Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, matDesc.instanceLocation, N, iN, fN, T );
 	const auto& material = *materialPtr;
 #else
 	materials::DisneyMaterial material;
-	material.Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, N, iN, fN, T );
+	material.Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, matDesc.instanceLocation, N, iN, fN, T );
 #endif
 
 	// we need to detect alpha in the shading code.
