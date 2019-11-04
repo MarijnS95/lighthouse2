@@ -16,17 +16,29 @@
 #include "rendersystem.h"
 
 // Lighthouse2 data model design principles:
-// 
+//
 // - If a data member can be given an obvious name, access is public, saving on LOC and repetition.
 // - (Almost) all data members are initialized to promote deterministic behavior in debug and release.
 // - Textures, materials, meshes etc. have IDs; use of pointers is minimized.
 // - Textures, materials, meshes etc. also have an optional name and origin string (not a char*).
-// - A struct is either host-oriented or GPU-oriented; the name (as well as the file name) indicates 
+// - A struct is either host-oriented or GPU-oriented; the name (as well as the file name) indicates
 //   this. If both are needed, both will be created, even if they are the same.
 // - The RenderCore is the only system communicating with the GPU. It is thus also the only owner of
 //   device-side data. The RenderSystem is responsible for setting this data before rendering starts.
 //   Data in RenderCore reached its final destination; it can thus not be queried, and internal
 //   operations are minimal.
+uint32_t HostMaterial::Flatten( Flattener<sizeof( uint32_t )>& flattener ) const
+{
+	CoreMaterial gpuMat;
+	ConvertTo( gpuMat );
+	return flattener.emplace_back( gpuMat ).offset();
+}
+
+void HostMaterial::CollectMaps( CoreMaterialEx& gpuMatEx ) const
+{
+	// copy maps array to CoreMaterialEx instance
+	for ( int i = 0; i < 11; i++ ) gpuMatEx.texture[i] = map[i].textureID;
+}
 
 //  +-----------------------------------------------------------------------------+
 //  |  HostMaterial::ConvertFrom                                                  |
@@ -108,7 +120,7 @@ void HostMaterial::ConvertFrom( const tinygltfMaterial& original, const tinygltf
 //  +-----------------------------------------------------------------------------+
 #define TOCHAR(a) ((uint)((a)*255.0f))
 #define TOUINT4(a,b,c,d) (TOCHAR(a)+(TOCHAR(b)<<8)+(TOCHAR(c)<<16)+(TOCHAR(d)<<24))
-void HostMaterial::ConvertTo( CoreMaterial& gpuMat, CoreMaterialEx& gpuMatEx )
+void HostMaterial::ConvertTo( CoreMaterial& gpuMat ) const
 {
 	// base properties
 	memset( &gpuMat, 0, sizeof( CoreMaterial ) );
@@ -148,8 +160,6 @@ void HostMaterial::ConvertTo( CoreMaterial& gpuMat, CoreMaterialEx& gpuMatEx )
 		(t2 ? (1 << 10) : 0) +								// has 3rd diffuse map
 		((flags & SMOOTH) ? (1 << 11) : 0) +				// has smooth normals
 		((flags & HASALPHA) ? (1 << 12) : 0);				// has alpha
-	// copy maps array to CoreMaterialEx instance
-	for (int i = 0; i < 11; i++) gpuMatEx.texture[i] = map[i].textureID;
 	// maps
 	if (t0) // texture layer 0
 		gpuMat.texwidth0 = t0->width, gpuMat.texheight0 = t0->height,

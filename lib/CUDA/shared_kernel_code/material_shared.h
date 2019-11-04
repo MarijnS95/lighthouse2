@@ -81,7 +81,7 @@ LH2_DEVFUNC void GetShadingData(
 	// triangle reference.
 	const float4 tdata1 = tri.v4;
 	// fetch initial set of data from material
-	const CoreMaterial4& mat = (const CoreMaterial4&)disneyMaterials[materialInstance];
+	const auto mat = LoadMaterial<CoreMaterial4>(materialInstance);
 	const uint4 baseData = mat.baseData4;
 	// process common data (unconditional)
 	const uint part0 = baseData.x; // diffuse_r, diffuse_g

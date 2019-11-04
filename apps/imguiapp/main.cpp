@@ -28,7 +28,7 @@ static std::bitset<8> mbstates;
 static string materialFile;
 
 // material editing
-HostMaterial currentMaterial;
+HostMaterial *currentMaterial = nullptr;
 int currentMaterialID = -1;
 static CoreStats coreStats;
 
@@ -90,9 +90,13 @@ bool HandleInput( float frameTime )
 		int selectedMaterialID = renderer->GetTriangleMaterialID( coreStats.probedInstid, coreStats.probedTriid );
 		if (selectedMaterialID != -1)
 		{
-			currentMaterial = *renderer->GetMaterial( selectedMaterialID );
-			currentMaterialID = selectedMaterialID;
-			currentMaterial.Changed(); // update checksum so we can track changes
+			auto disneyMaterial = dynamic_cast<HostMaterial*>( renderer->GetMaterial( selectedMaterialID ) );
+			if ( disneyMaterial )
+			{
+				currentMaterial = disneyMaterial;
+				currentMaterialID = selectedMaterialID;
+				currentMaterial->Changed(); // update checksum so we can track changes
+			}
 		}
 		// camera->focalDistance = coreStats.probedDist;
 		changed = true;
@@ -113,14 +117,13 @@ bool HandleInput( float frameTime )
 //  +-----------------------------------------------------------------------------+
 bool HandleMaterialChange()
 {
-	if (currentMaterial.Changed() && currentMaterialID != -1)
-	{
-		// put it back
-		*renderer->GetMaterial( currentMaterialID ) = currentMaterial;
-		renderer->GetMaterial( currentMaterialID )->MarkAsDirty();
-		return true;
-	}
-	return false;
+	bool changed = currentMaterial && currentMaterial->Changed();
+	if (changed)
+		// Checking ->Changed() does not only compare CRC, but also update it.
+		// Meaning that from that point on ->Changed() returns false. Mark
+		// it as dirty again:
+		currentMaterial->MarkAsDirty();
+	return changed;
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -198,23 +201,25 @@ int main()
 		ImGui::Text( "# deep rays:  %6ik (%6.1fM/s)", coreStats.deepRayCount / 1000, coreStats.deepRayCount / (max( 1.0f, coreStats.traceTimeX * 1000000 )) );
 		ImGui::Text( "# shadw rays: %6ik (%6.1fM/s)", coreStats.totalShadowRays / 1000, coreStats.totalShadowRays / (max( 1.0f, coreStats.shadowTraceTime * 1000000 )) );
 		ImGui::End();
-		ImGui::Begin( "Material parameters", 0 );
-		ImGui::Text( "name:    %s", currentMaterial.name.c_str() );
-		ImGui::ColorEdit3( "color", (float*)&currentMaterial.color );
-		ImGui::ColorEdit3( "absorption", (float*)&currentMaterial.absorption );
-		ImGui::SliderFloat( "metallic", &currentMaterial.metallic, 0, 1 );
-		ImGui::SliderFloat( "subsurface", &currentMaterial.subsurface, 0, 1 );
-		ImGui::SliderFloat( "specular", &currentMaterial.specular, 0, 1 );
-		ImGui::SliderFloat( "roughness", &currentMaterial.roughness, 0, 1 );
-		ImGui::SliderFloat( "specularTint", &currentMaterial.specularTint, 0, 1 );
-		ImGui::SliderFloat( "anisotropic", &currentMaterial.anisotropic, 0, 1 );
-		ImGui::SliderFloat( "sheen", &currentMaterial.sheen, 0, 1 );
-		ImGui::SliderFloat( "sheenTint", &currentMaterial.sheenTint, 0, 1 );
-		ImGui::SliderFloat( "clearcoat", &currentMaterial.clearcoat, 0, 1 );
-		ImGui::SliderFloat( "clearcoatGloss", &currentMaterial.clearcoatGloss, 0, 1 );
-		ImGui::SliderFloat( "transmission", &currentMaterial.transmission, 0, 1 );
-		ImGui::SliderFloat( "eta (1/ior)", &currentMaterial.eta, 0.25f, 1.0f );
-		ImGui::End();
+		if (currentMaterial) {
+			ImGui::Begin( "Material parameters", 0 );
+			ImGui::Text( "name:    %s", currentMaterial->name.c_str() );
+			ImGui::ColorEdit3( "color", (float*)&currentMaterial->color );
+			ImGui::ColorEdit3( "absorption", (float*)&currentMaterial->absorption );
+			ImGui::SliderFloat( "metallic", &currentMaterial->metallic, 0, 1 );
+			ImGui::SliderFloat( "subsurface", &currentMaterial->subsurface, 0, 1 );
+			ImGui::SliderFloat( "specular", &currentMaterial->specular, 0, 1 );
+			ImGui::SliderFloat( "roughness", &currentMaterial->roughness, 0, 1 );
+			ImGui::SliderFloat( "specularTint", &currentMaterial->specularTint, 0, 1 );
+			ImGui::SliderFloat( "anisotropic", &currentMaterial->anisotropic, 0, 1 );
+			ImGui::SliderFloat( "sheen", &currentMaterial->sheen, 0, 1 );
+			ImGui::SliderFloat( "sheenTint", &currentMaterial->sheenTint, 0, 1 );
+			ImGui::SliderFloat( "clearcoat", &currentMaterial->clearcoat, 0, 1 );
+			ImGui::SliderFloat( "clearcoatGloss", &currentMaterial->clearcoatGloss, 0, 1 );
+			ImGui::SliderFloat( "transmission", &currentMaterial->transmission, 0, 1 );
+			ImGui::SliderFloat( "eta (1/ior)", &currentMaterial->eta, 0.25f, 1.0f );
+			ImGui::End();
+		}
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 		// finalize

@@ -23,6 +23,8 @@
 
 #include "core_settings.h"
 
+#include <flattener.hpp>
+
 namespace lh2core {
 
 // forward declaration of cuda code
@@ -39,9 +41,11 @@ void InitCountersForExtend( int pathCount );
 void InitCountersSubsequent();
 
 // setters / getters
+// TODO: Move these to a shared header!!!!!!!
 void SetInstanceDescriptors( CoreInstanceDesc* p );
 void SetDisneyMaterialList( CoreMaterial* p );
 void SetMaterialDescList( CoreMaterialDesc* p );
+void SetMaterialList( CoreMaterialChunk* p );
 void SetAreaLights( CoreLightTri* p );
 void SetPointLights( CorePointLight* p );
 void SetSpotLights( CoreSpotLight* p );
@@ -350,40 +354,54 @@ void RenderCore::SyncStorageType( const TexelStorage storage )
 //  |  RenderCore::SetMaterials                                                   |
 //  |  Set the material data.                                               LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount )
+void RenderCore::SetMaterials( const std::vector<DynamicHostMaterial*>& materials )
 {
 	// Notes:
 	// Call this after the textures have been set; CoreMaterials store the offset of each texture
 	// in the continuous arrays; this data is valid only when textures are in sync.
 	delete materialBuffer;
-	delete[] hostMaterialBuffer;
-	hostMaterialBuffer = new CoreMaterial[materialCount];
-	memcpy( hostMaterialBuffer, mat, materialCount * sizeof( CoreMaterial ) );
-	for (int i = 0; i < materialCount; i++)
+	delete materialDescBuffer;
+
+	Flattener<sizeof( CoreMaterialChunk )> flattener;
+
+	std::vector<CoreMaterialDesc> matDesc;
+	matDesc.reserve( materials.size() );
+	for ( const auto& material : materials )
 	{
-		CoreMaterial& m = hostMaterialBuffer[i];
-		const CoreMaterialEx& e = matEx[i];
-		if (e.texture[0] != -1) m.texaddr0 = texDescs[e.texture[0]].firstPixel;
-		if (e.texture[1] != -1) m.texaddr1 = texDescs[e.texture[1]].firstPixel;
-		if (e.texture[2] != -1) m.texaddr2 = texDescs[e.texture[2]].firstPixel;
-		if (e.texture[3] != -1) m.nmapaddr0 = texDescs[e.texture[3]].firstPixel;
-		if (e.texture[4] != -1) m.nmapaddr1 = texDescs[e.texture[4]].firstPixel;
-		if (e.texture[5] != -1) m.nmapaddr2 = texDescs[e.texture[5]].firstPixel;
-		if (e.texture[6] != -1) m.smapaddr = texDescs[e.texture[6]].firstPixel;
-		if (e.texture[7] != -1) m.rmapaddr = texDescs[e.texture[7]].firstPixel;
-		// if (e.texture[ 8] != -1) m.texaddr0 = texDescs[e.texture[ 8]].firstPixel; second roughness map is not used
-		if (e.texture[9] != -1) m.cmapaddr = texDescs[e.texture[9]].firstPixel;
-		if (e.texture[10] != -1) m.amapaddr = texDescs[e.texture[10]].firstPixel;
+		// TODO: Pass loc as reference type
+		auto loc = material->Flatten( flattener );
+
+		if ( material->type == MaterialType::DISNEY )
+		{
+
+			CoreMaterialEx e;
+			material->CollectMaps( e );
+			// Update flattened material... Could also have
+			// written over (a writeable copy of) `material'
+			auto& m = *flattener.get<CoreMaterial>( loc );
+
+			if ( e.texture[0] != -1 ) m.texaddr0 = texDescs[e.texture[0]].firstPixel;
+			if ( e.texture[1] != -1 ) m.texaddr1 = texDescs[e.texture[1]].firstPixel;
+			if ( e.texture[2] != -1 ) m.texaddr2 = texDescs[e.texture[2]].firstPixel;
+			if ( e.texture[3] != -1 ) m.nmapaddr0 = texDescs[e.texture[3]].firstPixel;
+			if ( e.texture[4] != -1 ) m.nmapaddr1 = texDescs[e.texture[4]].firstPixel;
+			if ( e.texture[5] != -1 ) m.nmapaddr2 = texDescs[e.texture[5]].firstPixel;
+			if ( e.texture[6] != -1 ) m.smapaddr = texDescs[e.texture[6]].firstPixel;
+			if ( e.texture[7] != -1 ) m.rmapaddr = texDescs[e.texture[7]].firstPixel;
+			// if (e.texture[ 8] != -1) m.texaddr0 = texDescs[e.texture[ 8]].firstPixel; second roughness map is not used
+			if ( e.texture[9] != -1 ) m.cmapaddr = texDescs[e.texture[9]].firstPixel;
+			if ( e.texture[10] != -1 ) m.amapaddr = texDescs[e.texture[10]].firstPixel;
+		}
+
+		matDesc.push_back( CoreMaterialDesc{material->type, loc} );
 	}
-	materialBuffer = new CoreBuffer<CoreMaterial>( materialCount, ON_DEVICE | ON_HOST /* on_host: for alpha mapped tris */, hostMaterialBuffer );
-	SetDisneyMaterialList( materialBuffer->DevPtr() );
 
-	auto matDesc = new CoreMaterialDesc[materialCount];
-	for ( int i = 0; i < materialCount; i++ )
-		matDesc[i] = {MaterialType::DISNEY, (unsigned int)i};
+	printf( "Flattener size: %zu\n", flattener.size() );
 
-	materialDescBuffer = new CoreBuffer<CoreMaterialDesc>( materialCount, ON_DEVICE, matDesc );
-	delete[] matDesc;
+	materialBuffer = new CoreBuffer<CoreMaterialChunk>( flattener.size() / sizeof( CoreMaterialChunk ), ON_DEVICE, flattener.data() );
+	SetMaterialList( materialBuffer->DevPtr() );
+
+	materialDescBuffer = new CoreBuffer<decltype( matDesc )::value_type>( materials.size(), ON_DEVICE, matDesc.data() );
 	SetMaterialDescList( materialDescBuffer->DevPtr() );
 }
 
@@ -618,7 +636,6 @@ void RenderCore::Shutdown()
 	delete texel128Buffer;
 	delete normal32Buffer;
 	delete materialBuffer;
-	delete hostMaterialBuffer;
 	delete skyPixelBuffer;
 	delete instDescBuffer;
 	// delete light data

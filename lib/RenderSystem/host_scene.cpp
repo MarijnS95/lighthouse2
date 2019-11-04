@@ -22,7 +22,7 @@ vector<HostNode*> HostScene::nodePool;
 vector<HostMesh*> HostScene::meshPool;
 vector<HostSkin*> HostScene::skins;
 vector<HostAnimation*> HostScene::animations;
-vector<HostMaterial*> HostScene::materials;
+vector<DynamicHostMaterial*> HostScene::materials;
 vector<HostTexture*> HostScene::textures;
 vector<HostAreaLight*> HostScene::areaLights;
 vector<HostPointLight*> HostScene::pointLights;
@@ -59,6 +59,7 @@ HostScene::~HostScene()
 //  +-----------------------------------------------------------------------------+
 void HostScene::SerializeMaterials( const char* xmlFile )
 {
+#if 0
 	XMLDocument doc;
 	XMLNode* root = doc.NewElement( "materials" );
 	doc.InsertFirstChild( root );
@@ -106,6 +107,7 @@ void HostScene::SerializeMaterials( const char* xmlFile )
 		((XMLElement*)materialEntry->InsertEndChild( doc.NewElement( "custom3" ) ))->SetText( materials[i]->custom3 );
 	}
 	doc.SaveFile( xmlFile );
+#endif
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -114,6 +116,7 @@ void HostScene::SerializeMaterials( const char* xmlFile )
 //  +-----------------------------------------------------------------------------+
 void HostScene::DeserializeMaterials( const char* xmlFile )
 {
+#if 0
 	XMLDocument doc;
 	XMLError result = doc.LoadFile( xmlFile );
 	if (result != XML_SUCCESS) return;
@@ -165,6 +168,7 @@ void HostScene::DeserializeMaterials( const char* xmlFile )
 		if (entry->FirstChildElement( "custom2" )) entry->FirstChildElement( "custom2" )->QueryFloatText( &m->custom2 );
 		if (entry->FirstChildElement( "custom3" )) entry->FirstChildElement( "custom3" )->QueryFloatText( &m->custom3 );
 	}
+#endif
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -282,7 +286,7 @@ int HostScene::AddScene( const char* sceneFile, const char* dir, const mat4& tra
 	for (size_t s = gltfModel.materials.size(), i = 0; i < s; i++)
 	{
 		tinygltf::Material& gltfMaterial = gltfModel.materials[i];
-		HostMaterial* material = new HostMaterial();
+		auto material = new HostMaterial();
 		material->ID = (int)i + materialBase;
 		material->origin = cleanFileName;
 		material->ConvertFrom( gltfMaterial, gltfModel, textureBase );
@@ -480,15 +484,16 @@ int HostScene::FindOrCreateTexture( const string& origin, const uint modFlags )
 int HostScene::FindOrCreateMaterial( const string& name )
 {
 	// search list for existing texture
-	for (auto material : materials) if (material->name.compare( name ) == 0)
-	{
-		material->refCount++;
-		return material->ID;
-	}
-	// nothing found, create a new texture
-	const int newID = AddMaterial( make_float3( 0 ) );
-	materials[newID]->name = name;
-	return newID;
+	// for (auto material : materials) if (material->name.compare( name ) == 0)
+	// {
+	// 	material->refCount++;
+	// 	return material->ID;
+	// }
+	// // nothing found, create a new texture
+	// const int newID = AddMaterial( make_float3( 0 ) );
+	// materials[newID]->name = name;
+	// return newID;
+	return -1;
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -497,7 +502,7 @@ int HostScene::FindOrCreateMaterial( const string& name )
 //  +-----------------------------------------------------------------------------+
 int HostScene::FindMaterialID( const char* name )
 {
-	for (auto material : materials) if (material->name.compare( name ) == 0) return material->ID;
+	// for (auto material : materials) if (material->name.compare( name ) == 0) return material->ID;
 	return -1;
 }
 
@@ -560,7 +565,7 @@ int HostScene::CreateTexture( const string& origin, const uint modFlags )
 //  +-----------------------------------------------------------------------------+
 int HostScene::AddMaterial( const float3 color )
 {
-	HostMaterial* material = new HostMaterial();
+	auto material = new HostMaterial();
 	material->color = color;
 	material->ID = (int)materials.size();
 	materials.push_back( material );
