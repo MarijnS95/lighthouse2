@@ -55,4 +55,7 @@ class BxDF_T : public BxDF
 {
   protected:
 	__device__ BxDF_T() : BxDF( _type ) {}
+
+  public:
+	static constexpr BxDFType type = _type;
 };
