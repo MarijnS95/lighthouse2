@@ -32,6 +32,7 @@ class MaterialIntf : public HasPlacementNewOperator
 		const float coneWidth,							   //		ray cone width, for texture LOD
 		const CoreTri4& tri,							   //		triangle data
 		const int instIdx,								   //		instance index, for normal transform
+		const int materialInstance,						   //		Material instance id/location
 		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
 		float3& T,										   //		tangent vector
 		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
@@ -85,11 +86,8 @@ LH2_DEVFUNC MaterialIntf* CreateMaterial( MaterialStore inplace )
 	return new ( inplace ) T();
 }
 
-LH2_DEVFUNC MaterialIntf* GetMaterial( MaterialStore inplace, const CoreTri4& tri )
+LH2_DEVFUNC MaterialIntf* GetMaterial( MaterialStore inplace, const CoreMaterialDesc& matDesc )
 {
-	// Copy desc (single integer) to register:
-	const CoreMaterialDesc matDesc = materialDescriptions[GET_TRI_MATERIAL( tri.v4 )];
-
 	// Call placement new operator to set up vtables.
 
 	switch ( matDesc.type )

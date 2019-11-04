@@ -86,6 +86,7 @@ LH2_DEVFUNC void GetShadingData(
 	const float coneWidth,					//		ray cone width, for texture LOD
 	const CoreTri4& tri,					//		triangle data
 	const int instIdx,						//		instance index, for normal transform
+	const int materialInstance,				//		Material instance id/location
 	ShadingData& retVal,					// OUT:	material properties of the intersection point
 	float3& N, float3& iN, float3& fN,		//		geometric normal, interpolated normal, final normal (normal mapped)
 	float3& T,								//		tangent vector
@@ -97,11 +98,7 @@ LH2_DEVFUNC void GetShadingData(
 	// triangle reference.
 	const float4 tdata1 = tri.v4;
 	// fetch initial set of data from material
-	const CoreMaterialDesc& matDesc = (const CoreMaterialDesc&)materialDescriptions[TRI_MATERIAL];
-	if (matDesc.type != MaterialType::DISNEY)
-		// TODO: This code shouldn't even be called.
-		return;
-	const CoreMaterial4& mat = (const CoreMaterial4&)disneyMaterials[matDesc.instanceLocation];
+	const CoreMaterial4& mat = (const CoreMaterial4&)disneyMaterials[materialInstance];
 	const uint4 baseData = mat.baseData4;
 	// process common data (unconditional)
 	const uint part0 = baseData.x; // diffuse_r, diffuse_g
