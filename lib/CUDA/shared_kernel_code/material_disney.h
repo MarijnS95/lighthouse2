@@ -9,13 +9,15 @@ class DisneyMaterial : public MaterialIntf
 		const float coneWidth,							   //		ray cone width, for texture LOD
 		const CoreTri4& tri,							   //		triangle data
 		const int instIdx,								   //		instance index, for normal transform
+		const int materialInstance,						   //		Material instance id/location
 		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
 		float3& T,										   //		tangent vector
 		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
 		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		) override
 	{
-		GetShadingData( D, u, v, coneWidth, tri, instIdx, shadingData, N, iN, fN, T, waveLength );
+		GetShadingData( D, u, v, coneWidth, tri, instIdx, materialInstance,
+						shadingData, N, iN, fN, T, waveLength );
 	}
 
 	__device__ bool IsEmissive() const override
