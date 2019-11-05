@@ -31,6 +31,44 @@
 
 #pragma once
 
+#ifdef __CUDA_ARCH__
+
+LH2_DEVFUNC auto CreateSubstrate()
+{
+	using Params = common::materials::pbrt::Substrate;
+	return GuardNode(
+		[] __device__( const Params& params ) {
+			return !IsBlack( params.Kd ) || !IsBlack( params.Ks );
+		},
+		BxDFNode<Params>( [] __device__( const Params& params ) {
+			float urough = params.urough;
+			float vrough = params.vrough;
+
+			if ( params.remapRoughness )
+			{
+				urough = RoughnessToAlpha( urough );
+				vrough = RoughnessToAlpha( vrough );
+			}
+
+			const TrowbridgeReitzDistribution<> distrib( urough, vrough );
+
+			return FresnelBlend<TrowbridgeReitzDistribution<>>( params.Kd, params.Ks, distrib );
+		} ) );
+};
+
+using SubstrateStack = decltype( CreateSubstrate() );
+
+class Substrate : public StacklessMaterial<common::materials::pbrt::Substrate, SubstrateStack>
+{
+  protected:
+	__device__ SubstrateStack CreateBxDFStack() const override
+	{
+		return CreateSubstrate();
+	}
+};
+
+#else
+
 class Substrate : public SimpleMaterial<
 					  common::materials::pbrt::Substrate,
 					  FresnelBlend<TrowbridgeReitzDistribution<>>>
@@ -60,3 +98,5 @@ class Substrate : public SimpleMaterial<
 		bxdfs.emplace_back<FresnelBlend<TrowbridgeReitzDistribution<>>>( params.Kd, params.Ks, distrib );
 	}
 };
+
+#endif

@@ -58,6 +58,7 @@ class MaterialIntf : public HasPlacementNewOperator
 };
 
 #include "material_bsdf_stack.h"
+#include "stackless_material.h"
 
 #include "material_disney.h"
 #include "material_emissive.h"
