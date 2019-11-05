@@ -99,8 +99,8 @@ struct MaterialSwitch
  */
 using Materials = MaterialSwitch<
 #if 1
-	// Implement the gltf-extracted material through PBRT BxDFs
-	Case<MaterialType::DISNEY, pbrt::DisneyGltf>,
+// Implement the gltf-extracted material through PBRT BxDFs
+// Case<MaterialType::DISNEY, pbrt::DisneyGltf>,
 #else
 	Case<MaterialType::DISNEY, DisneyMaterial>,
 #endif

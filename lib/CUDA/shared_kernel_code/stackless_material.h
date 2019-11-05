@@ -234,11 +234,87 @@ struct GuardNodeImpl : public GraphNode<GuardNodeImpl<Func, Nested>>
 	}
 };
 
-template <typename Func, typename Nested>
-__device__ GuardNodeImpl<Func, Nested> GuardNode( Func enabled, Nested nested )
+template <typename Func, typename TrueCase, typename FalseCase>
+struct EitherNodeImpl : public GraphNode<EitherNodeImpl<Func, TrueCase, FalseCase>>
 {
-	return {enabled, nested};
-}
+	Func selector;
+	TrueCase t;
+	FalseCase f;
+
+	__device__ EitherNodeImpl( Func selector, TrueCase t, FalseCase f )
+		: selector( selector ), t( t ), f( f ) {}
+
+	template <typename Params>
+	__device__ int CountMatching( const Params& params, const BxDFType type ) const
+	{
+		if ( selector( params ) )
+			return t.CountMatching( params, type );
+		return f.CountMatching( params, type );
+	}
+
+	template <typename Params, typename Fn>
+	__device__ void Foreach( const Params& params, const BxDFType type, Fn&& func ) const
+	{
+		if ( selector( params ) )
+			return t.Foreach( params, type, func );
+		return f.Foreach( params, type, func );
+	}
+
+	template <typename Params, typename Fn>
+	__device__ void RunOnImpl( const Params& params, const BxDFType type, int& idx, Fn&& func ) const
+	{
+		if ( selector( params ) )
+			return t.RunOnImpl( params, type, idx, func );
+		return f.RunOnImpl( params, type, idx, func );
+	}
+};
+
+template <typename... Nodes>
+struct StackNodeImpl : public GraphNode<StackNodeImpl<Nodes...>>
+{
+	std::tuple<Nodes...> nodes;
+
+	__device__ StackNodeImpl( Nodes... nodes )
+		: nodes( std::forward<Nodes>( nodes )... ) {}
+
+	template <typename Params>
+	__device__ int CountMatching( const Params& params, const BxDFType type ) const
+	{
+		int count = 0;
+		std::apply(
+			[&] __device__( const auto&... n ) {
+				std::initializer_list<int> counts( {count += n.CountMatching( params, type )...} );
+			},
+			nodes );
+		return count;
+	}
+
+	template <typename Params, typename Fn>
+	__device__ void Foreach( const Params& params, const BxDFType type, Fn&& func ) const
+	{
+		foreach ( [&]( const auto& n ) { n.Foreach( params, type, func ); } )
+			;
+	}
+
+	template <typename Params, typename Fn>
+	__device__ void RunOnImpl( const Params& params, const BxDFType type, int& idx, Fn&& func ) const
+	{
+		foreach ( [&]( const auto& n ) { n.RunOnImpl( params, type, idx, func ); } )
+			;
+	}
+
+  private:
+	template <typename Func>
+	__device__ void foreach ( Func f ) const
+	{
+		std::apply(
+			[&] __device__( const auto&... n ) {
+				std::initializer_list<int> iter(
+					{( f( n ), 0 )...} );
+			},
+			nodes );
+	}
+};
 
 template <typename Params, typename Func>
 struct BxDFNodeImpl : public GraphNode<BxDFNodeImpl<Params, Func>>
@@ -275,8 +351,31 @@ struct BxDFNodeImpl : public GraphNode<BxDFNodeImpl<Params, Func>>
 	}
 };
 
+#if __cplusplus <= 201700L
+// Here until nvcc supports C++17
+// https://en.cppreference.com/w/cpp/language/class_template_argument_deduction
+
+template <typename Func, typename Nested>
+__device__ GuardNodeImpl<Func, Nested> GuardNode( Func enabled, Nested nested )
+{
+	return {enabled, nested};
+}
+
+template <typename Func, typename Left, typename Right>
+__device__ EitherNodeImpl<Func, Left, Right> EitherNode( Func create, Left left, Right right )
+{
+	return {create, left, right};
+}
+
 template <typename Params, typename Func>
 __device__ BxDFNodeImpl<Params, Func> BxDFNode( Func create )
 {
 	return {create};
 }
+
+template <typename... Nodes>
+__device__ StackNodeImpl<Nodes...> StackNode( Nodes... nodes )
+{
+	return {nodes...};
+}
+#endif

@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <numeric>
 
 // custom types
 typedef unsigned int uint;

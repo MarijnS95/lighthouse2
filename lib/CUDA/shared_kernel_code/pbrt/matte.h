@@ -31,6 +31,44 @@
 
 #pragma once
 
+#ifdef __CUDA_ARCH__
+
+LH2_DEVFUNC auto CreateMatte()
+{
+	using Params = common::materials::pbrt::Matte;
+	return GuardNode(
+		[] __device__( const Params& params ) {
+			return !IsBlack( params.Kd );
+		},
+		EitherNode(
+			[] __device__( const Params& params ) {
+				const float sig = clamp( params.sigma, 0.f, 90.f );
+				return sig == 0.f;
+			},
+			BxDFNode<Params>( [] __device__( const Params& params ) {
+				return LambertianReflection( params.Kd );
+			} ),
+			BxDFNode<Params>( [] __device__( const Params& params ) {
+				const float sig = clamp( params.sigma, 0.f, 90.f );
+				return OrenNayar( params.Kd, sig );
+			} ) )
+
+	);
+};
+
+using MatteStack = decltype( CreateMatte() );
+
+class Matte : public StacklessMaterial<common::materials::pbrt::Matte, MatteStack>
+{
+  protected:
+	__device__ MatteStack CreateBxDFStack() const override
+	{
+		return CreateMatte();
+	}
+};
+
+#else
+
 class Matte : public SimpleMaterial<
 				  common::materials::pbrt::Matte,
 				  LambertianReflection,
@@ -55,3 +93,5 @@ class Matte : public SimpleMaterial<
 			bxdfs.emplace_back<OrenNayar>( params.Kd, sig );
 	}
 };
+
+#endif

@@ -31,6 +31,76 @@
 
 #pragma once
 
+#ifdef __CUDA_ARCH__
+
+LH2_DEVFUNC auto CreateGlass()
+{
+	constexpr TransportMode mode = TransportMode::Radiance;
+
+	using Params = common::materials::pbrt::Glass;
+
+	const auto isSpecular = [] __device__( const Params& params ) {
+		float urough = params.urough;
+		float vrough = params.vrough;
+		return urough == 0 && vrough == 0;
+	};
+
+	return GuardNode(
+		[] __device__( const Params& params ) {
+			return !IsBlack( params.R ) || !IsBlack( params.T );
+		},
+		EitherNode(
+			[isSpecular] __device__( const Params& params ) {
+				// TODO: Pass transportmode and allowMultipleLobes
+				constexpr bool allowMultipleLobes = true;
+
+				return isSpecular( params ) && allowMultipleLobes;
+			},
+			BxDFNode<Params>( [] __device__( const Params& params ) {
+				return FresnelSpecular( params.R, params.T, 1.f, params.eta, mode );
+			} ),
+			StackNode(
+				EitherNode( isSpecular,
+							BxDFNode<Params>( [] __device__( const Params& params ) {
+								const FresnelDielectric fresnel( 1.f, params.eta );
+								return SpecularReflection<FresnelDielectric>( params.R, fresnel );
+							} ),
+							BxDFNode<Params>( [] __device__( const Params& params ) {
+								float urough = params.urough;
+								float vrough = params.vrough;
+								const TrowbridgeReitzDistribution<> distrib( urough, vrough );
+								const FresnelDielectric fresnel( 1.f, params.eta );
+
+								return MicrofacetReflection<TrowbridgeReitzDistribution<>, FresnelDielectric>( params.R, distrib, fresnel );
+							} ) ),
+				EitherNode( isSpecular,
+							BxDFNode<Params>( [] __device__( const Params& params ) {
+								return SpecularTransmission( params.T, 1.f, params.eta, mode );
+							} ),
+							BxDFNode<Params>( [] __device__( const Params& params ) {
+								float urough = params.urough;
+								float vrough = params.vrough;
+								const TrowbridgeReitzDistribution<> distrib( urough, vrough );
+
+								return MicrofacetTransmission<TrowbridgeReitzDistribution<>>( params.T, distrib, 1.f, params.eta, mode );
+							} ) ) )
+			//
+			) );
+};
+
+using GlassStack = decltype( CreateGlass() );
+
+class Glass : public StacklessMaterial<common::materials::pbrt::Glass, GlassStack>
+{
+  protected:
+	__device__ GlassStack CreateBxDFStack() const override
+	{
+		return CreateGlass();
+	}
+};
+
+#else
+
 class Glass : public SimpleMaterial<
 				  common::materials::pbrt::Glass,
 				  FresnelSpecular,
@@ -61,6 +131,7 @@ class Glass : public SimpleMaterial<
 		}
 		else
 		{
+			// TODO: Do on CPU!!
 			if ( params.remapRoughness )
 			{
 				urough = RoughnessToAlpha( urough );
@@ -88,3 +159,5 @@ class Glass : public SimpleMaterial<
 		}
 	}
 };
+
+#endif

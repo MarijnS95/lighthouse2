@@ -15,6 +15,8 @@
 
 #include ".cuda.h"
 
+#include "../../CUDA/shared_kernel_code/experimental_cpp_helpers.h"
+
 namespace lh2core
 {
 

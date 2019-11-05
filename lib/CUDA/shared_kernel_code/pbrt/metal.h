@@ -31,6 +31,49 @@
 
 #pragma once
 
+#ifdef __CUDA_ARCH__
+
+LH2_DEVFUNC auto CreateMetal()
+{
+	using Params = common::materials::pbrt::Metal;
+	return BxDFNode<Params>( [] __device__( const Params& params ) {
+		float urough = params.urough;
+		float vrough = params.vrough;
+
+		const FresnelConductor frMf( make_float3( 1.f ), params.eta, params.k );
+
+		if ( params.remapRoughness )
+		{
+			urough = RoughnessToAlpha( urough );
+			vrough = RoughnessToAlpha( vrough );
+		}
+
+		// NOTE: PBRT Doesn't make the optimization here to use a SpecularReflection like Glass does,
+		// when u- and vrough are zero. This means a black output when the value is zero, and banding when near zero
+		// (Unsure if this is a mathematic PBRT issue since the documentation says near-zero values should represent
+		//  a mirror).
+		// While the Mirror material would be a good alternative, it doesn't have an ETA nor K value. This material
+		// on the other hand doesn't allow specifying the reflection color.
+
+		const TrowbridgeReitzDistribution<> distrib( urough, vrough );
+		return MicrofacetReflection<TrowbridgeReitzDistribution<>, FresnelConductor>(
+			make_float3( 1.f ), distrib, frMf );
+	} );
+};
+
+using MetalStack = decltype( CreateMetal() );
+
+class Metal : public StacklessMaterial<common::materials::pbrt::Metal, MetalStack>
+{
+  protected:
+	__device__ MetalStack CreateBxDFStack() const override
+	{
+		return CreateMetal();
+	}
+};
+
+#else
+
 class Metal : public SimpleMaterial<
 				  common::materials::pbrt::Metal,
 				  MicrofacetReflection<TrowbridgeReitzDistribution<>, FresnelConductor>>
@@ -65,3 +108,5 @@ class Metal : public SimpleMaterial<
 		bxdfs.emplace_back<MicrofacetReflection<TrowbridgeReitzDistribution<>, FresnelConductor>>( make_float3( 1.f ), distrib, frMf );
 	}
 };
+
+#endif

@@ -31,6 +31,33 @@
 
 #pragma once
 
+#ifdef __CUDA_ARCH__
+
+LH2_DEVFUNC auto CreateMirror()
+{
+	using Params = common::materials::pbrt::Mirror;
+	return GuardNode(
+		[] __device__( const Params& params ) {
+			return !IsBlack( params.Kr );
+		},
+		BxDFNode<Params>( [] __device__( const Params& params ) {
+			return SpecularReflection<FresnelNoOp>( params.Kr, FresnelNoOp() );
+		} ) );
+};
+
+using MirrorStack = decltype( CreateMirror() );
+
+class Mirror : public StacklessMaterial<common::materials::pbrt::Mirror, MirrorStack>
+{
+  protected:
+	__device__ MirrorStack CreateBxDFStack() const override
+	{
+		return CreateMirror();
+	}
+};
+
+#else
+
 class Mirror : public SimpleMaterial<
 				   common::materials::pbrt::Mirror,
 				   SpecularReflection<FresnelNoOp>>
@@ -48,3 +75,5 @@ class Mirror : public SimpleMaterial<
 		bxdfs.emplace_back<SpecularReflection<FresnelNoOp>>( params.Kr, FresnelNoOp() );
 	}
 };
+
+#endif
