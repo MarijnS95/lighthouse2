@@ -3,6 +3,7 @@
 template <typename CoreMaterialProperties, typename Stack>
 class StacklessMaterial : public MaterialIntf
 {
+  protected:
 	CoreMaterialProperties props;
 
   public:
@@ -19,7 +20,7 @@ class StacklessMaterial : public MaterialIntf
 		const bool allowMultipleLobes = true,			   // IN:	Integrator samples multiple lobes (optional)
 		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		)
-		/* Don't allow overriding this function any further */ final override
+		/* Don't allow overriding this function any further */ /* final */ override
 	{
 		float w;
 		SetupFrame(

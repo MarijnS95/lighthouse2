@@ -280,6 +280,7 @@ using DisneyMicrofacetReflection = MicrofacetReflection<DisneyMicrofacetDistribu
 
 // ----------------------------------------------------------------
 
+#ifndef __CUDA_ARCH__
 /**
  * DisneyGltf: Disney material expressed as PBRT BxDF stack.
  * Material input data does not match it entirely, so be cautious.
@@ -429,6 +430,144 @@ class DisneyGltf : public BSDFStackMaterial<
 			bxdfs.emplace_back<LambertianTransmission>( dt * c );
 	}
 };
+#else
+
+LH2_DEVFUNC auto CreateDisneyGltf()
+{
+	constexpr TransportMode mode = TransportMode::Radiance;
+	const bool thin = false;
+
+	using Props = ShadingData;
+
+	const auto isThin = [] __device__( const Props& shadingData ) {
+		return thin;
+	};
+
+	return StackNode(
+		GuardNode(
+			[] __device__( const Props& shadingData ) {
+				const float metallicWeight = METALLIC;
+				const float strans = TRANSMISSION;
+				const float diffuseWeight = ( 1.f - metallicWeight ) * ( 1.f - strans );
+				return diffuseWeight > 0;
+			},
+			StackNode(
+				BxDFNode<Props>( [] __device__( const Props& shadingData ) {
+					const float metallicWeight = METALLIC;
+					const float strans = TRANSMISSION;
+					const float diffuseWeight = ( 1.f - metallicWeight ) * ( 1.f - strans );
+					const float3 c = shadingData.color;
+					return DisneyDiffuse( diffuseWeight * c );
+				} ),
+				BxDFNode<Props>( [] __device__( const Props& shadingData ) {
+					const float metallicWeight = METALLIC;
+					const float strans = TRANSMISSION;
+					const float diffuseWeight = ( 1.f - metallicWeight ) * ( 1.f - strans );
+					const float3 c = shadingData.color;
+					const float rough = ROUGHNESS;
+					return DisneyRetro( diffuseWeight * c, rough );
+				} )
+
+				// TODO: Sheen
+
+				) ),
+		BxDFNode<Props>( [] __device__( const Props& shadingData ) {
+			const float metallicWeight = METALLIC;
+			const float strans = TRANSMISSION;
+			const float diffuseWeight = ( 1.f - metallicWeight ) * ( 1.f - strans );
+			const float rough = ROUGHNESS;
+			const float e = ETA * 2.f; // Multiplied by .5 in host_material
+			const float3 c = shadingData.color;
+
+			const float lum = 0.212671f * c.x + 0.715160f * c.y + 0.072169f * c.z;
+			// normalize lum. to isolate hue+sat
+			const float3 Ctint = lum > 0 ? ( c / lum ) : make_float3( 1.f );
+
+			const float aspect = std::sqrt( 1.f - ANISOTROPIC * .9f );
+			const float ax = std::max( .001f, sqr( rough ) / aspect );
+			const float ay = std::max( .001f, sqr( rough ) * aspect );
+			const DisneyMicrofacetDistribution distrib( ax, ay );
+
+			// Specular is Trowbridge-Reitz with a modified Fresnel function.
+			const float specTint = SPECTINT;
+			const float3 Cspec0 = pbrt_Lerp( metallicWeight, SchlickR0FromEta( e ) * pbrt_Lerp( specTint, make_float3( 1.f ), Ctint ), c );
+			const DisneyFresnel fresnel( Cspec0, metallicWeight, e );
+
+			return DisneyMicrofacetReflection(
+				pbrt_Lerp( metallicWeight, c, make_float3( 1.f ) ),
+				distrib, fresnel );
+		} ),
+		BxDFNode<Props>( [] __device__( const Props& shadingData ) {
+			const float cc = CLEARCOAT;
+			return DisneyClearcoat( cc, pbrt_Lerp( CLEARCOATGLOSS, .1f, .001f ) );
+		} ),
+		GuardNode(
+			[] __device__( const Props& shadingData ) {
+				const float strans = TRANSMISSION;
+				return strans > 0;
+			},
+			//    EitherNode( isThin, BXDF( [] __device__( const Props& shadingData ) {
+
+			// 			   } ),
+			BxDFNode<Props>( [] __device__( const Props& shadingData ) {
+				const float strans = TRANSMISSION;
+				const float3 c = shadingData.color;
+				const float rough = ROUGHNESS;
+				const float e = ETA * 2.f; // Multiplied by .5 in host_material
+				const float3 s = make_float3( std::sqrt( c.x ), std::sqrt( c.y ), std::sqrt( c.z ) );
+				const float3 T = strans * s;
+
+				const float aspect = std::sqrt( 1.f - ANISOTROPIC * .9f );
+				const float ax = std::max( .001f, sqr( rough ) / aspect );
+				const float ay = std::max( .001f, sqr( rough ) * aspect );
+				const DisneyMicrofacetDistribution distrib( ax, ay );
+
+				return MicrofacetTransmission<std::remove_const_t<decltype( distrib )>>( T, distrib, 1.f, e, mode );
+			} )
+			//    ),
+			),
+
+		GuardNode( isThin, BxDFNode<Props>( [] __device__( const Props& shadingData ) {
+					   const float3 c = shadingData.color;
+					   const float dt = TRANSMISSION / 2;
+					   // Lambertian, weighted by (1 - diffTrans)
+					   return LambertianTransmission( dt * c );
+				   } ) )
+
+	);
+};
+
+using DisneyGltfStack = decltype( CreateDisneyGltf() );
+
+class DisneyGltf : public StacklessMaterial<ShadingData, DisneyGltfStack>
+{
+	__device__ void Setup(
+		const float3 D,									   // IN:	incoming ray direction, used for consistent normals
+		const float u, const float v,					   //		barycentric coordinates of intersection point
+		const float coneWidth,							   //		ray cone width, for texture LOD
+		const CoreTri4& tri,							   //		triangle data
+		const int instIdx,								   //		instance index, for normal transform
+		const int materialInstance,						   //		Material instance id/location
+		float3& N, float3& iN, float3& fN,				   //		geometric normal, interpolated normal, final normal (normal mapped)
+		float3& T,										   //		tangent vector
+		const float waveLength = -1.0f,					   // IN:	wavelength (optional)
+		const bool allowMultipleLobes = true,			   // IN:	Integrator samples multiple lobes (optional)
+		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
+		) override
+	{
+		GetShadingData( D, u, v, coneWidth, tri, instIdx, materialInstance,
+						// Returns:
+						props, N, iN, fN, T, waveLength );
+	}
+
+  protected:
+	__device__ DisneyGltfStack CreateBxDFStack() const override
+	{
+		return CreateDisneyGltf();
+	}
+};
+
+#endif
 
 /**
  * DisneyGltf: Disney material expressed as PBRT BxDF stack.
