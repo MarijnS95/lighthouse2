@@ -32,21 +32,14 @@ struct CommonIntersectionParams
 
 // ----------------------------------------------------------------
 
-// BSDF Declarations
-enum /* class */ BxDFType : int
-{
-	BSDF_REFLECTION = 1 << 0,
-	BSDF_TRANSMISSION = 1 << 1,
-	BSDF_DIFFUSE = 1 << 2,
-	BSDF_GLOSSY = 1 << 3,
-	BSDF_SPECULAR = 1 << 4,
-	BSDF_ALL = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR | BSDF_REFLECTION |
-			   BSDF_TRANSMISSION,
-};
-
 class BxDF : public HasPlacementNewOperator
 {
+  protected:
+	__device__ BxDF( BxDFType type ) : type( type ) {}
+
   public:
+	const BxDFType type;
+
 	__device__ virtual float3 f( const float NDotV, const float NDotL ) const = 0;
 
 	__device__ /* virtual */ float3 f( const float3& wo, const float3& wi ) const
@@ -56,10 +49,8 @@ class BxDF : public HasPlacementNewOperator
 
 	__device__ virtual float3 Sample_f( const float NDotV, float3& wi,
 										/*  const Point2f& u, */ const float r0, const float r1,
-										float& pdf, BxDFType* sampledType ) const
+										float& pdf, BxDFType& sampledType ) const
 	{
-		// TODO: sampledType
-
 		// Cosine-sample the hemisphere, flipping the direction if necessary
 		// *wi = CosineSampleHemisphere( u );
 		wi = DiffuseReflectionCosWeighted( r0, r1 );
@@ -70,7 +61,7 @@ class BxDF : public HasPlacementNewOperator
 
 	__device__ /* virtual */ float3 Sample_f( const float3& wo, float3& wi,
 											  /*  const Point2f& u, */ const float r0, const float r1,
-											  float& pdf, BxDFType* sampledType ) const
+											  float& pdf, BxDFType& sampledType ) const
 	{
 		return Sample_f( wo.z, wi, r0, r1, pdf, sampledType );
 	}
@@ -88,11 +79,9 @@ class BxDF : public HasPlacementNewOperator
 };
 
 // Templated type that may ever be helpful
-template <typename Derived, BxDFType type>
+template <typename Derived, BxDFType _type>
 class BxDF_T : public BxDF
 {
-  public:
-	// TODO: We do not currently store the type, but this _MUST_ happen
-	// when evaluating BxDFs in different ways.
-	// BxDF_T() : BxDF( type ) {}
+  protected:
+	__device__ BxDF_T() : BxDF( _type ) {}
 };

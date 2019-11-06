@@ -168,8 +168,8 @@ void shadeKernel( float4* accumulator, const uint stride,
 	}
 
 	// detect specular surfaces
-	// TODO: Update for transmission
-	if (material.Roughness() <= 0.001f) FLAGS |= S_SPECULAR; else FLAGS &= ~S_SPECULAR;
+	// TODO: Specularity is updated later... For now make sure NEE is evaluated
+	FLAGS &= ~S_SPECULAR;
 
 	// initialize seed based on pixel index
 	uint seed = WangHash( pathIdx * 17 + R0 /* well-seeded xor32 is all you need */ );
@@ -240,10 +240,14 @@ void shadeKernel( float4* accumulator, const uint stride,
 		r3 = RandomFloat( seed );
 		r4 = RandomFloat( seed );
 	}
-	bool specular = false;
-	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, HIT_T, r3, r4, R, newBsdfPdf, specular );
+
+	materials::BxDFType sampledType;
+	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, HIT_T, r3, r4,
+										 R, newBsdfPdf, sampledType );
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
-	if (specular) FLAGS |= S_SPECULAR;
+
+	// detect specular surfaces
+	if ( sampledType & materials::BxDFType::BSDF_SPECULAR ) FLAGS |= S_SPECULAR; else FLAGS &= ~S_SPECULAR;
 
 	// russian roulette (TODO: greatly increases variance.)
 	const float p = ((FLAGS & S_SPECULAR) || ((FLAGS & S_BOUNCED) == 0))  ? 1 : SurvivalProbability( bsdf );

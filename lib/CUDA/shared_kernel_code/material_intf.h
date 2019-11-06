@@ -5,6 +5,18 @@
 namespace materials
 {
 
+// BSDF Declarations
+enum /* class */ BxDFType : int
+{
+	BSDF_REFLECTION = 1 << 0,
+	BSDF_TRANSMISSION = 1 << 1,
+	BSDF_DIFFUSE = 1 << 2,
+	BSDF_GLOSSY = 1 << 3,
+	BSDF_SPECULAR = 1 << 4,
+	BSDF_ALL = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR | BSDF_REFLECTION |
+			   BSDF_TRANSMISSION,
+};
+
 class MaterialIntf : public HasPlacementNewOperator
 {
   public:
@@ -30,14 +42,14 @@ class MaterialIntf : public HasPlacementNewOperator
 	 * Used to retrieve color for emissive surfaces.
 	 */
 	__device__ virtual float3 Color() const = 0;
-	__device__ virtual float Roughness() const = 0;
 
 	__device__ virtual float3 Evaluate( const float3 iN, const float3 T,
 										const float3 wo, const float3 wi, float& pdf ) const = 0;
 	__device__ virtual float3 Sample( float3 iN, const float3 N, const float3 T,
 									  const float3 wo, const float distance,
 									  const float r3, const float r4,
-									  float3& wi, float& pdf, bool& specular ) const = 0;
+									  float3& wi, float& pdf,
+									  BxDFType& sampledType ) const = 0;
 };
 
 #include "material_bsdf_stack.h"

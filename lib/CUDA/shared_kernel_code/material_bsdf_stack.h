@@ -102,11 +102,6 @@ class BSDFStackMaterial : public MaterialIntf
 		return make_float3( 1, 0, 1 );
 	}
 
-	__device__ float Roughness() const override
-	{
-		return 0.f;
-	}
-
 	__device__ float3 Evaluate( const float3 iN, const float3 T,
 								const float3 wo, const float3 wi,
 								float& pdf ) const override
@@ -134,10 +129,12 @@ class BSDFStackMaterial : public MaterialIntf
 
 	__device__ float3 Sample( float3 iN, const float3 N, const float3 T,
 							  const float3 wo, const float distance,
-							  float r3, float r4,
-							  float3& wi, float& pdf, bool& specular ) const override
+							  float r3, const float r4,
+							  float3& wi, float& pdf,
+							  BxDFType& sampledType ) const override
 	{
 		pdf = 0;
+		sampledType = BxDFType( 0 );
 
 		const float NDotV = dot( iN, wo );
 
@@ -164,14 +161,18 @@ class BSDFStackMaterial : public MaterialIntf
 			}
 		assert( bxdf );
 
-		auto f = bxdf->Sample_f( NDotV, wi, r3, r4, pdf, nullptr );
+		sampledType = bxdf->type;
+		auto f = bxdf->Sample_f( NDotV, wi, r3, r4, pdf, sampledType );
 
 		// wi = wiForType( stack.types[comp], r3, r4 );
 
 		// const float NDotL = dot( iN, wi );
 
 		if ( pdf == 0 )
+		{
+			sampledType = BxDFType( 0 );
 			return make_float3( 0.f );
+		}
 
 		// Convert wi to world-space. (Not using Tangent2World because we already have T, besides N)
 
