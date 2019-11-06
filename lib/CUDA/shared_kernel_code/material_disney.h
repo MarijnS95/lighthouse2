@@ -34,11 +34,6 @@ class DisneyMaterial : public MaterialIntf
 		return shadingData.color;
 	}
 
-	__device__ float Roughness() const override
-	{
-		return ROUGHNESS;
-	}
-
 	__device__ float3 Evaluate( const float3 iN, const float3 T,
 								const float3 wo, const float3 wi,
 								float& pdf ) const override
@@ -51,8 +46,13 @@ class DisneyMaterial : public MaterialIntf
 	__device__ float3 Sample( float3 iN, const float3 N, const float3 T,
 							  const float3 wo,
 							  const float r3, const float r4,
-							  float3& wi, float& pdf ) const override
+							  float3& wi, float& pdf,
+							  BxDFType& sampledType ) const override
 	{
+		sampledType = ROUGHNESS < 0.01f
+						  ? BxDFType::BSDF_SPECULAR
+						  : /* TODO: Unknown, only specular is necesary: */
+						  BxDFType( 0 );
 		return SampleBSDF( shadingData, iN, N, T, wo, r3, r4, wi, pdf );
 	}
 };
