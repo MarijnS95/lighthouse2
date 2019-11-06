@@ -166,10 +166,6 @@ void shadeKernel( float4* accumulator, const uint stride,
 		return;
 	}
 
-	// detect specular surfaces
-	// TODO: Update for transmission
-	if (material.Roughness() < 0.001f) FLAGS |= S_SPECULAR; else FLAGS &= ~S_SPECULAR;
-
 	// initialize seed based on pixel index
 	uint seed = WangHash( pathIdx + R0 /* well-seeded xor32 is all you need */ );
 
@@ -244,15 +240,19 @@ void shadeKernel( float4* accumulator, const uint stride,
 		r3 = RandomFloat( seed );
 		r4 = RandomFloat( seed );
 	}
-	bool specular = false;
-	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, HIT_T, r3, r4, R, newBsdfPdf, specular );
+
+	materials::BxDFType sampledType;
+	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, HIT_T, r3, r4,
+										 R, newBsdfPdf, sampledType );
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
-	if (specular) FLAGS |= S_SPECULAR;
+
+	// detect specular surfaces
+	if ( sampledType & materials::BxDFType::BSDF_SPECULAR ) FLAGS |= S_SPECULAR; else FLAGS &= ~S_SPECULAR;
+	if (!(FLAGS & S_SPECULAR)) FLAGS |= S_BOUNCED; else FLAGS |= S_VIASPECULAR;
 
 	// write extension ray
 	const uint extensionRayIdx = atomicAdd( &counters->extensionRays, 1 ); // compact
 	const uint packedNormal = PackNormal( fN );
-	if (!(FLAGS & S_SPECULAR)) FLAGS |= S_BOUNCED; else FLAGS |= S_VIASPECULAR;
 	extensionRaysOut[extensionRayIdx].O4 = make_float4( SafeOrigin( I, R, N, geometryEpsilon ), 0 );
 	extensionRaysOut[extensionRayIdx].D4 = make_float4( R, 1e34f );
 	FIXNAN_FLOAT3( throughput );
