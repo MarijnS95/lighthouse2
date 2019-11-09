@@ -107,6 +107,7 @@ using Materials = MaterialSwitch<
 	Case<MaterialType::DISNEY, DisneyMaterial>,
 #endif
 	Case<MaterialType::PBRT_GLASS, pbrt::Glass>,
+	Case<MaterialType::PBRT_METAL, pbrt::Metal>,
 	Case<MaterialType::PBRT_MIRROR, pbrt::Mirror>,
 	Case<MaterialType::PBRT_SUBSTRATE, pbrt::Substrate>,
 	>;

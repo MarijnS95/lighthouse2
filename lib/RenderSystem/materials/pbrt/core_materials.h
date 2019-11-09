@@ -20,6 +20,16 @@ struct Glass
 	bool remapRoughness;
 };
 
+struct Metal
+{
+	FLOAT3( eta, urough );
+	FLOAT3( k, vrough );
+	bool remapRoughness;
+
+	// float roughness;
+	// float bumpmap;
+};
+
 struct Mirror
 {
 	float3 Kr;
