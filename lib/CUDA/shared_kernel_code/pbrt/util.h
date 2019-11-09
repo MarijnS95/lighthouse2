@@ -221,6 +221,19 @@ LH2_DEVFUNC float Erf( float x )
 }
 
 // ----------------------------------------------------------------
+// float3 additions
+
+LH2_DEVFUNC bool IsBlack( const float3& v )
+{
+	return v.x + v.y + v.z == 0.f;
+}
+
+LH2_DEVFUNC float3 Sqrt( const float3& v )
+{
+	return make_float3( std::sqrt( v.x ), std::sqrt( v.y ), std::sqrt( v.z ) );
+}
+
+// ----------------------------------------------------------------
 
 // BxDF Utility Functions
 LH2_DEVFUNC float FrDielectric( float cosThetaI, float etaI, float etaT )
@@ -251,10 +264,29 @@ LH2_DEVFUNC float FrDielectric( float cosThetaI, float etaI, float etaT )
 	return ( Rparl * Rparl + Rperp * Rperp ) / 2;
 }
 
-// ----------------------------------------------------------------
-// float3 additions
-
-LH2_DEVFUNC bool IsBlack( const float3& v )
+// https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
+LH2_DEVFUNC float3 FrConductor( float cosThetaI, const float3& etai,
+								const float3& etat, const float3& k )
 {
-	return v.x + v.y + v.z == 0.f;
+	cosThetaI = clamp( cosThetaI, -1.f, 1.f );
+	const float3 eta = etat / etai;
+	const float3 etak = k / etai;
+
+	const float cosThetaI2 = cosThetaI * cosThetaI;
+	const float sinThetaI2 = 1.f - cosThetaI2;
+	const float3 eta2 = eta * eta;
+	const float3 etak2 = etak * etak;
+
+	const float3 t0 = eta2 - etak2 - sinThetaI2;
+	const float3 a2plusb2 = Sqrt( t0 * t0 + 4 * eta2 * etak2 );
+	const float3 t1 = a2plusb2 + cosThetaI2;
+	const float3 a = Sqrt( .5f * ( a2plusb2 + t0 ) );
+	const float3 t2 = 2.f * cosThetaI * a;
+	const float3 Rs = ( t1 - t2 ) / ( t1 + t2 );
+
+	const float3 t3 = cosThetaI2 * a2plusb2 + sinThetaI2 * sinThetaI2;
+	const float3 t4 = t2 * sinThetaI2;
+	const float3 Rp = Rs * ( t3 - t4 ) / ( t3 + t4 );
+
+	return 0.5f * ( Rp + Rs );
 }
