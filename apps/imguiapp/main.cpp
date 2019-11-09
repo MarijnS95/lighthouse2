@@ -51,8 +51,67 @@ void PrepareScene()
 	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
 	int lightInst = renderer->AddInstance( lightQuad );
 
+	common::materials::pbrt::Glass glass{};
+	glass.R = make_float3( .9f );
+	glass.T = make_float3( .9f );
+	glass.urough = .001f;
+	glass.vrough = .001f;
+	glass.eta = 1.5f;
+	// glass.remapRoughness = false;
+
+	common::materials::pbrt::Substrate substrate{};
+	substrate.Ks = make_float3( 0.04f );
+	substrate.urough = 0.001f;
+	substrate.vrough = 0.001f;
+	substrate.Kd = make_float3( 1.000000, 0.378676, 0.013473 );
+
+	common::materials::pbrt::Mirror mirror{};
+	mirror.Kr = make_float3( .9f );
+
+	common::materials::pbrt::Metal metal{};
+	metal.eta = make_float3( 1.657460, 0.880369, 0.521229 );
+	metal.k = make_float3( 9.223869, 6.269523, 4.837001 );
+	metal.urough = .1f;
+	metal.vrough = .1f;
+	metal.remapRoughness = false;
+
+	common::materials::pbrt::Matte matte{};
+	matte.Kd = make_float3( 0.325000, 0.310000, 0.250000 );
+	matte.sigma = 90.f;
+
+	common::materials::pbrt::Disney disney{};
+	disney.metallic = 1.f;
+	disney.color = make_float3( .5f );
+	disney.eta = 1.5f;
+
+	common::materials::pbrt::Plastic plastic{};
+	plastic.Ks = make_float3( 1, 0, 1 );
+	plastic.Kd = make_float3( 0, .25f, 0 );
+	plastic.roughness = 0.1f;
+	plastic.remapRoughness = false; //true;
+
+	// TODO: Just get a list of materials.
+	for ( int i = 0; i < 35; ++i )
+	{
+		constexpr auto matcount = 5;
+		auto& mat = renderer->GetMaterial( i );
+		if ( i % matcount == 0 )
+			mat = new SimpleHostMaterial<decltype( glass )>( glass );
+		else if ( i % matcount == 1 )
+			mat = new SimpleHostMaterial<decltype( substrate )>( substrate );
+		else if ( i % matcount == 2 )
+			mat = new SimpleHostMaterial<decltype( mirror )>( mirror );
+		else if ( i % matcount == 3 )
+			mat = new SimpleHostMaterial<decltype( metal )>( metal );
+		else
+			mat = new SimpleHostMaterial<decltype( matte )>( matte );
+
+		// mat = new SimpleHostMaterial<decltype( disney )>( disney );
+		mat = new SimpleHostMaterial<decltype( plastic )>( plastic );
+	}
+
 	// read persistent material changes
-	renderer->DeserializeMaterials( "data/pica/pica_materials.xml" );
+	// renderer->DeserializeMaterials( "data/pica/pica_materials.xml" );
 }
 
 //  +-----------------------------------------------------------------------------+
