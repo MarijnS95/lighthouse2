@@ -52,8 +52,8 @@ class DynamicHostMaterial_T : public DynamicHostMaterial
 /**
  * Simple holder for a material already stored in GPU format
  */
-template <typename Material, MaterialType _type>
-class SimpleHostMaterial : public DynamicHostMaterial_T<SimpleHostMaterial<Material, _type>, _type>
+template <typename Material>
+class SimpleHostMaterial : public DynamicHostMaterial_T<SimpleHostMaterial<Material>, Material::type>
 {
 	Material material;
 
