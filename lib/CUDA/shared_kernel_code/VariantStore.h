@@ -1,6 +1,7 @@
 #pragma once
 
-#include <assert.h>
+// #include <assert.h>
+#define assert(a)
 #include <utility>
 
 template <typename BaseType, typename Storage>

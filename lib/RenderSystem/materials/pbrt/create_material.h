@@ -29,12 +29,12 @@ namespace pbrt
 {
 using namespace common::materials::pbrt;
 
-std::shared_ptr<SimpleHostMaterial<Disney>> CreateDisneyMaterial( const TextureParams& mp );
-std::shared_ptr<SimpleHostMaterial<Glass>> CreateGlassMaterial( const TextureParams& mp );
-std::shared_ptr<SimpleHostMaterial<Matte>> CreateMatteMaterial( const TextureParams& mp );
-std::shared_ptr<SimpleHostMaterial<Metal>> CreateMetalMaterial( const TextureParams& mp );
-std::shared_ptr<SimpleHostMaterial<Mirror>> CreateMirrorMaterial( const TextureParams& mp );
-std::shared_ptr<SimpleHostMaterial<Plastic>> CreatePlasticMaterial( const TextureParams& mp );
-std::shared_ptr<SimpleHostMaterial<Substrate>> CreateSubstrateMaterial( const TextureParams& mp );
+SimpleHostMaterial<Disney>* CreateDisneyMaterial( const TextureParams& mp );
+SimpleHostMaterial<Glass>* CreateGlassMaterial( const TextureParams& mp );
+SimpleHostMaterial<Matte>* CreateMatteMaterial( const TextureParams& mp );
+SimpleHostMaterial<Metal>* CreateMetalMaterial( const TextureParams& mp );
+SimpleHostMaterial<Mirror>* CreateMirrorMaterial( const TextureParams& mp );
+SimpleHostMaterial<Plastic>* CreatePlasticMaterial( const TextureParams& mp );
+SimpleHostMaterial<Substrate>* CreateSubstrateMaterial( const TextureParams& mp );
 
 }; // namespace pbrt

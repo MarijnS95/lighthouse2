@@ -20,7 +20,7 @@
 namespace pbrt
 {
 
-std::shared_ptr<SimpleHostMaterial<Disney>> CreateDisneyMaterial( const TextureParams& mp )
+SimpleHostMaterial<Disney>* CreateDisneyMaterial( const TextureParams& mp )
 {
 	Disney disney;
 	disney.color = mp.GetConstantSpectrumTexture( "color", Spectrum( .5f ) ).vector();
@@ -42,10 +42,10 @@ std::shared_ptr<SimpleHostMaterial<Disney>> CreateDisneyMaterial( const TextureP
 	if ( mp.GetFloatTextureOrNull( "bumpmap" ) )
 		Error( "Bumpmaps not yet supported!" );
 
-	return std::make_shared<SimpleHostMaterial<Disney>>( disney );
+	return new SimpleHostMaterial<Disney>( disney );
 }
 
-std::shared_ptr<SimpleHostMaterial<Glass>> CreateGlassMaterial( const TextureParams& mp )
+SimpleHostMaterial<Glass>* CreateGlassMaterial( const TextureParams& mp )
 {
 	Glass glass;
 	glass.R = mp.GetConstantSpectrumTexture( "Kr", Spectrum( 1.f ) ).vector();
@@ -61,10 +61,10 @@ std::shared_ptr<SimpleHostMaterial<Glass>> CreateGlassMaterial( const TexturePar
 
 	glass.remapRoughness = mp.FindBool( "remaproughness", true );
 
-	return std::make_shared<SimpleHostMaterial<Glass>>( glass );
+	return new SimpleHostMaterial<Glass>( glass );
 }
 
-std::shared_ptr<SimpleHostMaterial<Matte>> CreateMatteMaterial( const TextureParams& mp )
+SimpleHostMaterial<Matte>* CreateMatteMaterial( const TextureParams& mp )
 {
 	Matte matte;
 	matte.Kd = mp.GetConstantSpectrumTexture( "Kd", Spectrum( .5f ) ).vector();
@@ -73,10 +73,10 @@ std::shared_ptr<SimpleHostMaterial<Matte>> CreateMatteMaterial( const TexturePar
 	if ( mp.GetFloatTextureOrNull( "bumpmap" ) )
 		Error( "Bumpmaps not yet supported!" );
 
-	return std::make_shared<SimpleHostMaterial<Matte>>( matte );
+	return new SimpleHostMaterial<Matte>( matte );
 }
 
-std::shared_ptr<SimpleHostMaterial<Metal>> CreateMetalMaterial( const TextureParams& mp )
+SimpleHostMaterial<Metal>* CreateMetalMaterial( const TextureParams& mp )
 {
 	// Values courtesy of PBRT
 	const int CopperSamples = 56;
@@ -132,9 +132,9 @@ std::shared_ptr<SimpleHostMaterial<Metal>> CreateMetalMaterial( const TexturePar
 	if ( mp.GetFloatTextureOrNull( "bumpmap" ) )
 		Error( "Bumpmaps not yet supported!" );
 
-	return std::make_shared<SimpleHostMaterial<Metal>>( metal );
+	return new SimpleHostMaterial<Metal>( metal );
 }
-std::shared_ptr<SimpleHostMaterial<Mirror>> CreateMirrorMaterial( const TextureParams& mp )
+SimpleHostMaterial<Mirror>* CreateMirrorMaterial( const TextureParams& mp )
 {
 	Mirror mirror;
 	mirror.Kr = mp.GetConstantSpectrumTexture( "Kr", .9f ).vector();
@@ -142,10 +142,10 @@ std::shared_ptr<SimpleHostMaterial<Mirror>> CreateMirrorMaterial( const TextureP
 	if ( mp.GetFloatTextureOrNull( "bumpmap" ) )
 		Error( "Bumpmaps not yet supported!" );
 
-	return std::make_shared<SimpleHostMaterial<Mirror>>( mirror );
+	return new SimpleHostMaterial<Mirror>( mirror );
 }
 
-std::shared_ptr<SimpleHostMaterial<Plastic>> CreatePlasticMaterial( const TextureParams& mp )
+SimpleHostMaterial<Plastic>* CreatePlasticMaterial( const TextureParams& mp )
 {
 	Plastic plastic;
 	plastic.Kd = mp.GetConstantSpectrumTexture( "Kd", .25f ).vector();
@@ -156,10 +156,10 @@ std::shared_ptr<SimpleHostMaterial<Plastic>> CreatePlasticMaterial( const Textur
 	if ( mp.GetFloatTextureOrNull( "bumpmap" ) )
 		Error( "Bumpmaps not yet supported!" );
 
-	return std::make_shared<SimpleHostMaterial<Plastic>>( plastic );
+	return new SimpleHostMaterial<Plastic>( plastic );
 }
 
-std::shared_ptr<SimpleHostMaterial<Substrate>> CreateSubstrateMaterial( const TextureParams& mp )
+SimpleHostMaterial<Substrate>* CreateSubstrateMaterial( const TextureParams& mp )
 {
 	Substrate substrate;
 	substrate.Kd = mp.GetConstantSpectrumTexture( "Kd", .5f ).vector();
@@ -171,7 +171,7 @@ std::shared_ptr<SimpleHostMaterial<Substrate>> CreateSubstrateMaterial( const Te
 	if ( mp.GetFloatTextureOrNull( "bumpmap" ) )
 		Error( "Bumpmaps not yet supported!" );
 
-	return std::make_shared<SimpleHostMaterial<Substrate>>( substrate );
+	return new SimpleHostMaterial<Substrate>( substrate );
 }
 
 }; // namespace pbrt

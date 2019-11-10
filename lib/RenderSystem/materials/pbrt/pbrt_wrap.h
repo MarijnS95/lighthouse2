@@ -38,6 +38,7 @@ using Vector2f = float2;
 using Normal3f = float3;
 using Point3f = float3;
 using Point2f = float2;
+using Transform = mat4;
 
 #define PBRT_CONSTEXPR constexpr
 

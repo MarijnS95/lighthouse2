@@ -51,6 +51,7 @@ public:
 	void Render( Convergence converge );
 	Camera* GetCamera();
 	RenderSettings* GetSettings();
+	HostScene* GetScene();
 	int GetTriangleMaterialID( const int coreInstId, const int coreTriId );
 	DynamicHostMaterial*& GetTriangleMaterial( const int coreInstId, const int coreTriId );
 	DynamicHostMaterial*& GetMaterial( const int matId );
