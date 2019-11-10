@@ -547,6 +547,12 @@ class RGBSpectrum : public CoefficientSpectrum<3>
 		xyz[2] *= scale;
 		return FromXYZ( xyz );
 	}
+
+	// LH2 additions
+	Vector3f vector() const
+	{
+		return {c[0], c[1], c[2]};
+	}
 };
 
 // Spectrum Inline Functions

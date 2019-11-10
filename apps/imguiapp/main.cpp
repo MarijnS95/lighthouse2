@@ -33,6 +33,10 @@ static CoreStats coreStats;
 
 #include "main_tools.h"
 
+#include <materials/pbrt/api.h>
+
+using namespace pbrt;
+
 //  +-----------------------------------------------------------------------------+
 //  |  PrepareScene                                                               |
 //  |  Initialize a scene.                                                  LH2'19|
@@ -40,6 +44,7 @@ static CoreStats coreStats;
 void PrepareScene()
 {
 	// initialize scene
+#if 0
 	renderer->AddScene( "scene.gltf", "data/pica/", mat4::Translate( 0, -10.2f, 0 ) );
 	// int meshIdx = renderer->AddMesh( "rungholt.obj", "data/rungholt/", 1.0f );
 	// renderer->AddInstance( meshIdx );
@@ -112,6 +117,19 @@ void PrepareScene()
 
 	// read persistent material changes
 	// renderer->DeserializeMaterials( "data/pica/pica_materials.xml" );
+
+#else
+
+	Options opts;
+
+	pbrtInit( opts );
+
+	pbrtParseFile( "data/coffee/scene.pbrt" );
+
+	// TODO in end of main!
+	// pbrtCleanup();
+
+#endif
 }
 
 //  +-----------------------------------------------------------------------------+
