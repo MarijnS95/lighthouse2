@@ -18,15 +18,54 @@
 */
 
 // core/api.cpp*
-#include "api.h"
+#include <rendersystem.h>
 
 #include "create_material.h"
 
 #include "paramset.h"
 #include "texture.h"
 
+#include "shapes/plymesh.h"
+
 namespace pbrt
 {
+
+// API Local Classes
+PBRT_CONSTEXPR int MaxTransforms = 2;
+PBRT_CONSTEXPR int StartTransformBits = 1 << 0;
+PBRT_CONSTEXPR int EndTransformBits = 1 << 1;
+PBRT_CONSTEXPR int AllTransformsBits = ( 1 << MaxTransforms ) - 1;
+struct TransformSet
+{
+	// TransformSet Public Methods
+	Transform& operator[]( int i )
+	{
+		CHECK_GE( i, 0 );
+		CHECK_LT( i, MaxTransforms );
+		return t[i];
+	}
+	const Transform& operator[]( int i ) const
+	{
+		CHECK_GE( i, 0 );
+		CHECK_LT( i, MaxTransforms );
+		return t[i];
+	}
+	friend TransformSet Inverse( const TransformSet& ts )
+	{
+		TransformSet tInv;
+		for ( int i = 0; i < MaxTransforms; ++i ) tInv.t[i] = ts.t[i].Inverted();
+		return tInv;
+	}
+	bool IsAnimated() const
+	{
+		for ( int i = 0; i < MaxTransforms - 1; ++i )
+			if ( t[i] != t[i + 1] ) return true;
+		return false;
+	}
+
+  private:
+	Transform t[MaxTransforms];
+};
 
 // MaterialInstance represents both an instance of a material as well as
 // the information required to create another instance of it (possibly with
@@ -35,12 +74,12 @@ struct MaterialInstance
 {
 	MaterialInstance() = default;
 	MaterialInstance( const std::string& name,
-					  const std::shared_ptr<DynamicHostMaterial>& mtl,
+					  DynamicHostMaterial* mtl,
 					  ParamSet params )
 		: name( name ), material( mtl ), params( std::move( params ) ) {}
 
 	std::string name;
-	std::shared_ptr<DynamicHostMaterial> material;
+	DynamicHostMaterial* material;
 	ParamSet params;
 };
 
@@ -54,10 +93,10 @@ struct GraphicsState
 	{
 		ParamSet empty;
 		TextureParams tp( empty, empty, *floatTextures, *spectrumTextures );
-		std::shared_ptr<DynamicHostMaterial> mtl( CreateMatteMaterial( tp ) );
+		DynamicHostMaterial* mtl = CreateMatteMaterial( tp );
 		currentMaterial = std::make_shared<MaterialInstance>( "matte", mtl, ParamSet() );
 	}
-	std::shared_ptr<DynamicHostMaterial> GetMaterialForShape( const ParamSet& geomParams );
+	DynamicHostMaterial* GetMaterialForShape( const ParamSet& geomParams );
 	// MediumInterface CreateMediumInterface();
 
 	// Graphics State
@@ -87,16 +126,104 @@ struct GraphicsState
 	bool reverseOrientation = false;
 };
 
+static TransformSet curTransform;
+static uint32_t activeTransformBits = AllTransformsBits;
+static std::map<std::string, TransformSet> namedCoordinateSystems;
 GraphicsState graphicsState;
+static std::vector<GraphicsState> pushedGraphicsStates;
+static std::vector<TransformSet> pushedTransforms;
+static std::vector<uint32_t> pushedActiveTransformBits;
+
+HostScene* hostScene;
 
 Options PbrtOptions;
 
+enum class APIState
+{
+	Uninitialized,
+	OptionsBlock,
+	WorldBlock
+};
+static APIState currentApiState = APIState::Uninitialized;
 int catIndentCount = 0;
 
-static std::shared_ptr<DynamicHostMaterial> MakeMaterial( const std::string& name,
-														  const TextureParams& mp )
+// API Macros
+#define VERIFY_INITIALIZED( func )                         \
+	if ( !( PbrtOptions.cat || PbrtOptions.toPly ) &&      \
+		 currentApiState == APIState::Uninitialized )      \
+	{                                                      \
+		Error(                                             \
+			"pbrtInit() must be before calling \"%s()\". " \
+			"Ignoring.",                                   \
+			func );                                        \
+		return;                                            \
+	}                                                      \
+	else /* swallow trailing semicolon */
+#define VERIFY_OPTIONS( func )                           \
+	VERIFY_INITIALIZED( func );                          \
+	if ( !( PbrtOptions.cat || PbrtOptions.toPly ) &&    \
+		 currentApiState == APIState::WorldBlock )       \
+	{                                                    \
+		Error(                                           \
+			"Options cannot be set inside world block; " \
+			"\"%s\" not allowed.  Ignoring.",            \
+			func );                                      \
+		return;                                          \
+	}                                                    \
+	else /* swallow trailing semicolon */
+#define VERIFY_WORLD( func )                                 \
+	VERIFY_INITIALIZED( func );                              \
+	if ( !( PbrtOptions.cat || PbrtOptions.toPly ) &&        \
+		 currentApiState == APIState::OptionsBlock )         \
+	{                                                        \
+		Error(                                               \
+			"Scene description must be inside world block; " \
+			"\"%s\" not allowed. Ignoring.",                 \
+			func );                                          \
+		return;                                              \
+	}                                                        \
+	else /* swallow trailing semicolon */
+#define FOR_ACTIVE_TRANSFORMS( expr )           \
+	for ( int i = 0; i < MaxTransforms; ++i )   \
+		if ( activeTransformBits & ( 1 << i ) ) \
+		{                                       \
+			expr                                \
+		}
+#if 1
+#define WARN_IF_ANIMATED_TRANSFORM( func )
+#else
+// TODO
+#define WARN_IF_ANIMATED_TRANSFORM( func )                           \
+	do                                                               \
+	{                                                                \
+		if ( curTransform.IsAnimated() )                             \
+			Warning(                                                 \
+				"Animated transformations set; ignoring for \"%s\" " \
+				"and using the start transform only",                \
+				func );                                              \
+	} while ( false ) /* swallow trailing semicolon */
+#endif
+
+// Object Creation Function Definitions
+static HostMesh* MakeShapes( const std::string& name,
+							 const Transform* object2world,
+							 const Transform* world2object,
+							 bool reverseOrientation,
+							 const ParamSet& paramSet,
+							 const int materialIdx )
 {
-	std::shared_ptr<DynamicHostMaterial> material = nullptr;
+	if ( name == "plymesh" )
+		return CreatePLYMesh( object2world, world2object, reverseOrientation,
+							  paramSet, materialIdx, &*graphicsState.floatTextures );
+	else
+		Warning( "Shape \"%s\" unknown.", name.c_str() );
+	return nullptr;
+}
+
+static DynamicHostMaterial* MakeMaterial( const std::string& name,
+										  const TextureParams& mp )
+{
+	DynamicHostMaterial* material = nullptr;
 	if ( name == "" || name == "none" )
 		return nullptr;
 	else if ( name == "matte" )
@@ -118,7 +245,7 @@ static std::shared_ptr<DynamicHostMaterial> MakeMaterial( const std::string& nam
 	{
 		std::string m1 = mp.FindString( "namedmaterial1", "" );
 		std::string m2 = mp.FindString( "namedmaterial2", "" );
-		std::shared_ptr<DynamicHostMaterial> mat1, mat2;
+		DynamicHostMaterial *mat1, *mat2;
 		if ( graphicsState.namedMaterials->find( m1 ) ==
 			 graphicsState.namedMaterials->end() )
 		{
@@ -179,14 +306,30 @@ static std::shared_ptr<DynamicHostMaterial> MakeMaterial( const std::string& nam
 	return material;
 }
 
-void pbrtInit( const Options& opt )
+void pbrtInit( const Options& opt, HostScene* hs )
 {
 	PbrtOptions = opt;
+	hostScene = hs;
+	// API Initialization
+	if ( currentApiState != APIState::Uninitialized )
+		Error( "pbrtInit() has already been called." );
+	currentApiState = APIState::OptionsBlock;
+	// renderOptions.reset( new RenderOptions );
+	graphicsState = GraphicsState();
+	catIndentCount = 0;
+
+	// General \pbrt Initialization
+	SampledSpectrum::Init();
 }
 
 void pbrtCleanup()
 {
-	Warning( "pbrtCleanup is not implemented!" );
+	// API Cleanup
+	if ( currentApiState == APIState::Uninitialized )
+		Error( "pbrtCleanup() called without pbrtInit()." );
+	else if ( currentApiState == APIState::WorldBlock )
+		Error( "pbrtCleanup() called while inside world block." );
+	currentApiState = APIState::Uninitialized;
 }
 
 void pbrtIdentity()
@@ -215,14 +358,36 @@ void pbrtLookAt( Float ex, Float ey, Float ez, Float lx, Float ly, Float lz,
 	Warning( "pbrtLookAt is not implemented!" );
 }
 
-void pbrtConcatTransform( Float transform[16] )
+void pbrtConcatTransform( Float tr[16] )
 {
-	Warning( "pbrtConcatTransform is not implemented!" );
+	VERIFY_INITIALIZED( "ConcatTransform" );
+	FOR_ACTIVE_TRANSFORMS(
+		curTransform[i] =
+			curTransform[i] *
+			Transform( mat4{tr[0], tr[4], tr[8], tr[12], tr[1], tr[5],
+							tr[9], tr[13], tr[2], tr[6], tr[10], tr[14],
+							tr[3], tr[7], tr[11], tr[15]} ); )
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sConcatTransform [ ", catIndentCount, "" );
+		for ( int i = 0; i < 16; ++i ) printf( "%.9g ", tr[i] );
+		printf( " ]\n" );
+	}
 }
 
-void pbrtTransform( Float transform[16] )
+void pbrtTransform( Float tr[16] )
 {
-	Warning( "pbrtTransform is not implemented!" );
+	VERIFY_INITIALIZED( "Transform" );
+	FOR_ACTIVE_TRANSFORMS(
+		curTransform[i] = Transform( mat4{
+			tr[0], tr[4], tr[8], tr[12], tr[1], tr[5], tr[9], tr[13], tr[2],
+			tr[6], tr[10], tr[14], tr[3], tr[7], tr[11], tr[15]} ); )
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sTransform [ ", catIndentCount, "" );
+		for ( int i = 0; i < 16; ++i ) printf( "%.9g ", tr[i] );
+		printf( " ]\n" );
+	}
 }
 
 void pbrtCoordinateSystem( const std::string& )
@@ -297,17 +462,51 @@ void pbrtMediumInterface( const std::string& insideName, const std::string& outs
 
 void pbrtWorldBegin()
 {
-	Warning( "pbrtWorldBegin is not implemented!" );
+	VERIFY_OPTIONS( "WorldBegin" );
+	currentApiState = APIState::WorldBlock;
+	for ( int i = 0; i < MaxTransforms; ++i ) curTransform[i] = Transform();
+	activeTransformBits = AllTransformsBits;
+	namedCoordinateSystems["world"] = curTransform;
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+		printf( "\n\nWorldBegin\n\n" );
 }
 
 void pbrtAttributeBegin()
 {
-	Warning( "pbrtAttributeBegin is not implemented!" );
+	VERIFY_WORLD( "AttributeBegin" );
+	pushedGraphicsStates.push_back( graphicsState );
+	graphicsState.floatTexturesShared = graphicsState.spectrumTexturesShared =
+		graphicsState.namedMaterialsShared = true;
+	pushedTransforms.push_back( curTransform );
+	pushedActiveTransformBits.push_back( activeTransformBits );
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "\n%*sAttributeBegin\n", catIndentCount, "" );
+		catIndentCount += 4;
+	}
 }
 
 void pbrtAttributeEnd()
 {
-	Warning( "pbrtAttributeEnd is not implemented!" );
+	VERIFY_WORLD( "AttributeEnd" );
+	if ( !pushedGraphicsStates.size() )
+	{
+		Error(
+			"Unmatched pbrtAttributeEnd() encountered. "
+			"Ignoring it." );
+		return;
+	}
+	graphicsState = std::move( pushedGraphicsStates.back() );
+	pushedGraphicsStates.pop_back();
+	curTransform = pushedTransforms.back();
+	pushedTransforms.pop_back();
+	activeTransformBits = pushedActiveTransformBits.back();
+	pushedActiveTransformBits.pop_back();
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		catIndentCount -= 4;
+		printf( "%*sAttributeEnd\n", catIndentCount, "" );
+	}
 }
 
 void pbrtTransformBegin()
@@ -349,7 +548,7 @@ void pbrtMakeNamedMaterial( const std::string& name, const ParamSet& params )
 	TextureParams mp( params, emptyParams, *graphicsState.floatTextures,
 					  *graphicsState.spectrumTextures );
 	std::string matName = mp.FindString( "type" );
-	// WARN_IF_ANIMATED_TRANSFORM( "MakeNamedMaterial" );
+	WARN_IF_ANIMATED_TRANSFORM( "MakeNamedMaterial" );
 	if ( matName == "" )
 		Error( "No parameter string \"type\" found in MakeNamedMaterial" );
 
@@ -379,7 +578,20 @@ void pbrtMakeNamedMaterial( const std::string& name, const ParamSet& params )
 
 void pbrtNamedMaterial( const std::string& name )
 {
-	Warning( "pbrtNamedMaterial is not implemented!" );
+	VERIFY_WORLD( "NamedMaterial" );
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sNamedMaterial \"%s\"\n", catIndentCount, "", name.c_str() );
+		return;
+	}
+
+	auto iter = graphicsState.namedMaterials->find( name );
+	if ( iter == graphicsState.namedMaterials->end() )
+	{
+		Error( "NamedMaterial \"%s\" unknown.", name.c_str() );
+		return;
+	}
+	graphicsState.currentMaterial = iter->second;
 }
 
 void pbrtLightSource( const std::string& name, const ParamSet& params )
@@ -394,7 +606,155 @@ void pbrtAreaLightSource( const std::string& name, const ParamSet& params )
 
 void pbrtShape( const std::string& name, const ParamSet& params )
 {
-	Warning( "pbrtShape is not implemented!" );
+	VERIFY_WORLD( "Shape" );
+	// std::vector<std::shared_ptr<Primitive>> prims;
+	// std::vector<std::shared_ptr<AreaLight>> areaLights;
+	if ( PbrtOptions.cat || ( PbrtOptions.toPly && name != "trianglemesh" ) )
+	{
+		printf( "%*sShape \"%s\" ", catIndentCount, "", name.c_str() );
+		params.Print( catIndentCount );
+		printf( "\n" );
+	}
+
+	if ( curTransform.IsAnimated() )
+		Error( "No animated transform loader yet!" );
+
+	auto mtl = graphicsState.GetMaterialForShape( params );
+	auto materialIdx = hostScene->AddMaterial( mtl );
+
+	// Initialize _prims_ and _areaLights_ for static shape
+
+	// Create shapes for shape _name_
+	// Transform* ObjToWorld = transformCache.Lookup( curTransform[0] );
+	// Transform* WorldToObj = transformCache.Lookup( Inverse( curTransform[0] ) );
+	Transform ObjToWorld = curTransform[0];
+	Transform WorldToObj = curTransform[0].Inverted();
+	auto hostMesh = MakeShapes( name, &ObjToWorld, &WorldToObj,
+								graphicsState.reverseOrientation, params, materialIdx );
+	// if ( shapes.empty() ) return;
+	params.ReportUnused();
+
+	if ( !hostMesh )
+	{
+		Warning( "No mesh created for %s", name.c_str() );
+		return;
+	}
+
+	// TODO: Medium and area lights
+#if 0
+	MediumInterface mi = graphicsState.CreateMediumInterface();
+	prims.reserve( shapes.size() );
+	for ( auto s : shapes )
+	{
+		// Possibly create area light for shape
+		std::shared_ptr<AreaLight> area;
+		if ( graphicsState.areaLight != "" )
+		{
+			area = MakeAreaLight( graphicsState.areaLight, curTransform[0],
+								  mi, graphicsState.areaLightParams, s );
+			if ( area ) areaLights.push_back( area );
+		}
+		prims.push_back(
+			std::make_shared<GeometricPrimitive>( s, mtl, area, mi ) );
+	}
+#endif
+
+	CHECK( hostScene );
+
+	auto meshIdx = hostScene->AddMesh( hostMesh );
+	hostScene->AddInstance( meshIdx, ObjToWorld );
+
+	// Add _prims_ and _areaLights_ to scene or current instance
+	// if ( renderOptions->currentInstance )
+	// {
+	// 	if ( areaLights.size() )
+	// 		Warning( "Area lights not supported with object instancing" );
+	// 	renderOptions->currentInstance->insert(
+	// 		renderOptions->currentInstance->end(), prims.begin(), prims.end() );
+	// }
+	// else
+	// {
+	// 	renderOptions->primitives.insert( renderOptions->primitives.end(),
+	// 									  prims.begin(), prims.end() );
+	// 	if ( areaLights.size() )
+	// 		renderOptions->lights.insert( renderOptions->lights.end(),
+	// 									  areaLights.begin(), areaLights.end() );
+	// }
+}
+
+// Attempt to determine if the ParamSet for a shape may provide a value for
+// its material's parameters. Unfortunately, materials don't provide an
+// explicit representation of their parameters that we can query and
+// cross-reference with the parameter values available from the shape.
+//
+// Therefore, we'll apply some "heuristics".
+bool shapeMaySetMaterialParameters( const ParamSet& ps )
+{
+	for ( const auto& param : ps.textures )
+		// Any texture other than one for an alpha mask is almost certainly
+		// for a Material (or is unused!).
+		if ( param->name != "alpha" && param->name != "shadowalpha" )
+			return true;
+
+	// Special case spheres, which are the most common non-mesh primitive.
+	for ( const auto& param : ps.floats )
+		if ( param->nValues == 1 && param->name != "radius" )
+			return true;
+
+	// Extra special case strings, since plymesh uses "filename", curve "type",
+	// and loopsubdiv "scheme".
+	for ( const auto& param : ps.strings )
+		if ( param->nValues == 1 && param->name != "filename" &&
+			 param->name != "type" && param->name != "scheme" )
+			return true;
+
+	// For all other parameter types, if there is a single value of the
+	// parameter, assume it may be for the material. This should be valid
+	// (if conservative), since no materials currently take array
+	// parameters.
+	for ( const auto& param : ps.bools )
+		if ( param->nValues == 1 )
+			return true;
+	for ( const auto& param : ps.ints )
+		if ( param->nValues == 1 )
+			return true;
+	for ( const auto& param : ps.point2fs )
+		if ( param->nValues == 1 )
+			return true;
+	for ( const auto& param : ps.vector2fs )
+		if ( param->nValues == 1 )
+			return true;
+	for ( const auto& param : ps.point3fs )
+		if ( param->nValues == 1 )
+			return true;
+	for ( const auto& param : ps.vector3fs )
+		if ( param->nValues == 1 )
+			return true;
+	for ( const auto& param : ps.normals )
+		if ( param->nValues == 1 )
+			return true;
+	for ( const auto& param : ps.spectra )
+		if ( param->nValues == 1 )
+			return true;
+
+	return false;
+}
+
+DynamicHostMaterial* GraphicsState::GetMaterialForShape(
+	const ParamSet& shapeParams )
+{
+	CHECK( currentMaterial );
+	if ( shapeMaySetMaterialParameters( shapeParams ) )
+	{
+		// Only create a unique material for the shape if the shape's
+		// parameters are (apparently) going to provide values for some of
+		// the material parameters.
+		TextureParams mp( shapeParams, currentMaterial->params, *floatTextures,
+						  *spectrumTextures );
+		return MakeMaterial( currentMaterial->name, mp );
+	}
+	else
+		return currentMaterial->material;
 }
 
 void pbrtReverseOrientation()

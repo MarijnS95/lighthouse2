@@ -25,11 +25,13 @@
 
 #include "pbrt_wrap.h"
 
+#include <rendersystem.h>
+
 namespace pbrt
 {
 
 // API Function Declarations
-void pbrtInit( const Options& opt );
+void pbrtInit( const Options& opt, HostScene* hs );
 void pbrtCleanup();
 void pbrtIdentity();
 void pbrtTranslate( Float dx, Float dy, Float dz );

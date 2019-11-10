@@ -65,7 +65,7 @@ public:
 	void SetPose( const vector<float>& weights );
 	void SetPose( const HostSkin* skin );
 	// data members
-	string name = "unnamed";					// name for the mesh						
+	string name = "unnamed";					// name for the mesh
 	int ID = -1;								// unique ID for the mesh: position in mesh array
 	vector<float4> vertices;					// model vertices
 	vector<float3> vertexNormals;				// vertex normals
@@ -73,7 +73,7 @@ public:
 	vector<float3> origNormal;					// skinning: base pose normals
 	vector<HostTri> triangles;					// full triangles
 	vector<int> materialList;					// list of materials used by the mesh; used to efficiently track light changes
-	vector<uint> alphaFlags;					// list containing 1 for each triangle that is flagged as HASALPHA, 0 otherwise 
+	vector<uint> alphaFlags;					// list containing 1 for each triangle that is flagged as HASALPHA, 0 otherwise
 	vector<uint4> joints;						// skinning: joints
 	vector<float4> weights;						// skinning: joint weights
 	vector<Pose> poses;							// morph target data
@@ -83,7 +83,7 @@ public:
 	// Vertices and indices can be deduced from the list of HostTris, obviously. However, efficient intersection
 	// (e.g. in OptiX) requires only vertices and connectivity data. Shading on the other hand requires the full
 	// HostTris. The cores will thus benefit from having both structures. Now, we could let the core build the
-	// vertex and index lists. However, building these efficiently is non-trivial, therefore the 'smart' split 
+	// vertex and index lists. However, building these efficiently is non-trivial, therefore the 'smart' split
 	// logic stays in the RenderSystem.
 };
 

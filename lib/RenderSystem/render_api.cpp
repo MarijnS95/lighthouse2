@@ -131,6 +131,10 @@ RenderSettings* RenderAPI::GetSettings()
 	return &renderer->settings;
 }
 
+HostScene* RenderAPI::GetScene() {
+	return renderer->scene;
+}
+
 int RenderAPI::GetTriangleMaterialID( const int coreInstId, const int coreTriId )
 {
 	return renderer->GetTriangleMaterial( coreInstId, coreTriId );
