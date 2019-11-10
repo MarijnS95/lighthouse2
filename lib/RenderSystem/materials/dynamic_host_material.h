@@ -73,12 +73,16 @@ class SimpleHostMaterial : public DynamicHostMaterial_T<SimpleHostMaterial<Mater
 	}
 
 	// TODO:
+	bool isDirty = true;
 	bool Changed()
 	{
-		return false;
+		bool wasDirty = isDirty;
+		isDirty = false;
+		return wasDirty;
 	}
 	void MarkAsDirty()
 	{
+		isDirty = true;
 	}
 };
 
