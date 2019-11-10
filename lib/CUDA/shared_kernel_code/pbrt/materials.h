@@ -15,6 +15,7 @@ namespace pbrt
 #include "./matte.h"
 #include "./metal.h"
 #include "./mirror.h"
+#include "./plastic.h"
 #include "./substrate.h"
 
 }; // namespace pbrt
