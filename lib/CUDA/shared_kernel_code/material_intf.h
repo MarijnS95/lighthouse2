@@ -114,6 +114,7 @@ using Materials = MaterialSwitch<
 	Case<MaterialType::PBRT_MATTE, pbrt::Matte>,
 	Case<MaterialType::PBRT_METAL, pbrt::Metal>,
 	Case<MaterialType::PBRT_MIRROR, pbrt::Mirror>,
+	Case<MaterialType::PBRT_PLASTIC, pbrt::Plastic>,
 	Case<MaterialType::PBRT_SUBSTRATE, pbrt::Substrate>,
 	>;
 
