@@ -12,6 +12,8 @@
 
 struct Disney
 {
+	static constexpr auto type = MaterialType::PBRT_DISNEY;
+
 	FLOAT3( color, flatness );
 	FLOAT3( scatterDistance, specTrans );
 	float metallic, eta;
@@ -25,6 +27,8 @@ struct Disney
 
 struct Glass
 {
+	static constexpr auto type = MaterialType::PBRT_GLASS;
+
 	FLOAT3( R, urough );
 	FLOAT3( T, vrough );
 
@@ -35,11 +39,15 @@ struct Glass
 
 struct Matte
 {
+	static constexpr auto type = MaterialType::PBRT_MATTE;
+
 	FLOAT3( Kd, sigma );
 };
 
 struct Metal
 {
+	static constexpr auto type = MaterialType::PBRT_METAL;
+
 	FLOAT3( eta, urough );
 	FLOAT3( k, vrough );
 	bool remapRoughness;
@@ -50,11 +58,15 @@ struct Metal
 
 struct Mirror
 {
+	static constexpr auto type = MaterialType::PBRT_MIRROR;
+
 	float3 Kr;
 };
 
 struct Substrate
 {
+	static constexpr auto type = MaterialType::PBRT_SUBSTRATE;
+
 	FLOAT3( Kd, urough );
 	FLOAT3( Ks, vrough );
 
