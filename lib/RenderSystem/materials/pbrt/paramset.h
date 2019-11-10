@@ -184,6 +184,13 @@ class TextureParams
 													 Float def ) const;
 	std::shared_ptr<Texture<Float>> GetFloatTextureOrNull(
 		const std::string& name ) const;
+
+	// LH2 Additions
+	Float GetConstantFloatTexture( const std::string& name, float def ) const;
+
+	Spectrum GetConstantSpectrumTexture( const std::string& name, Spectrum def ) const;
+	// End LH2 additions
+
 	Float FindFloat( const std::string& n, Float d ) const
 	{
 		return geomParams.FindOneFloat( n, materialParams.FindOneFloat( n, d ) );

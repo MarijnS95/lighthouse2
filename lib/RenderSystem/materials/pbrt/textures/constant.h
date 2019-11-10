@@ -55,8 +55,8 @@ class ConstantTexture : public Texture<T>
 	ConstantTexture( const T& value ) : value( value ) {}
 	// T Evaluate( const SurfaceInteraction& ) const { return value; }
 
-  private:
-	T value;
+	// private:
+	const T value;
 };
 
 // ConstantTexture<Float>* CreateConstantFloatTexture( const Transform& tex2world,

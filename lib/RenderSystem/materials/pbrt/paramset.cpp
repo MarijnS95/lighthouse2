@@ -930,6 +930,32 @@ std::shared_ptr<Texture<Float>> TextureParams::GetFloatTextureOrNull(
 	}
 }
 
+// LH2 Additions
+Float TextureParams::GetConstantFloatTexture( const std::string& name, float def ) const
+{
+	auto tex = GetFloatTexture( name, def );
+
+	auto constant_tex = std::dynamic_pointer_cast<ConstantTexture<Float>>( tex );
+
+	if ( !constant_tex )
+		Error( "Non-constant textures not yet supported!" );
+
+	return constant_tex->value;
+}
+
+Spectrum TextureParams::GetConstantSpectrumTexture( const std::string& name, Spectrum def ) const
+{
+	auto tex = GetSpectrumTexture( name, def );
+
+	auto constant_tex = std::dynamic_pointer_cast<ConstantTexture<Spectrum>>( tex );
+
+	if ( !constant_tex )
+		Error( "Non-constant textures not yet supported!" );
+
+	return constant_tex->value;
+}
+// End LH2 additions
+
 template <typename T>
 static void
 reportUnusedMaterialParams(
