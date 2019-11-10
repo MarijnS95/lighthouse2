@@ -124,7 +124,7 @@ void PrepareScene()
 
 	Options opts;
 
-	pbrtInit( opts );
+	pbrtInit( opts, renderer->GetScene() );
 
 	pbrtParseFile( "data/coffee/scene.pbrt" );
 

@@ -185,15 +185,30 @@ void HostScene::Init()
 
 //  +-----------------------------------------------------------------------------+
 //  |  HostScene::AddMesh                                                         |
+//  |  Add an existing HostMesh to the list of meshes and return the mesh ID.     |
+//  |                                                                       LH2'19|
+//  +-----------------------------------------------------------------------------+
+int HostScene::AddMesh( HostMesh* mesh )
+{
+	auto res = std::find( meshes.begin(), meshes.end(), mesh );
+
+	if ( res != meshes.end() )
+		return std::distance( meshes.begin(), res );
+
+	mesh->ID = (int)meshes.size();
+	meshes.push_back( mesh );
+	return mesh->ID;
+}
+
+//  +-----------------------------------------------------------------------------+
+//  |  HostScene::AddMesh                                                         |
 //  |  Create a mesh specified by a file name and data dir, apply a scale, add    |
 //  |  the mesh to the list of meshes and return the mesh ID.               LH2'19|
 //  +-----------------------------------------------------------------------------+
 int HostScene::AddMesh( const char* objFile, const char* dir, const float scale )
 {
 	HostMesh* newMesh = new HostMesh( objFile, dir, scale );
-	newMesh->ID = (int)meshes.size();
-	meshes.push_back( newMesh );
-	return newMesh->ID;
+	return AddMesh( newMesh );
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -205,9 +220,7 @@ int HostScene::AddMesh( const char* objFile, const char* dir, const float scale 
 int HostScene::AddMesh( const int triCount )
 {
 	HostMesh* newMesh = new HostMesh( triCount );
-	newMesh->ID = (int)meshes.size();
-	meshes.push_back( newMesh );
-	return newMesh->ID;
+	return AddMesh( newMesh );
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -570,15 +583,30 @@ int HostScene::CreateTexture( const string& origin, const uint modFlags )
 
 //  +-----------------------------------------------------------------------------+
 //  |  HostScene::AddMaterial                                                     |
+//  |  Adds an existing DynamicHostMaterial* and returns the ID. If the material  |
+//  |  with that pointer is already added, it is not added again.           LH2'19|
+//  +-----------------------------------------------------------------------------+
+int HostScene::AddMaterial( DynamicHostMaterial* material )
+{
+	auto res = std::find( materials.begin(), materials.end(), material );
+
+	if ( res != materials.end() )
+		return std::distance( materials.begin(), res );
+
+	int matid = (int)materials.size();
+	materials.push_back( material );
+	return matid;
+}
+
+//  +-----------------------------------------------------------------------------+
+//  |  HostScene::AddMaterial                                                     |
 //  |  Create a material, with a limited set of parameters.                 LH2'19|
 //  +-----------------------------------------------------------------------------+
 int HostScene::AddMaterial( const float3 color )
 {
 	auto material = new HostMaterial();
 	material->color = color;
-	material->ID = (int)materials.size();
-	materials.push_back( material );
-	return material->ID;
+	return material->ID = AddMaterial( material );
 }
 
 //  +-----------------------------------------------------------------------------+
