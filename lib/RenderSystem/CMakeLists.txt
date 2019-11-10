@@ -26,3 +26,26 @@ if(BUILD_SHARED_LIBS)
 	install(TARGETS ${PROJECT_NAME})
 endif()
 
+include(CheckCXXSourceCompiles)
+
+check_cxx_source_compiles ("
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+int main() {
+   int fd = open(\"foo\", O_RDONLY);
+   struct stat s;
+   fstat(fd, &s);
+   size_t len = s.st_size;
+   void *ptr = mmap(0, len, PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
+   munmap(ptr, len);
+}
+" HAVE_MMAP)
+if(HAVE_MMAP)
+	target_compile_definitions(${PROJECT_NAME} PUBLIC PBRT_HAVE_MMAP)
+endif()
+
+iF(MSVC OR WIN32)
+	target_compile_definitions(${PROJECT_NAME} PUBLIC PBRT_IS_WINDOWS)
+endif()
