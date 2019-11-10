@@ -20,12 +20,164 @@
 // core/api.cpp*
 #include "api.h"
 
+#include "create_material.h"
+
+#include "paramset.h"
+#include "texture.h"
+
 namespace pbrt
 {
+
+// MaterialInstance represents both an instance of a material as well as
+// the information required to create another instance of it (possibly with
+// different parameters from the shape).
+struct MaterialInstance
+{
+	MaterialInstance() = default;
+	MaterialInstance( const std::string& name,
+					  const std::shared_ptr<DynamicHostMaterial>& mtl,
+					  ParamSet params )
+		: name( name ), material( mtl ), params( std::move( params ) ) {}
+
+	std::string name;
+	std::shared_ptr<DynamicHostMaterial> material;
+	ParamSet params;
+};
+
+struct GraphicsState
+{
+	// Graphics State Methods
+	GraphicsState()
+		: floatTextures( std::make_shared<FloatTextureMap>() ),
+		  spectrumTextures( std::make_shared<SpectrumTextureMap>() ),
+		  namedMaterials( std::make_shared<NamedMaterialMap>() )
+	{
+		ParamSet empty;
+		TextureParams tp( empty, empty, *floatTextures, *spectrumTextures );
+		std::shared_ptr<DynamicHostMaterial> mtl( CreateMatteMaterial( tp ) );
+		currentMaterial = std::make_shared<MaterialInstance>( "matte", mtl, ParamSet() );
+	}
+	std::shared_ptr<DynamicHostMaterial> GetMaterialForShape( const ParamSet& geomParams );
+	// MediumInterface CreateMediumInterface();
+
+	// Graphics State
+	// std::string currentInsideMedium, currentOutsideMedium;
+
+	// Updated after book publication: floatTextures, spectrumTextures, and
+	// namedMaterials are all implemented using a "copy on write" approach
+	// for more efficient GraphicsState management.  When state is pushed
+	// in pbrtAttributeBegin(), we don't immediately make a copy of these
+	// maps, but instead record that each one is shared.  Only if an item
+	// is added to one is a unique copy actually made.
+	using FloatTextureMap = std::map<std::string, std::shared_ptr<Texture<Float>>>;
+	std::shared_ptr<FloatTextureMap> floatTextures;
+	bool floatTexturesShared = false;
+
+	using SpectrumTextureMap = std::map<std::string, std::shared_ptr<Texture<Spectrum>>>;
+	std::shared_ptr<SpectrumTextureMap> spectrumTextures;
+	bool spectrumTexturesShared = false;
+
+	using NamedMaterialMap = std::map<std::string, std::shared_ptr<MaterialInstance>>;
+	std::shared_ptr<NamedMaterialMap> namedMaterials;
+	bool namedMaterialsShared = false;
+
+	std::shared_ptr<MaterialInstance> currentMaterial;
+	ParamSet areaLightParams;
+	std::string areaLight;
+	bool reverseOrientation = false;
+};
+
+GraphicsState graphicsState;
 
 Options PbrtOptions;
 
 int catIndentCount = 0;
+
+std::shared_ptr<DynamicHostMaterial> MakeMaterial( const std::string& name,
+												   const TextureParams& mp )
+{
+	std::shared_ptr<DynamicHostMaterial> material = nullptr;
+	if ( name == "" || name == "none" )
+		return nullptr;
+	else if ( name == "matte" )
+		material = CreateMatteMaterial( mp );
+	else if ( name == "plastic" )
+		material = CreatePlasticMaterial( mp );
+	// else if ( name == "translucent" )
+	// 	material = CreateTranslucentMaterial( mp );
+	else if ( name == "glass" )
+		material = CreateGlassMaterial( mp );
+	else if ( name == "mirror" )
+		material = CreateMirrorMaterial( mp );
+	// else if ( name == "hair" )
+	// 	material = CreateHairMaterial( mp );
+	else if ( name == "disney" )
+		material = CreateDisneyMaterial( mp );
+#if 0 // Not implemented
+	else if ( name == "mix" )
+	{
+		std::string m1 = mp.FindString( "namedmaterial1", "" );
+		std::string m2 = mp.FindString( "namedmaterial2", "" );
+		std::shared_ptr<DynamicHostMaterial> mat1, mat2;
+		if ( graphicsState.namedMaterials->find( m1 ) ==
+			 graphicsState.namedMaterials->end() )
+		{
+			Error( "Named material \"%s\" undefined.  Using \"matte\"",
+				   m1.c_str() );
+			mat1 = MakeMaterial( "matte", mp );
+		}
+		else
+			mat1 = ( *graphicsState.namedMaterials )[m1]->material;
+
+		if ( graphicsState.namedMaterials->find( m2 ) ==
+			 graphicsState.namedMaterials->end() )
+		{
+			Error( "Named material \"%s\" undefined.  Using \"matte\"",
+				   m2.c_str() );
+			mat2 = MakeMaterial( "matte", mp );
+		}
+		else
+			mat2 = ( *graphicsState.namedMaterials )[m2]->material;
+
+		material = CreateMixMaterial( mp, mat1, mat2 );
+	}
+#endif
+	else if ( name == "metal" )
+		material = CreateMetalMaterial( mp );
+	else if ( name == "substrate" )
+		material = CreateSubstrateMaterial( mp );
+#if 0 // Not implemented
+	else if ( name == "uber" )
+		material = CreateUberMaterial( mp );
+	else if ( name == "subsurface" )
+		material = CreateSubsurfaceMaterial( mp );
+	else if ( name == "kdsubsurface" )
+		material = CreateKdSubsurfaceMaterial( mp );
+	else if ( name == "fourier" )
+		material = CreateFourierMaterial( mp );
+#endif
+	else
+	{
+		Warning( "Material \"%s\" unknown. Using \"matte\".", name.c_str() );
+		material = CreateMatteMaterial( mp );
+	}
+
+#if 0 // All existing implementations are pathtracers
+	if ( ( name == "subsurface" || name == "kdsubsurface" ) &&
+		 ( renderOptions->IntegratorName != "path" &&
+		   ( renderOptions->IntegratorName != "volpath" ) ) )
+		Warning(
+			"Subsurface scattering material \"%s\" used, but \"%s\" "
+			"integrator doesn't support subsurface scattering. "
+			"Use \"path\" or \"volpath\".",
+			name.c_str(), renderOptions->IntegratorName.c_str() );
+#endif
+
+	mp.ReportUnused();
+	if ( !material )
+		Error( "Unable to create material \"%s\"", name.c_str() );
+	return material;
+}
 
 void pbrtInit( const Options& opt )
 {
@@ -175,12 +327,54 @@ void pbrtTexture( const std::string& name, const std::string& type, const std::s
 
 void pbrtMaterial( const std::string& name, const ParamSet& params )
 {
-	Warning( "pbrtMaterial is not implemented!" );
+	ParamSet emptyParams;
+	TextureParams mp( params, emptyParams, *graphicsState.floatTextures,
+					  *graphicsState.spectrumTextures );
+
+	auto mtl = MakeMaterial( name, mp );
+	graphicsState.currentMaterial =
+		std::make_shared<MaterialInstance>( name, mtl, params );
+
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sMaterial \"%s\" ", catIndentCount, "", name.c_str() );
+		params.Print( catIndentCount );
+		printf( "\n" );
+	}
 }
 
 void pbrtMakeNamedMaterial( const std::string& name, const ParamSet& params )
 {
-	Warning( "pbrtMakeNamedMaterial is not implemented!" );
+	ParamSet emptyParams;
+	TextureParams mp( params, emptyParams, *graphicsState.floatTextures,
+					  *graphicsState.spectrumTextures );
+	std::string matName = mp.FindString( "type" );
+	// WARN_IF_ANIMATED_TRANSFORM( "MakeNamedMaterial" );
+	if ( matName == "" )
+		Error( "No parameter string \"type\" found in MakeNamedMaterial" );
+
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sMakeNamedMaterial \"%s\" ", catIndentCount, "",
+				name.c_str() );
+		params.Print( catIndentCount );
+		printf( "\n" );
+	}
+	else
+	{
+		auto mtl = MakeMaterial( matName, mp );
+		if ( graphicsState.namedMaterials->find( name ) !=
+			 graphicsState.namedMaterials->end() )
+			Warning( "Named material \"%s\" redefined.", name.c_str() );
+		if ( graphicsState.namedMaterialsShared )
+		{
+			graphicsState.namedMaterials =
+				std::make_shared<GraphicsState::NamedMaterialMap>( *graphicsState.namedMaterials );
+			graphicsState.namedMaterialsShared = false;
+		}
+		( *graphicsState.namedMaterials )[name] =
+			std::make_shared<MaterialInstance>( matName, mtl, params );
+	}
 }
 
 void pbrtNamedMaterial( const std::string& name )

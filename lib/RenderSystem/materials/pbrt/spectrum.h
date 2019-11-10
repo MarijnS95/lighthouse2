@@ -549,6 +549,12 @@ class RGBSpectrum : public CoefficientSpectrum<3>
 		printf( "Spectrum from sample %s\n", bla.ToString().c_str() );
 		return bla;
 	}
+
+	// LH2 additions
+	Vector3f vector() const
+	{
+		return {c[0], c[1], c[2]};
+	}
 };
 
 // Spectrum Inline Functions
