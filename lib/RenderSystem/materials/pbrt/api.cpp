@@ -779,7 +779,31 @@ void pbrtObjectInstance( const std::string& name )
 
 void pbrtWorldEnd()
 {
-	Warning( "pbrtWorldEnd is not implemented!" );
+	VERIFY_WORLD( "WorldEnd" );
+	// Ensure there are no pushed graphics states
+	while ( pushedGraphicsStates.size() )
+	{
+		Warning( "Missing end to pbrtAttributeBegin()" );
+		pushedGraphicsStates.pop_back();
+		pushedTransforms.pop_back();
+	}
+	while ( pushedTransforms.size() )
+	{
+		Warning( "Missing end to pbrtTransformBegin()" );
+		pushedTransforms.pop_back();
+	}
+
+	graphicsState = GraphicsState();
+	// transformCache.Clear();
+	currentApiState = APIState::OptionsBlock;
+	// ImageTexture<Float, Float>::ClearCache();
+	// ImageTexture<RGBSpectrum, Spectrum>::ClearCache();
+	// renderOptions.reset( new RenderOptions );
+
+	for ( int i = 0; i < MaxTransforms; ++i ) curTransform[i] = Transform();
+	activeTransformBits = AllTransformsBits;
+	namedCoordinateSystems.erase( namedCoordinateSystems.begin(),
+								  namedCoordinateSystems.end() );
 }
 
 }; // namespace pbrt
