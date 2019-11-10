@@ -34,6 +34,10 @@ static CoreStats coreStats;
 
 #include "main_tools.h"
 
+#include <materials/pbrt/api.h>
+
+using namespace pbrt;
+
 //  +-----------------------------------------------------------------------------+
 //  |  PrepareScene                                                               |
 //  |  Initialize a scene.                                                  LH2'19|
@@ -42,9 +46,15 @@ void PrepareScene()
 {
 	// initialize scene
 #if 0
+
+#if 1
 	// mushrooms
 	materialFile = string( "data/woodville/wood_materials.xml" );
 	renderer->AddScene( "PUP_Woodville.gltf", "data/woodville/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
+#elif 0
+	// radio
+	materialFile = string( "data/receiver/red_materials.xml" );
+	renderer->AddScene( "scene.gltf", "data/receiver/", mat4::Scale( 0.2f ) * mat4::Translate( 0, 0, 0 ) );
 	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
 	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
 	animPaused = true;
@@ -129,6 +139,19 @@ void PrepareScene()
 		// mat = new SimpleHostMaterial<decltype( disney )>( disney );
 		mat = new SimpleHostMaterial<decltype( plastic )>( plastic );
 	}
+
+#else
+
+	Options opts;
+
+	pbrtInit( opts );
+
+	pbrtParseFile( "data/coffee/scene.pbrt" );
+
+	// TODO in end of main!
+	// pbrtCleanup();
+
+#endif
 }
 
 //  +-----------------------------------------------------------------------------+
