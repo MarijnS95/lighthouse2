@@ -341,7 +341,7 @@ class DisneyGltf : public BSDFStackMaterial<
 				// Blend between DisneyDiffuse and fake subsurface based on
 				// flatness.  Additionally, weight using diffTrans.
 				bxdfs.emplace_back<DisneyDiffuse>( ( 1 - flat ) * thin_color );
-				bxdfs.emplace_back<DisneyFakeSS>( flat * thin_color, ROUGHNESS );
+				bxdfs.emplace_back<DisneyFakeSS>( flat * thin_color, rough );
 			}
 			else
 			{
@@ -408,8 +408,7 @@ class DisneyGltf : public BSDFStackMaterial<
 			// Walter et al's model, with the provided transmissive term scaled
 			// by sqrt(color), so that after two refractions, we're back to the
 			// provided color.
-			const float3 s = make_float3( std::sqrt( c.x ), std::sqrt( c.y ), std::sqrt( c.z ) );
-			const float3 T = strans * s;
+			const float3 T = strans * Sqrt( c );
 			if ( thin )
 			{
 				// Scale roughness based on IOR (Burley 2015, Figure 15).
@@ -426,9 +425,128 @@ class DisneyGltf : public BSDFStackMaterial<
 		}
 
 		if ( thin )
-		{
 			// Lambertian, weighted by (1 - diffTrans)
 			bxdfs.emplace_back<LambertianTransmission>( dt * c );
+	}
+};
+
+/**
+ * DisneyGltf: Disney material expressed as PBRT BxDF stack.
+ * Material input data does not match it entirely, so be cautious.
+ */
+class Disney : public SimpleMaterial<
+				   common::materials::pbrt::Disney,
+				   DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen,
+				   DisneyClearcoat, DisneyMicrofacetReflection,
+				   MicrofacetTransmission<DisneyMicrofacetDistribution>,
+				   MicrofacetTransmission<TrowbridgeReitzDistribution<>>,
+				   LambertianTransmission>
+{
+  public:
+	__device__ void ComputeScatteringFunctions(
+		const common::materials::pbrt::Disney& params,
+		const bool allowMultipleLobes,
+		const TransportMode mode ) override
+	{
+		// TODO: Bumpmapping
+
+		const float3 c = params.color;
+		const float metallicWeight = params.metallic;
+		const float e = params.eta;
+		const float strans = params.specTrans;
+		const float diffuseWeight = ( 1.f - metallicWeight ) * ( 1.f - strans );
+		const float dt = params.diffTrans / 2.f; // 0: all diffuse is reflected -> 1, transmitted
+		const float rough = params.roughness;
+		const float lum = 0.212671f * c.x + 0.715160f * c.y + 0.072169f * c.z;
+		// normalize lum. to isolate hue+sat
+		const float3 Ctint = lum > 0 ? ( c / lum ) : make_float3( 1.f );
+
+		if ( diffuseWeight > 0 )
+		{
+			if ( params.thin )
+			{
+				const float flat = -1337.f; // TODO: Evaluate from texture/value
+				const float3 thin_color = ( 1 - dt ) * diffuseWeight * c;
+
+				// Blend between DisneyDiffuse and fake subsurface based on
+				// flatness.  Additionally, weight using diffTrans.
+				bxdfs.emplace_back<DisneyDiffuse>( ( 1 - flat ) * thin_color );
+				bxdfs.emplace_back<DisneyFakeSS>( flat * thin_color, rough );
+			}
+			else
+			{
+				float3 sd = params.scatterDistance;
+				if ( IsBlack( sd ) )
+				{
+					bxdfs.emplace_back<DisneyDiffuse>( diffuseWeight * c );
+				}
+				else
+				{
+					// TODO:
+
+					// Implementation of the empirical BSSRDF described in "Extending the
+					// Disney BRDF to a BSDF with integrated subsurface scattering" (Brent
+					// Burley) and "Approximate Reflectance Profiles for Efficient Subsurface
+					// Scattering (Christensen and Burley).
+				}
+			}
+
+			// Retro-reflection.
+			bxdfs.emplace_back<DisneyRetro>( diffuseWeight * c, rough );
+
+			// Sheen (if enabled)
+			const float sheenWeight = params.sheen;
+			if ( sheenWeight > 0 )
+			{
+				const float stint = params.sheenTint;
+				const float3 Csheen = pbrt_Lerp( stint, make_float3( 1.f ), Ctint );
+
+				bxdfs.emplace_back<DisneySheen>( diffuseWeight * sheenWeight * Csheen );
+			}
 		}
+
+		// Create the microfacet distribution for metallic and/or specular
+		// transmission.
+		const float aspect = std::sqrt( 1.f - params.anisotropic * .9f );
+		const float ax = std::max( .001f, sqr( rough ) / aspect );
+		const float ay = std::max( .001f, sqr( rough ) * aspect );
+		const DisneyMicrofacetDistribution distrib( ax, ay );
+
+		// Specular is Trowbridge-Reitz with a modified Fresnel function.
+		const float specTint = params.specularTint;
+		const float3 Cspec0 = pbrt_Lerp( metallicWeight, SchlickR0FromEta( e ) * pbrt_Lerp( specTint, make_float3( 1.f ), Ctint ), c );
+		const DisneyFresnel fresnel( Cspec0, metallicWeight, e );
+		// https://github.com/mmp/pbrt-v3/issues/224
+		bxdfs.emplace_back<DisneyMicrofacetReflection>( make_float3( 1.f ), distrib, fresnel );
+
+		// Clearcoat
+		const float cc = params.clearcoat;
+		if ( cc > 0 )
+			bxdfs.emplace_back<DisneyClearcoat>( cc, pbrt_Lerp( params.clearcoatGloss, .1f, .001f ) );
+
+		// BTDF
+		if ( strans > 0 )
+		{
+			// Walter et al's model, with the provided transmissive term scaled
+			// by sqrt(color), so that after two refractions, we're back to the
+			// provided color.
+			const float3 T = strans * Sqrt( c );
+			if ( params.thin )
+			{
+				const float rscaled = ( .65f * e - .35f ) * rough;
+				const float ax = std::max( .001f, sqr( rscaled ) / aspect );
+				const float ay = std::max( .001f, sqr( rscaled ) * aspect );
+				const TrowbridgeReitzDistribution<> scaledDistrib( ax, ay );
+				bxdfs.emplace_back<MicrofacetTransmission<
+					std::remove_const_t<decltype( scaledDistrib )>>>( T, scaledDistrib, 1.f, e, mode );
+			}
+			else
+				bxdfs.emplace_back<MicrofacetTransmission<
+					std::remove_const_t<decltype( distrib )>>>( T, distrib, 1.f, e, mode );
+		}
+
+		if ( params.thin )
+			// Lambertian, weighted by (1 - diffTrans)
+			bxdfs.emplace_back<LambertianTransmission>( dt * c );
 	}
 };
