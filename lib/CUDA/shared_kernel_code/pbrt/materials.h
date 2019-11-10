@@ -12,6 +12,7 @@ namespace pbrt
 
 #include "./disney.h"
 #include "./glass.h"
+#include "./matte.h"
 #include "./metal.h"
 #include "./mirror.h"
 #include "./substrate.h"
