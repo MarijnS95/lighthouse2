@@ -127,6 +127,7 @@ void PrepareScene()
 	pbrtInit( opts, renderer->GetScene() );
 
 	pbrtParseFile( "data/coffee/scene.pbrt" );
+	pbrtParseFile( "data/glass-of-water/scene.pbrt" );
 
 	// TODO in end of main!
 	// pbrtCleanup();
