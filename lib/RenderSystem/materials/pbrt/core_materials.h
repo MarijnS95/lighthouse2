@@ -10,6 +10,19 @@
 		};                         \
 	}
 
+struct Disney
+{
+	FLOAT3( color, flatness );
+	FLOAT3( scatterDistance, specTrans );
+	float metallic, eta;
+	float roughness, specularTint, anisotropic;
+	float sheenTint, sheen;
+	float clearcoat, clearcoatGloss;
+	float diffTrans;
+	// float bumpMap;
+	bool thin;
+};
+
 struct Glass
 {
 	FLOAT3( R, urough );
