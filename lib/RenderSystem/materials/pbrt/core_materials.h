@@ -63,6 +63,16 @@ struct Mirror
 	float3 Kr;
 };
 
+struct Plastic
+{
+	static constexpr auto type = MaterialType::PBRT_PLASTIC;
+
+	FLOAT3( Kd, roughness );
+	float3 Ks;
+
+	bool remapRoughness;
+};
+
 struct Substrate
 {
 	static constexpr auto type = MaterialType::PBRT_SUBSTRATE;
