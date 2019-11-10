@@ -1,0 +1,9 @@
+{
+    "editor.insertSpaces": false,
+    "cmake.configureOnOpen": true,
+    "cmake.configureSettings": {
+        "OptiX_INSTALL_DIR:PATH": "/opt/optix-6",
+        "OptiX7_INSTALL_DIR:PATH": "/opt/optix"
+    },
+    "cmake.generator": "Unix Makefiles"
+}
