@@ -40,6 +40,16 @@ void HostMaterial::CollectMaps( CoreMaterialEx& gpuMatEx ) const
 	for ( int i = 0; i < 11; i++ ) gpuMatEx.texture[i] = map[i].textureID;
 }
 
+bool HostMaterial::IsEmissive() const
+{
+	return color.x > 1 || color.y > 1 || color.z > 1;
+}
+
+float3 HostMaterial::Color() const
+{
+	return color;
+}
+
 //  +-----------------------------------------------------------------------------+
 //  |  HostMaterial::ConvertFrom                                                  |
 //  |  Converts a tinyobjloader material to a HostMaterial.                 LH2'19|

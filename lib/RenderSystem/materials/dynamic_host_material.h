@@ -33,6 +33,10 @@ class DynamicHostMaterial
 	// Blegh.
 	virtual void CollectMaps( CoreMaterialEx& gpuMatEx ) const = 0;
 
+	virtual bool IsEmissive() const = 0;
+	// Retrieve color for material. Mainly used for emissive materials
+	virtual float3 Color() const = 0;
+
 	// TODO: API
   public:
 	virtual bool Changed() = 0;
@@ -72,11 +76,25 @@ class SimpleHostMaterial : public DynamicHostMaterial_T<SimpleHostMaterial<Mater
 		// Nothing. This function should be refactored out.
 	}
 
-	// TODO:
+	bool IsEmissive() const override
+	{
+		// Assuming no SimpleHostMaterial is emissive
+		return false;
+	}
+
+	float3 Color() const override
+	{
+		// No way to extract this properly. Function is really only used
+		// for emissive materials, which are likely not implemented through
+		// SimpleHostMaterial.
+		return make_float3( 0.f );
+	}
+
 	bool isDirty = true;
 	bool Changed()
 	{
 		bool wasDirty = isDirty;
+		// Assuming no-one changes the material, for now.
 		isDirty = false;
 		return wasDirty;
 	}
@@ -89,3 +107,48 @@ class SimpleHostMaterial : public DynamicHostMaterial_T<SimpleHostMaterial<Mater
 // template <typename Material>
 // class SimpleHostMaterial<Material, Material::type> {
 // };
+
+class EmissiveMaterial : public DynamicHostMaterial_T<EmissiveMaterial, MaterialType::EMISSIVE>
+{
+	float3 color;
+
+  public:
+	EmissiveMaterial( const float3& color ) : color( color )
+	{
+	}
+
+	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener ) const override
+	{
+		// TODO: return -1, assume host_light picks this up
+		return flattener.push_back( color ).offset();
+	}
+
+	void CollectMaps( CoreMaterialEx& gpuMatEx ) const override
+	{
+		// Nothing. This function should be refactored out.
+	}
+
+	bool IsEmissive() const override
+	{
+		// Assuming no material is emissive
+		return true;
+	}
+
+	float3 Color() const override
+	{
+		return color;
+	}
+
+	bool isDirty = true;
+	bool Changed()
+	{
+		bool wasDirty = isDirty;
+		// Assuming no-one changes the material, for now.
+		isDirty = false;
+		return wasDirty;
+	}
+	void MarkAsDirty()
+	{
+		isDirty = true;
+	}
+};

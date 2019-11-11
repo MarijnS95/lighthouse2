@@ -251,6 +251,9 @@ enum class MaterialType : char
 	PBRT_SUBSURFACE,
 	PBRT_TRANSLUCENT,
 	PBRT_UBER,
+
+	// Special case for emissive material types.
+	EMISSIVE,
 };
 
 struct CoreMaterialDesc
