@@ -517,12 +517,35 @@ void pbrtAttributeEnd()
 
 void pbrtTransformBegin()
 {
-	Warning( "pbrtTransformBegin is not implemented!" );
+	VERIFY_WORLD( "TransformBegin" );
+	pushedTransforms.push_back( curTransform );
+	pushedActiveTransformBits.push_back( activeTransformBits );
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sTransformBegin\n", catIndentCount, "" );
+		catIndentCount += 4;
+	}
 }
 
 void pbrtTransformEnd()
 {
-	Warning( "pbrtTransformEnd is not implemented!" );
+	VERIFY_WORLD( "TransformEnd" );
+	if ( !pushedTransforms.size() )
+	{
+		Error(
+			"Unmatched pbrtTransformEnd() encountered. "
+			"Ignoring it." );
+		return;
+	}
+	curTransform = pushedTransforms.back();
+	pushedTransforms.pop_back();
+	activeTransformBits = pushedActiveTransformBits.back();
+	pushedActiveTransformBits.pop_back();
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		catIndentCount -= 4;
+		printf( "%*sTransformEnd\n", catIndentCount, "" );
+	}
 }
 
 void pbrtTexture( const std::string& name, const std::string& type, const std::string& texname, const ParamSet& params )
