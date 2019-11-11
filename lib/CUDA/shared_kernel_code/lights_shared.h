@@ -22,7 +22,6 @@
 #include "noerrors.h"
 
 #define ISLIGHTS
-#define MAXISLIGHTS	2048
 
 #define AREALIGHTCOUNT			lightCounts.x
 #define POINTLIGHTCOUNT			lightCounts.y
@@ -124,14 +123,14 @@ LH2_DEVFUNC float LightPickProb( int idx, const float3& O, const float3& N, cons
 {
 #ifdef ISLIGHTS
 	// for implicit connections; calculates the chance that the light would have been explicitly selected
-	float potential[MAXISLIGHTS];
+	float potential;
 	float sum = 0;
-	for (int i = 0; i < AREALIGHTCOUNT; i++) { float c = PotentialAreaLightContribution( i, O, N, I, make_float3( -1 ) ); potential[i] = c; sum += c; }
-	for (int i = 0; i < POINTLIGHTCOUNT; i++) { float c = PotentialPointLightContribution( i, O, N ); sum += c; }
-	for (int i = 0; i < SPOTLIGHTCOUNT; i++) { float c = PotentialSpotLightContribution( i, O, N ); sum += c; }
-	for (int i = 0; i < DIRECTIONALLIGHTCOUNT; i++) { float c = PotentialDirectionalLightContribution( i, O, N ); sum += c; }
+	for (int i = 0; i < AREALIGHTCOUNT; i++) { float c = PotentialAreaLightContribution( i, O, N, I, make_float3( -1 ) ); if (i == idx) potential = c; sum += c; }
+	for (int i = 0; i < POINTLIGHTCOUNT; i++) { float c = PotentialPointLightContribution( i, O, N ); if (i == idx) potential = c; sum += c; }
+	for (int i = 0; i < SPOTLIGHTCOUNT; i++) { float c = PotentialSpotLightContribution( i, O, N ); if (i == idx) potential = c; sum += c; }
+	for (int i = 0; i < DIRECTIONALLIGHTCOUNT; i++) { float c = PotentialDirectionalLightContribution( i, O, N ); if (i == idx) potential = c; sum += c; }
 	if (sum <= 0) return 0; // no potential lights found
-	return potential[idx] / sum;
+	return potential / sum;
 #else
 	return 1.0f / AREALIGHTCOUNT; // should I include delta lights?
 #endif
@@ -176,25 +175,29 @@ LH2_DEVFUNC float3 RandomPointOnLight( float r0, float r1, const float3& I, cons
 	// predetermine the barycentrics for any area light we sample
 	float3 bary = RandomBarycentrics( r0 );
 	// importance sampling of lights, pickProb is per-light probability
-	float potential[MAXISLIGHTS];
-	float sum = 0, total = 0;
-	int lights = 0, lightIdx = 0;
-	for (int i = 0; i < AREALIGHTCOUNT; i++) { float c = PotentialAreaLightContribution( i, I, N, make_float3( 0 ), bary ); potential[lights++] = c; sum += c; }
-	for (int i = 0; i < POINTLIGHTCOUNT; i++) { float c = PotentialPointLightContribution( i, I, N ); potential[lights++] = c; sum += c; }
-	for (int i = 0; i < SPOTLIGHTCOUNT; i++) { float c = PotentialSpotLightContribution( i, I, N ); potential[lights++] = c; sum += c; }
-	for (int i = 0; i < DIRECTIONALLIGHTCOUNT; i++) { float c = PotentialDirectionalLightContribution( i, I, N ); potential[lights++] = c; sum += c; }
-	if (sum <= 0) // no potential lights found
+	float areaSum = 0.f, pointSum = 0.f, spotlightSum = 0.f, directionalSum = 0.f;
+	for (int i = 0; i < AREALIGHTCOUNT; i++) { float c = PotentialAreaLightContribution( i, I, N, make_float3( 0 ), bary ); areaSum += c; }
+	for (int i = 0; i < POINTLIGHTCOUNT; i++) { float c = PotentialPointLightContribution( i, I, N ); pointSum += c; }
+	for (int i = 0; i < SPOTLIGHTCOUNT; i++) { float c = PotentialSpotLightContribution( i, I, N ); spotlightSum += c; }
+	for (int i = 0; i < DIRECTIONALLIGHTCOUNT; i++) { float c = PotentialDirectionalLightContribution( i, I, N ); directionalSum += c; }
+	const float sum = areaSum + pointSum + spotlightSum + directionalSum;
+	if ( sum <= 0 ) // no potential lights found
 	{
 		lightPdf = 0;
 		return make_float3( 1 /* light direction; don't return 0 or nan, this will be slow */ );
 	}
 	r1 *= sum;
-	for (int i = 0; i < lights; i++)
-	{
-		total += potential[i];
-		if (total >= r1) { lightIdx = i; break; }
-	}
-	pickProb = potential[lightIdx] / sum;
+	float total = 0.f;
+	int lightIdx = 0;
+	float potential;
+	if (r1 <= areaSum) for (int i = 0; i < AREALIGHTCOUNT; i++) { float c = PotentialAreaLightContribution( i, I, N, make_float3( 0 ), bary ); if ((total+=c) >= r1) {lightIdx = i, potential = c; break;} }
+	r1 -= areaSum;
+	if (r1 <= pointSum) for (int i = 0; i < POINTLIGHTCOUNT; i++) { float c = PotentialPointLightContribution( i, I, N ); if ((total+=c) >= r1) {lightIdx = i, potential = c; break;} }
+	r1 -= pointSum;
+	if (r1 <= spotlightSum) for (int i = 0; i < SPOTLIGHTCOUNT; i++) { float c = PotentialSpotLightContribution( i, I, N ); if ((total+=c) >= r1) {lightIdx = i, potential = c; break;} }
+	r1 -= spotlightSum;
+	if (r1 <= directionalSum) for (int i = 0; i < DIRECTIONALLIGHTCOUNT; i++) { float c = PotentialDirectionalLightContribution( i, I, N ); if ((total+=c) >= r1) {lightIdx = i, potential = c; break;} }
+	pickProb = potential / sum;
 #else
 	// uniform random sampling of lights, pickProb is simply 1.0 / lightCount
 	pickProb = 1.0f / lightCount;
