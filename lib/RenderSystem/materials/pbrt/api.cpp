@@ -24,6 +24,7 @@
 
 #include "paramset.h"
 #include "texture.h"
+#include "textures/constant.h"
 
 #include "shapes/plymesh.h"
 #include "shapes/triangle.h"
@@ -550,7 +551,10 @@ void pbrtTransformEnd()
 
 void pbrtTexture( const std::string& name, const std::string& type, const std::string& texname, const ParamSet& params )
 {
-	Warning( "pbrtTexture is not implemented!" );
+	if ( type == "spectrum" )
+		( *graphicsState.spectrumTextures )[name] = std::make_shared<ConstantTexture<Spectrum>>( Spectrum( .25f ) );
+	else if ( type == "float" )
+		( *graphicsState.floatTextures )[name] = std::make_shared<ConstantTexture<Float>>( .0f );
 }
 
 void pbrtMaterial( const std::string& name, const ParamSet& params )
