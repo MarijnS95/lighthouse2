@@ -60,14 +60,14 @@ HostNode::~HostNode()
 		HostMesh* mesh = HostScene::meshPool[meshID];
 		for (auto materialIdx : mesh->materialList)
 		{
-			// HostMaterial* material = HostScene::materials[materialIdx];
-			// if (material->color.x > 1 || material->color.y > 1 || material->color.z > 1)
-			// {
-			// 	// mesh contains an emissive material; remove related area lights
-			// 	vector<HostAreaLight*>& lightList = HostScene::areaLights;
-			// 	for (int s = (int)lightList.size(), i = 0; i < s; i++)
-			// 		if (lightList[i]->instIdx == ID) lightList.erase( lightList.begin() + i-- );
-			// }
+			auto material = HostScene::materials[materialIdx];
+			if ( material->IsEmissive() )
+			{
+				// mesh contains an emissive material; remove related area lights
+				vector<HostAreaLight*>& lightList = HostScene::areaLights;
+				for ( int s = (int)lightList.size(), i = 0; i < s; i++ )
+					if ( lightList[i]->instIdx == ID ) lightList.erase( lightList.begin() + i-- );
+			}
 		}
 	}
 }
@@ -208,26 +208,26 @@ void HostNode::PrepareLights()
 		for (int s = (int)mesh->triangles.size(), i = 0; i < s; i++)
 		{
 			HostTri* tri = &mesh->triangles[i];
-			// HostMaterial* mat = HostScene::materials[tri->material];
-			// if (mat->color.x > 1 || mat->color.y > 1 || mat->color.z > 1)
-			// {
-			// 	tri->UpdateArea();
-			// 	HostTri transformedTri = TransformedHostTri( tri, localTransform );
-			// 	HostAreaLight* light = new HostAreaLight( &transformedTri, i, ID );
-			// 	tri->ltriIdx = (int)HostScene::areaLights.size(); // TODO: can't duplicate a light due to this.
-			// 	HostScene::areaLights.push_back( light );
-			// 	hasLTris = true;
-			// 	// Note: TODO:
-			// 	// 1. if a mesh is deleted it should scan the list of area lights
-			// 	//    to delete those that no longer exist.
-			// 	// 2. if a material is changed from emissive to non-emissive,
-			// 	//    meshes using the material should remove their light emitting
-			// 	//    triangles from the list of area lights.
-			// 	// 3. if a material is changed from non-emissive to emissive,
-			// 	//    meshes using the material should update the area lights list.
-			// 	// Item 1 can be done efficiently. Items 2 and 3 require a list
-			// 	// of materials per mesh to be efficient.
-			// }
+			auto mat = HostScene::materials[tri->material];
+			if ( mat->IsEmissive() )
+			{
+				tri->UpdateArea();
+				HostTri transformedTri = TransformedHostTri( tri, localTransform );
+				HostAreaLight* light = new HostAreaLight( &transformedTri, i, ID );
+				tri->ltriIdx = (int)HostScene::areaLights.size(); // TODO: can't duplicate a light due to this.
+				HostScene::areaLights.push_back( light );
+				hasLTris = true;
+				// Note: TODO:
+				// 1. if a mesh is deleted it should scan the list of area lights
+				//    to delete those that no longer exist.
+				// 2. if a material is changed from emissive to non-emissive,
+				//    meshes using the material should remove their light emitting
+				//    triangles from the list of area lights.
+				// 3. if a material is changed from non-emissive to emissive,
+				//    meshes using the material should update the area lights list.
+				// Item 1 can be done efficiently. Items 2 and 3 require a list
+				// of materials per mesh to be efficient.
+			}
 		}
 	}
 }

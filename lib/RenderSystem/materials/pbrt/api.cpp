@@ -656,8 +656,23 @@ void pbrtShape( const std::string& name, const ParamSet& params )
 	if ( curTransform.IsAnimated() )
 		Error( "No animated transform loader yet!" );
 
-	auto mtl = graphicsState.GetMaterialForShape( params );
-	auto materialIdx = hostScene->AddMaterial( mtl );
+	// Possibly create area light for shape
+	int materialIdx;
+	if ( graphicsState.areaLight != "" )
+	{
+		// area = MakeAreaLight( graphicsState.areaLight, curTransform[0],
+		//                                        mi, graphicsState.areaLightParams, s );
+		auto& lparams = graphicsState.areaLightParams;
+		auto L = lparams.FindOneSpectrum( "L", Spectrum( 1.0 ) ).vector();
+		auto sc = lparams.FindOneSpectrum( "scale", Spectrum( 1.0 ) ).vector();
+		auto mtl = new EmissiveMaterial( L * sc );
+		materialIdx = hostScene->AddMaterial( mtl );
+	}
+	else
+	{
+		auto mtl = graphicsState.GetMaterialForShape( params );
+		materialIdx = hostScene->AddMaterial( mtl );
+	}
 
 	// Initialize _prims_ and _areaLights_ for static shape
 
@@ -681,22 +696,9 @@ void pbrtShape( const std::string& name, const ParamSet& params )
 #if 0
 	MediumInterface mi = graphicsState.CreateMediumInterface();
 	prims.reserve( shapes.size() );
-	for ( auto s : shapes )
-	{
-		// Possibly create area light for shape
-		std::shared_ptr<AreaLight> area;
-		if ( graphicsState.areaLight != "" )
-		{
-			area = MakeAreaLight( graphicsState.areaLight, curTransform[0],
-								  mi, graphicsState.areaLightParams, s );
-			if ( area ) areaLights.push_back( area );
-		}
-		prims.push_back(
-			std::make_shared<GeometricPrimitive>( s, mtl, area, mi ) );
-	}
+	prims.push_back(
+		std::make_shared<GeometricPrimitive>( s, mtl, area, mi ) );
 #endif
-
-	CHECK( hostScene );
 
 	auto meshIdx = hostScene->AddMesh( hostMesh );
 	hostScene->AddInstance( meshIdx, ObjToWorld );
