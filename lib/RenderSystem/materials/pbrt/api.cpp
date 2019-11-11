@@ -451,9 +451,25 @@ void pbrtIntegrator( const std::string& name, const ParamSet& params )
 	Warning( "pbrtIntegrator is not implemented!" );
 }
 
-void pbrtCamera( const std::string&, const ParamSet& cameraParams )
+void pbrtCamera( const std::string& name, const ParamSet& params )
 {
-	Warning( "pbrtCamera is not implemented!" );
+	VERIFY_OPTIONS( "Camera" );
+	auto CameraName = name;
+	auto CameraParams = params;
+	auto CameraToWorld = Inverse( curTransform );
+	namedCoordinateSystems["camera"] = CameraToWorld;
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sCamera \"%s\" ", catIndentCount, "", name.c_str() );
+		params.Print( catIndentCount );
+		printf( "\n" );
+	}
+
+	hostScene->camera->position = make_float3( CameraToWorld[0] * make_float4( 0, 0, 0, 1 ) );
+	hostScene->camera->direction = make_float3( CameraToWorld[0] * make_float4( 0, 0, 1, 0 ) );
+
+	hostScene->camera->FOV = params.FindOneFloat( "fov", 90.f );
+	hostScene->camera->focalDistance = params.FindOneFloat( "focaldistance", /* PBRT default: 1e6f */ 5.f );
 }
 
 void pbrtMakeNamedMedium( const std::string& name, const ParamSet& params )
