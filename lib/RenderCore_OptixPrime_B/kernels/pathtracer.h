@@ -232,7 +232,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	}
 
 	// cap at one diffuse bounce (because of this we also don't need Russian roulette)
-	if (FLAGS & S_BOUNCED) return;
+	// if (FLAGS & S_BOUNCED) return;
 
 	// depth cap
 	if (pathLength == MAXPATHLENGTH /* don't fill arrays with rays we won't trace */) return;
