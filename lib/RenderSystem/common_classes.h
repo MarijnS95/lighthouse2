@@ -251,6 +251,9 @@ enum class MaterialType : char
 	PBRT_SUBSURFACE,
 	PBRT_TRANSLUCENT,
 	PBRT_UBER,
+
+	// Special case for emissive material types.
+	EMISSIVE,
 };
 
 struct CoreMaterialDesc
@@ -259,6 +262,11 @@ struct CoreMaterialDesc
 	unsigned int instanceLocation : 24;
 };
 static_assert( sizeof( CoreMaterialDesc ) == sizeof( int ), "CoreMaterialDesc must be 4 bytes!" );
+
+struct CoreEmissiveMaterial
+{
+	float3 color;
+};
 
 enum TexelStorage
 {

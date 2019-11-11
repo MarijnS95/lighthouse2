@@ -60,6 +60,7 @@ class MaterialIntf : public HasPlacementNewOperator
 #include "material_bsdf_stack.h"
 
 #include "material_disney.h"
+#include "material_emissive.h"
 #include "pbrt/materials.h"
 
 template <MaterialType _MaterialType, typename _type>
@@ -109,6 +110,7 @@ using Materials = MaterialSwitch<
 	Case<MaterialType::PBRT_MIRROR, pbrt::Mirror>,
 	Case<MaterialType::PBRT_PLASTIC, pbrt::Plastic>,
 	Case<MaterialType::PBRT_SUBSTRATE, pbrt::Substrate>,
+	Case<MaterialType::EMISSIVE, Emissive>,
 	>;
 
 using MaterialStore = Materials::MaterialStore;
