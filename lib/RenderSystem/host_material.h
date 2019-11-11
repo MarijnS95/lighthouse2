@@ -38,6 +38,9 @@ class HostMaterial : public DynamicHostMaterial_T<HostMaterial, MaterialType::DI
 	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener ) const override;
 	void CollectMaps( CoreMaterialEx& gpuMatEx ) const override;
 
+	bool IsEmissive() const override;
+	float3 Color() const override;
+
 	void ConvertFrom( const tinyobjMaterial& );
 	void ConvertFrom( const tinygltfMaterial&, const tinygltfModel&, const int textureBase );
 	void ConvertTo( CoreMaterial& ) const;
