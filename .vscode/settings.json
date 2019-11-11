@@ -5,5 +5,23 @@
         "OptiX_INSTALL_DIR:PATH": "/opt/optix-6",
         "OptiX7_INSTALL_DIR:PATH": "/opt/optix"
     },
-    "cmake.generator": "Unix Makefiles"
+    "cmake.generator": "Unix Makefiles",
+    "files.associations": {
+        "*.cu": "cpp",
+        "*.cuh": "cpp",
+        "*.frag": "cpp",
+        "*.vert": "cpp",
+        "*.cl": "c",
+        "*.vssettings": "xml",
+        "*.hs": "haskell",
+        "*.x": "haskell",
+        "*.y": "haskell",
+        "*.ag": "haskell",
+        "*.asmh": "asm",
+        "*.aidl": "java",
+        "*.inc": "latex",
+        "bvh": "cpp",
+        "*.tcc": "cpp",
+        "ios": "cpp"
+    }
 }
