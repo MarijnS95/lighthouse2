@@ -26,6 +26,7 @@
 #include "texture.h"
 
 #include "shapes/plymesh.h"
+#include "shapes/triangle.h"
 
 namespace pbrt
 {
@@ -209,12 +210,17 @@ static HostMesh* MakeShapes( const std::string& name,
 							 const Transform* object2world,
 							 const Transform* world2object,
 							 bool reverseOrientation,
-							 const ParamSet& paramSet,
+							 const ParamSet& params,
 							 const int materialIdx )
 {
 	if ( name == "plymesh" )
 		return CreatePLYMesh( object2world, world2object, reverseOrientation,
-							  paramSet, materialIdx, &*graphicsState.floatTextures );
+							  params, materialIdx, &*graphicsState.floatTextures );
+	else if ( name == "trianglemesh" )
+		return CreateTriangleMeshShape( object2world, world2object,
+										reverseOrientation, params,
+										materialIdx,
+										&*graphicsState.floatTextures );
 	else
 		Warning( "Shape \"%s\" unknown.", name.c_str() );
 	return nullptr;
@@ -601,7 +607,15 @@ void pbrtLightSource( const std::string& name, const ParamSet& params )
 
 void pbrtAreaLightSource( const std::string& name, const ParamSet& params )
 {
-	Warning( "pbrtAreaLightSource is not implemented!" );
+	VERIFY_WORLD( "AreaLightSource" );
+	graphicsState.areaLight = name;
+	graphicsState.areaLightParams = params;
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sAreaLightSource \"%s\" ", catIndentCount, "", name.c_str() );
+		params.Print( catIndentCount );
+		printf( "\n" );
+	}
 }
 
 void pbrtShape( const std::string& name, const ParamSet& params )
