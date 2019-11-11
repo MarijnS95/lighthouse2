@@ -231,8 +231,8 @@ void shadeKernel( float4* accumulator, const uint stride,
 		}
 	}
 
-	// cap at two diffuse bounces, or a maxium path length
-	if (FLAGS & ENOUGH_BOUNCES || pathLength == MAXPATHLENGTH) return;
+	// cap at two diffuse bounces, or a maximum path length
+	if (/* FLAGS & ENOUGH_BOUNCES || */ pathLength == MAXPATHLENGTH) return;
 
 	// evaluate bsdf to obtain direction for next path segment
 	float3 R;
