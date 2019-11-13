@@ -16,7 +16,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 find_package(OptiX7 REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE optix)
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-	OPTIX_INCLUDE_PATH="$<TARGET_PROPERTY:optix,INTERFACE_INCLUDE_DIRECTORIES>")
+	OPTIX_INCLUDE_PATH="${CMAKE_SOURCE_DIR}/lib/OptiX7/include/")
+	# OPTIX_INCLUDE_PATH="$<TARGET_PROPERTY:optix,INTERFACE_INCLUDE_DIRECTORIES>")
 
 # By default a CUDA-enabled project does not include the headers for non *.cu files
 # nor link against the Driver API (libcuda)
