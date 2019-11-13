@@ -158,10 +158,16 @@ void RenderCore::CreateOptixContext( int cc )
 	}
 	else
 	{
+		const char *file = NULL;
+		if (cc / 10 == 7) file = "../../lib/RenderCore_Optix7Filter/optix/.optix.turing.cu.ptx";
+		else if (cc / 10 == 6) file = "../../lib/RenderCore_Optix7Filter/optix/.optix.pascal.cu.ptx";
+		else if (cc / 10 == 5) file = "../../lib/RenderCore_Optix7Filter/optix/.optix.maxwell.cu.ptx";
 		FILE* f;
-		if (cc / 10 == 7) fopen_s( &f, "../../lib/RenderCore_Optix7Filter/optix/.optix.turing.cu.ptx", "rb" );
-		else if (cc / 10 == 6) fopen_s( &f, "../../lib/RenderCore_Optix7Filter/optix/.optix.pascal.cu.ptx", "rb" );
-		else if (cc / 10 == 5) fopen_s( &f, "../../lib/RenderCore_Optix7Filter/optix/.optix.maxwell.cu.ptx", "rb" );
+#ifdef _MSC_VER
+		fopen_s( &f, file, "rb" );
+#else
+		f = fopen( file, "rb" );
+#endif
 		int len;
 		fread( &len, 1, 4, f );
 		char* t = new char[len];
