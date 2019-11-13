@@ -15,6 +15,7 @@
 
 #include "core_settings.h"
 #include <optix_function_table_definition.h>
+#include <optix_stack_size.h>
 
 namespace lh2core
 {
