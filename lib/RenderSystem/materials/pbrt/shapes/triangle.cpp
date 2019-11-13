@@ -34,6 +34,8 @@
 
 #include "triangle.h"
 
+#include "../textures/constant.h"
+
 namespace pbrt
 {
 
@@ -120,7 +122,6 @@ HostMesh* CreateTriangleMeshShape(
 		faceIndices = nullptr;
 	}
 
-#if 0
 	// TODO
 
 	std::shared_ptr<Texture<Float>> alphaTex;
@@ -151,8 +152,6 @@ HostMesh* CreateTriangleMeshShape(
 	else if ( params.FindOneFloat( "shadowalpha", 1.f ) == 0.f )
 		shadowAlphaTex.reset( new ConstantTexture<Float>( 0.f ) );
 
-#endif
-
 	if ( faceIndices )
 		Warning( "faceIndices specified, but not used!" );
 	if ( S )
@@ -163,25 +162,17 @@ HostMesh* CreateTriangleMeshShape(
 	const std::vector<uint4> noJoints;
 	const std::vector<float4> noWeights;
 
-	// int nvi, npi, nuvi, nsi, nni;
-	// const int* vi = params.FindInt( "indices", &nvi );
-	// const Point3f* P = params.FindPoint3f( "P", &npi );
-	// const Point2f* uvs = params.FindPoint2f( "uv", &nuvi );
-	// if ( !uvs ) uvs = params.FindPoint2f( "st", &nuvi );
+	const std::vector<int> indices( vi, vi + nvi );
+	const std::vector<Point3f> vertices( P, P + npi );
 
-	// const Vector3f* S = params.FindVector3f( "S", &nsi );
-	// const Normal3f* N = params.FindNormal3f( "N", &nni );
-
-	// // TODO: Validation
-
-	std::vector<int> indices( vi, vi + nvi );
-	std::vector<Point3f> vertices( P, P + npi );
+	// Optional normals and uvs:
 	std::vector<Normal3f> normals;
 	if ( N )
 		normals = {N, N + nni};
 	std::vector<Point2f> uvs_vec;
 	if ( uvs )
 		uvs_vec = {uvs, uvs + nuvi};
+
 	mesh->BuildFromIndexedData( indices, vertices, normals, uvs_vec, noPose, noJoints, noWeights, materialIdx );
 
 	return mesh;
