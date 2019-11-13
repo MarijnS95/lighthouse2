@@ -28,7 +28,6 @@
 #include <ctime>
 #include <fstream>
 #include <half.hpp>
-#include <ppl.h>
 #include <ratio>
 #include <string>
 #include <thread>
