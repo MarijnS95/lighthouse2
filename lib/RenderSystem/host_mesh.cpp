@@ -546,7 +546,16 @@ void HostMesh::BuildFromIndexedData( const vector<int>& tmpIndices, const vector
 			float2 uv02 = make_float2( tri.u2 - tri.u0, tri.v2 - tri.v0 );
 			if (dot( uv01, uv01 ) == 0 || dot( uv02, uv02 ) == 0)
 			{
+#if 1
+				// PBRT:
+				// https://github.com/mmp/pbrt-v3/blob/3f94503ae1777cd6d67a7788e06d67224a525ff4/src/shapes/triangle.cpp#L381
+				if ( std::abs( N.x ) > std::abs( N.y ) )
+					tri.T = make_float3( -N.z, 0, N.x ) / std::sqrt( N.x * N.x + N.z * N.z );
+				else
+					tri.T = make_float3( 0, N.z, -N.y ) / std::sqrt( N.y * N.y + N.z * N.z );
+#else
 				tri.T = normalize( tri.vertex1 - tri.vertex0 );
+#endif
 				tri.B = normalize( cross( N, tri.T ) );
 			}
 			else
