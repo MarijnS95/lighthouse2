@@ -686,7 +686,7 @@ void HostMesh::SetPose( const HostSkin* skin )
 	}
 #if 1
 	// code optimized for INFOMOV by Alysha Bogaers and Naraenda Prasetya
-#define USE_PARALLEL_SETPOSE 1
+#define USE_PARALLEL_SETPOSE 0 // TODO: Find Linux replacement for PPL
 	// adjust full triangles
 #if USE_PARALLEL_SETPOSE == 1
 #if 0
