@@ -58,7 +58,7 @@
 #include <optix_stubs.h>
 #include <optix_stack_size.h>
 
-char* ParseOptixError( OptixResult r );
+const char* ParseOptixError( OptixResult r );
 #define CHK_OPTIX( c ) do { OptixResult r = c; if (r) { \
 	FatalError( __FILE__, __LINE__, ParseOptixError( r ) ); \
 	system( "pause" ); exit( 1 ); } } while( 0 )
