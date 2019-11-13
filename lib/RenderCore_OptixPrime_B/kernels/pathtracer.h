@@ -149,6 +149,9 @@ void shadeKernel( float4* accumulator, const uint stride,
 	material.Setup( D, HIT_U, HIT_V, coneWidth, instanceTriangles[PRIMIDX], INSTANCEIDX, matDesc.instanceLocation, N, iN, fN, T );
 #endif
 
+	// accumulator[pixelIdx] += make_float4( T, 0 );
+	// return;
+
 	// we need to detect alpha in the shading code.
 	if (material.IsAlpha())
 	{
@@ -179,8 +182,9 @@ void shadeKernel( float4* accumulator, const uint stride,
 			const CoreTri& tri = (const CoreTri&)instanceTriangles[PRIMIDX];
 			const float lightPdf = CalculateLightPDF( D, HIT_T, tri.area, N );
 			const float pickProb = LightPickProb( tri.ltriIdx, RAY_O, lastN /* TODO: lastN for primary ray? */, I /* the N at the previous vertex */ );
-			if ((bsdfPdf + lightPdf * pickProb) > 0) contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf * pickProb));
-			contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf));
+			// if ((bsdfPdf + lightPdf * pickProb) > 0)
+			contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf * pickProb));
+			// contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf));
 			CLAMPINTENSITY;
 			FIXNAN_FLOAT3( contribution );
 			accumulator[pixelIdx] += make_float4( contribution, 0 );

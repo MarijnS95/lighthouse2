@@ -22,7 +22,7 @@
 
 // core-specific settings
 #define CLAMPFIREFLIES		// suppress fireflies by clamping
-#define MAXPATHLENGTH		10
+#define MAXPATHLENGTH		3
 // #define USE_LAMBERT_BSDF	// override default microfacet model
 // #define USE_MULTISCATTER_BSDF // override default microfacet model
 // #define GGXCONDUCTOR // alternative is the diffuse ggx brdf
