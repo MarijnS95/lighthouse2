@@ -1,7 +1,7 @@
 project(CUDA_host_code LANGUAGES CXX)
 
-file(GLOB sources "*.cpp")
-file(GLOB headers "*.h")
+file(GLOB_RECURSE sources "*.cpp")
+file(GLOB_RECURSE headers "*.h")
 add_library(${PROJECT_NAME} INTERFACE)
 target_sources(${PROJECT_NAME} INTERFACE ${headers} ${sources})
 target_include_directories(${PROJECT_NAME} INTERFACE ${PROJECT_SOURCE_DIR})

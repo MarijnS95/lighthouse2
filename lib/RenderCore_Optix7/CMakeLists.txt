@@ -10,7 +10,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	RenderSystem
 	sharedBSDFs
 	CUDA
-	CUDA_host_code)
+	CUDA_host_code
+	CUDA_kernel_code)
 
 set(CMAKE_MODULE_PATH "/opt/optix/SDK/CMake/")
 set(OptiX_INSTALL_DIR "/opt/optix/"
