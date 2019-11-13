@@ -786,12 +786,15 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 			shading->DevPtr(), motion->DevPtr(), moments->DevPtr(), prevMoments->DevPtr(), deltaDepth->DevPtr(),
 			prevView, j0, j1, prevj0, prevj1,
 			scrwidth, scrheight, samplesTaken, vars.filterClampDirect, vars.filterClampIndirect, converge == Restart ? 0 : 1 );
+#ifdef _MSC_VER
+		// TODO: Cross-compatible way of passing key input FROM APP down to RenderCore
 		if (GetAsyncKeyState( VK_F4 ))
 		{
 			finalizeFilterDebug( scrwidth, scrheight, features->DevPtr(), worldPos->DevPtr(), prevWorldPos->DevPtr(),
 				deltaDepth->DevPtr(), motion->DevPtr(), moments->DevPtr(), shading->DevPtr() );
 		}
 		else
+#endif
 		{
 			applyFilter( 1, shading, filteredIN, filteredOUT );
 			applyFilter( 2, filteredOUT, 0, filteredIN );
