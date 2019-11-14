@@ -156,7 +156,7 @@ public:
 		#ifdef OPTIX_INCLUDE_PATH
 			options.push_back( "-I" OPTIX_INCLUDE_PATH );
 		#else
-			FATALERROR( "No include path defined for OptiX %d!", optixVer );
+			options.push_back("-Ilib/OptiX7/include");
 		#endif
 		}
 		else
@@ -164,7 +164,7 @@ public:
 		#ifdef OPTIX_6_INCLUDE_PATH
 			options.push_back( "-I" OPTIX_6_INCLUDE_PATH );
 		#else
-			FATALERROR( "No include path defined for OptiX %d!", optixVer );
+			options.push_back("-Ilib/OptiX/include");
 		#endif
 		}
 		string optionString = "-I";
