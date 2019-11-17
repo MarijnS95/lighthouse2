@@ -34,8 +34,6 @@
 
 #include "triangle.h"
 
-#include "../textures/constant.h"
-
 namespace pbrt
 {
 
@@ -43,7 +41,7 @@ HostMesh* CreateTriangleMeshShape(
 	const Transform* o2w, const Transform* w2o, bool reverseOrientation,
 	const ParamSet& params,
 	const int materialIdx,
-	std::map<std::string, std::shared_ptr<Texture<Float>>>* floatTextures )
+	std::map<std::string, DynamicHostTexture<Float>*>* floatTextures )
 {
 	int nvi, npi, nuvi, nsi, nni;
 	const int* vi = params.FindInt( "indices", &nvi );
@@ -123,7 +121,7 @@ HostMesh* CreateTriangleMeshShape(
 	}
 
 	// TODO
-
+#if 0
 	std::shared_ptr<Texture<Float>> alphaTex;
 	std::string alphaTexName = params.FindTexture( "alpha" );
 	if ( alphaTexName != "" )
@@ -151,6 +149,7 @@ HostMesh* CreateTriangleMeshShape(
 	}
 	else if ( params.FindOneFloat( "shadowalpha", 1.f ) == 0.f )
 		shadowAlphaTex.reset( new ConstantTexture<Float>( 0.f ) );
+#endif
 
 	if ( faceIndices )
 		Warning( "faceIndices specified, but not used!" );

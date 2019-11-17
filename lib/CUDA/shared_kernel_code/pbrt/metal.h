@@ -38,15 +38,18 @@ class Metal : public SimpleMaterial<
 
   public:
 	__device__ void ComputeScatteringFunctions( const common::materials::pbrt::Metal& params,
+												const float2 uv,
 												const bool allowMultipleLobes,
 												const TransportMode mode ) override
 	{
 		// TODO: Bumpmapping
 
-		float urough = params.urough;
-		float vrough = params.vrough;
+		const auto eta = params.eta.Evaluate( uv );
+		const auto k = params.k.Evaluate( uv );
+		auto urough = params.urough.Evaluate( uv );
+		auto vrough = params.vrough.Evaluate( uv );
 
-		const FresnelConductor frMf( make_float3( 1.f ), params.eta, params.k );
+		const FresnelConductor frMf( make_float3( 1.f ), eta, k );
 
 		if ( params.remapRoughness )
 		{

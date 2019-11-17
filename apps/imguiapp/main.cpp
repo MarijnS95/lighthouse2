@@ -134,7 +134,9 @@ void PrepareScene()
 	// pbrtParseFile( "data/coffee/scene.pbrt" );
 	// pbrtParseFile( "data/material-testball/scene.pbrt" );
 	// pbrtParseFile( "data/glass-of-water/scene.pbrt" );
-	pbrtParseFile( "data/lamp/scene.pbrt" );
+	// pbrtParseFile( "data/lamp/scene.pbrt" );
+	pbrtParseFile( "data/kitchen/scene.pbrt" );
+	// pbrtParseFile( "data/bathroom2/scene.pbrt" );
 
 	// TODO in end of main!
 	// pbrtCleanup();

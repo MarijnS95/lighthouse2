@@ -33,7 +33,6 @@
 // core/paramset.cpp*
 #include "paramset.h"
 #include "floatfile.h"
-#include "textures/constant.h"
 
 namespace pbrt
 {
@@ -816,17 +815,17 @@ void ParamSet::Print( int indent ) const
 }
 
 // TextureParams Method Definitions
-std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTexture(
-	const std::string& n, const Spectrum& def ) const
+DynamicHostTexture<float3>* TextureParams::GetFloat3Texture(
+	const std::string& n, const float3& def ) const
 {
-	std::shared_ptr<Texture<Spectrum>> tex = GetSpectrumTextureOrNull( n );
+	DynamicHostTexture<float3>* tex = GetFloat3TextureOrNull( n );
 	if ( tex )
 		return tex;
 	else
-		return std::make_shared<ConstantTexture<Spectrum>>( def );
+		return new ConstantTexture<float3>( def );
 }
 
-std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTextureOrNull(
+DynamicHostTexture<float3>* TextureParams::GetFloat3TextureOrNull(
 	const std::string& n ) const
 {
 	// Check the shape parameters first.
@@ -840,7 +839,7 @@ std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTextureOrNull(
 			if ( count > 1 )
 				Warning( "Ignoring excess values provided with parameter \"%s\"",
 						 n.c_str() );
-			return std::make_shared<ConstantTexture<Spectrum>>( *s );
+			return new ConstantTexture<float3>( s->vector() );
 		}
 
 		name = materialParams.FindTexture( n );
@@ -853,7 +852,7 @@ std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTextureOrNull(
 				if ( count > 1 )
 					Warning( "Ignoring excess values provided with parameter \"%s\"",
 							 n.c_str() );
-				return std::make_shared<ConstantTexture<Spectrum>>( *s );
+				return new ConstantTexture<float3>( s->vector() );
 			}
 		}
 
@@ -873,17 +872,23 @@ std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTextureOrNull(
 	}
 }
 
-std::shared_ptr<Texture<Float>> TextureParams::GetFloatTexture(
+DynamicHostTexture<float3>* TextureParams::GetFloat3Texture(
+	const std::string& n, const Spectrum& def ) const
+{
+	return GetFloat3Texture( n, def.vector() );
+}
+
+DynamicHostTexture<Float>* TextureParams::GetFloatTexture(
 	const std::string& n, Float def ) const
 {
-	std::shared_ptr<Texture<Float>> tex = GetFloatTextureOrNull( n );
+	DynamicHostTexture<Float>* tex = GetFloatTextureOrNull( n );
 	if ( tex )
 		return tex;
 	else
-		return std::make_shared<ConstantTexture<Float>>( def );
+		return new ConstantTexture<Float>( def );
 }
 
-std::shared_ptr<Texture<Float>> TextureParams::GetFloatTextureOrNull(
+DynamicHostTexture<Float>* TextureParams::GetFloatTextureOrNull(
 	const std::string& n ) const
 {
 	// Check the shape parameters first.
@@ -897,7 +902,7 @@ std::shared_ptr<Texture<Float>> TextureParams::GetFloatTextureOrNull(
 			if ( count > 1 )
 				Warning( "Ignoring excess values provided with parameter \"%s\"",
 						 n.c_str() );
-			return std::make_shared<ConstantTexture<Float>>( *s );
+			return new ConstantTexture<Float>( *s );
 		}
 
 		name = materialParams.FindTexture( n );
@@ -910,7 +915,7 @@ std::shared_ptr<Texture<Float>> TextureParams::GetFloatTextureOrNull(
 				if ( count > 1 )
 					Warning( "Ignoring excess values provided with parameter \"%s\"",
 							 n.c_str() );
-				return std::make_shared<ConstantTexture<Float>>( *s );
+				return new ConstantTexture<Float>( *s );
 			}
 		}
 
@@ -929,32 +934,6 @@ std::shared_ptr<Texture<Float>> TextureParams::GetFloatTextureOrNull(
 		return nullptr;
 	}
 }
-
-// LH2 Additions
-Float TextureParams::GetConstantFloatTexture( const std::string& name, float def ) const
-{
-	auto tex = GetFloatTexture( name, def );
-
-	auto constant_tex = std::dynamic_pointer_cast<ConstantTexture<Float>>( tex );
-
-	if ( !constant_tex )
-		Error( "Non-constant textures not yet supported!" );
-
-	return constant_tex->value;
-}
-
-Spectrum TextureParams::GetConstantSpectrumTexture( const std::string& name, Spectrum def ) const
-{
-	auto tex = GetSpectrumTexture( name, def );
-
-	auto constant_tex = std::dynamic_pointer_cast<ConstantTexture<Spectrum>>( tex );
-
-	if ( !constant_tex )
-		Error( "Non-constant textures not yet supported!" );
-
-	return constant_tex->value;
-}
-// End LH2 additions
 
 template <typename T>
 static void

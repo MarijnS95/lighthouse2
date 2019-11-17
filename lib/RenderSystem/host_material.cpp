@@ -27,17 +27,27 @@
 //   device-side data. The RenderSystem is responsible for setting this data before rendering starts.
 //   Data in RenderCore reached its final destination; it can thus not be queried, and internal
 //   operations are minimal.
-uint32_t HostMaterial::Flatten( Flattener<sizeof( uint32_t )>& flattener ) const
+uint32_t HostMaterial::Flatten( Flattener<sizeof( uint32_t )>& flattener, const CoreTexDesc* texDescs ) const
 {
 	CoreMaterial gpuMat;
 	ConvertTo( gpuMat );
-	return flattener.emplace_back( gpuMat ).offset();
-}
+	auto ref = flattener.emplace_back( gpuMat );
 
-void HostMaterial::CollectMaps( CoreMaterialEx& gpuMatEx ) const
-{
-	// copy maps array to CoreMaterialEx instance
-	for ( int i = 0; i < 11; i++ ) gpuMatEx.texture[i] = map[i].textureID;
+	auto& m = *ref;
+
+	if ( map[0].textureID != -1 ) m.texaddr0 = texDescs[map[0].textureID].firstPixel;
+	if ( map[1].textureID != -1 ) m.texaddr1 = texDescs[map[1].textureID].firstPixel;
+	if ( map[2].textureID != -1 ) m.texaddr2 = texDescs[map[2].textureID].firstPixel;
+	if ( map[3].textureID != -1 ) m.nmapaddr0 = texDescs[map[3].textureID].firstPixel;
+	if ( map[4].textureID != -1 ) m.nmapaddr1 = texDescs[map[4].textureID].firstPixel;
+	if ( map[5].textureID != -1 ) m.nmapaddr2 = texDescs[map[5].textureID].firstPixel;
+	if ( map[6].textureID != -1 ) m.smapaddr = texDescs[map[6].textureID].firstPixel;
+	if ( map[7].textureID != -1 ) m.rmapaddr = texDescs[map[7].textureID].firstPixel;
+	// if (map[ 8].textureID != -1) m.texaddr0 = texDescs[map[ 8].textureID].firstPixel; second roughness map is not used
+	if ( map[9].textureID != -1 ) m.cmapaddr = texDescs[map[9].textureID].firstPixel;
+	if ( map[10].textureID != -1 ) m.amapaddr = texDescs[map[10].textureID].firstPixel;
+
+	return ref.offset();
 }
 
 bool HostMaterial::IsEmissive() const

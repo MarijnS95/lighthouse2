@@ -369,30 +369,7 @@ void RenderCore::SetMaterials( const std::vector<DynamicHostMaterial*>& material
 	for ( const auto& material : materials )
 	{
 		// TODO: Pass loc as reference type
-		auto loc = material->Flatten( flattener );
-
-		if ( material->type == MaterialType::DISNEY )
-		{
-
-			CoreMaterialEx e;
-			material->CollectMaps( e );
-			// Update flattened material... Could also have
-			// written over (a writeable copy of) `material'
-			auto& m = *flattener.get<CoreMaterial>( loc );
-
-			if ( e.texture[0] != -1 ) m.texaddr0 = texDescs[e.texture[0]].firstPixel;
-			if ( e.texture[1] != -1 ) m.texaddr1 = texDescs[e.texture[1]].firstPixel;
-			if ( e.texture[2] != -1 ) m.texaddr2 = texDescs[e.texture[2]].firstPixel;
-			if ( e.texture[3] != -1 ) m.nmapaddr0 = texDescs[e.texture[3]].firstPixel;
-			if ( e.texture[4] != -1 ) m.nmapaddr1 = texDescs[e.texture[4]].firstPixel;
-			if ( e.texture[5] != -1 ) m.nmapaddr2 = texDescs[e.texture[5]].firstPixel;
-			if ( e.texture[6] != -1 ) m.smapaddr = texDescs[e.texture[6]].firstPixel;
-			if ( e.texture[7] != -1 ) m.rmapaddr = texDescs[e.texture[7]].firstPixel;
-			// if (e.texture[ 8] != -1) m.texaddr0 = texDescs[e.texture[ 8]].firstPixel; second roughness map is not used
-			if ( e.texture[9] != -1 ) m.cmapaddr = texDescs[e.texture[9]].firstPixel;
-			if ( e.texture[10] != -1 ) m.amapaddr = texDescs[e.texture[10]].firstPixel;
-		}
-
+		auto loc = material->Flatten( flattener, texDescs );
 		matDesc.push_back( CoreMaterialDesc{material->type, loc} );
 	}
 

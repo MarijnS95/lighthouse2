@@ -40,7 +40,6 @@
 // shapes/plymesh.h*
 // #include "shapes/triangle.h"
 #include "../paramset.h"
-#include "../texture.h"
 
 #include <rendersystem.h>
 
@@ -51,7 +50,7 @@ HostMesh* CreatePLYMesh(
 	const Transform* o2w, const Transform* w2o, bool reverseOrientation,
 	const ParamSet& params,
 	const int materialIdx,
-	std::map<std::string, std::shared_ptr<Texture<Float>>>* floatTextures =
+	std::map<std::string, DynamicHostTexture<Float>*>* floatTextures =
 		nullptr );
 
 } // namespace pbrt

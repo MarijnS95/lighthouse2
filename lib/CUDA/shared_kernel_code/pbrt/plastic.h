@@ -38,19 +38,22 @@ class Plastic : public SimpleMaterial<
 {
   public:
 	__device__ void ComputeScatteringFunctions( const common::materials::pbrt::Plastic& params,
+												const float2 uv,
 												const bool allowMultipleLobes,
 												const TransportMode mode ) override
 	{
 
 		// TODO: Bumpmapping
-		// bxdfs.emplace_back<LambertianReflection>( make_float3(1,0,1) );
 
-		if ( !IsBlack( params.Kd ) )
-			bxdfs.emplace_back<LambertianReflection>( params.Kd );
+		const auto Kd = params.Kd.Evaluate( uv );
+		const auto Ks = params.Ks.Evaluate( uv );
 
-		if ( !IsBlack( params.Ks ) )
+		if ( !IsBlack( Kd ) )
+			bxdfs.emplace_back<LambertianReflection>( Kd );
+
+		if ( !IsBlack( Ks ) )
 		{
-			float rough = params.roughness;
+			auto rough = params.roughness.Evaluate( uv );
 
 			if ( params.remapRoughness )
 				rough = RoughnessToAlpha( rough );
@@ -58,7 +61,7 @@ class Plastic : public SimpleMaterial<
 			const FresnelDielectric fresnel( 1.5f, 1.f );
 			const TrowbridgeReitzDistribution<> distrib( rough, rough );
 
-			bxdfs.emplace_back<MicrofacetReflection<TrowbridgeReitzDistribution<>, FresnelDielectric>>( params.Ks, distrib, fresnel );
+			bxdfs.emplace_back<MicrofacetReflection<TrowbridgeReitzDistribution<>, FresnelDielectric>>( Ks, distrib, fresnel );
 		}
 	}
 };

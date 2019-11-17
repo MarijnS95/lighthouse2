@@ -21,20 +21,20 @@
 
 #include "paramset.h"
 #include "pbrt_wrap.h"
-#include "texture.h"
 
 #include <memory>
 
 namespace pbrt
 {
+using namespace materials::pbrt;
 using namespace common::materials::pbrt;
 
-SimpleHostMaterial<Disney>* CreateDisneyMaterial( const TextureParams& mp );
-SimpleHostMaterial<Glass>* CreateGlassMaterial( const TextureParams& mp );
-SimpleHostMaterial<Matte>* CreateMatteMaterial( const TextureParams& mp );
-SimpleHostMaterial<Metal>* CreateMetalMaterial( const TextureParams& mp );
-SimpleHostMaterial<Mirror>* CreateMirrorMaterial( const TextureParams& mp );
-SimpleHostMaterial<Plastic>* CreatePlasticMaterial( const TextureParams& mp );
-SimpleHostMaterial<Substrate>* CreateSubstrateMaterial( const TextureParams& mp );
+DisneyHostMaterial* CreateDisneyMaterial( const TextureParams& mp );
+GlassHostMaterial* CreateGlassMaterial( const TextureParams& mp );
+MatteHostMaterial* CreateMatteMaterial( const TextureParams& mp );
+MetalHostMaterial* CreateMetalMaterial( const TextureParams& mp );
+MirrorHostMaterial* CreateMirrorMaterial( const TextureParams& mp );
+PlasticHostMaterial* CreatePlasticMaterial( const TextureParams& mp );
+SubstrateHostMaterial* CreateSubstrateMaterial( const TextureParams& mp );
 
 }; // namespace pbrt
