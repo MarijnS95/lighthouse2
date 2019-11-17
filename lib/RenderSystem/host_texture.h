@@ -18,6 +18,8 @@
 namespace lighthouse2
 {
 
+using namespace lh2core;
+
 //  +-----------------------------------------------------------------------------+
 //  |  HostTexture                                                                |
 //  |  Stores a texture, with either integer or floating point data.              |
@@ -33,7 +35,7 @@ namespace lighthouse2
 //  |    name, including path, as well as the mods field.                         |
 //  |                                                                       LH2'19|
 //  +-----------------------------------------------------------------------------+
-class HostTexture
+class HostTexture : public DynamicHostTexture<float3>
 {
 public:
 	enum
@@ -63,6 +65,10 @@ public:
 	// internal methods
 	int PixelsNeeded( const int width, const int height, const int MIPlevels ) const;
 	void ConstructMIPmaps();
+
+
+	CoreTexture<float3> GetCoreTexture( const CoreTexDesc* texDescs ) const override;
+
 	// public properties
 public:
 	uint width = 0;						// width in pixels

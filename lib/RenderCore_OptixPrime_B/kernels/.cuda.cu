@@ -97,4 +97,5 @@ __host__ void SetCounters( Counters* p ) { cudaMemcpyToSymbol( counters, &p, siz
 
 } // namespace lh2core
 
+
 // EOF

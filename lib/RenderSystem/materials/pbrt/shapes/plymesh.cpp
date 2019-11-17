@@ -34,7 +34,6 @@
 // #include "shapes/triangle.h"
 #include "../ext/rply.h"
 #include "../paramset.h"
-#include "../textures/constant.h"
 
 #include <rendersystem.h>
 
@@ -175,7 +174,7 @@ HostMesh* CreatePLYMesh(
 	const Transform* o2w, const Transform* w2o, bool reverseOrientation,
 	const ParamSet& params,
 	const int materialIdx,
-	std::map<std::string, std::shared_ptr<Texture<Float>>>* floatTextures )
+	std::map<std::string, DynamicHostTexture<Float>*>* floatTextures )
 {
 	const std::string filename = params.FindOneFilename( "filename", "" );
 	p_ply ply = ply_open( filename.c_str(), rply_message_callback, 0, nullptr );
@@ -283,8 +282,9 @@ HostMesh* CreatePLYMesh(
 
 	if ( context.error ) return nullptr;
 
+#if 0
 	// Look up an alpha texture, if applicable
-	std::shared_ptr<Texture<Float>> alphaTex;
+	DynamicHostTexture<Float>* alphaTex;
 	std::string alphaTexName = params.FindTexture( "alpha" );
 	if ( alphaTexName != "" )
 	{
@@ -296,10 +296,10 @@ HostMesh* CreatePLYMesh(
 	}
 	else if ( params.FindOneFloat( "alpha", 1.f ) == 0.f )
 	{
-		alphaTex.reset( new ConstantTexture<Float>( 0.f ) );
+		alphaTex = new ConstantTexture<Float>( 0.f );
 	}
 
-	std::shared_ptr<Texture<Float>> shadowAlphaTex;
+	DynamicHostTexture<Float>* shadowAlphaTex;
 	std::string shadowAlphaTexName = params.FindTexture( "shadowalpha" );
 	if ( shadowAlphaTexName != "" )
 	{
@@ -312,7 +312,8 @@ HostMesh* CreatePLYMesh(
 				shadowAlphaTexName.c_str() );
 	}
 	else if ( params.FindOneFloat( "shadowalpha", 1.f ) == 0.f )
-		shadowAlphaTex.reset( new ConstantTexture<Float>( 0.f ) );
+		shadowAlphaTex = new ConstantTexture<Float>( 0.f );
+#endif
 
 	auto mesh = new HostMesh;
 	const std::vector<HostMesh::Pose> noPose;

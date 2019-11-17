@@ -23,7 +23,6 @@
 #include "create_material.h"
 
 #include "paramset.h"
-#include "texture.h"
 
 #include "shapes/plymesh.h"
 #include "shapes/triangle.h"
@@ -89,11 +88,12 @@ struct GraphicsState
 	// Graphics State Methods
 	GraphicsState()
 		: floatTextures( std::make_shared<FloatTextureMap>() ),
-		  spectrumTextures( std::make_shared<SpectrumTextureMap>() ),
+		  //   spectrumTextures( std::make_shared<SpectrumTextureMap>() ),
+		  float3Textures( std::make_shared<Float3TextureMap>() ),
 		  namedMaterials( std::make_shared<NamedMaterialMap>() )
 	{
 		ParamSet empty;
-		TextureParams tp( empty, empty, *floatTextures, *spectrumTextures );
+		TextureParams tp( empty, empty, *floatTextures, *float3Textures );
 		DynamicHostMaterial* mtl = CreateMatteMaterial( tp );
 		currentMaterial = std::make_shared<MaterialInstance>( "matte", mtl, ParamSet() );
 	}
@@ -109,13 +109,17 @@ struct GraphicsState
 	// in pbrtAttributeBegin(), we don't immediately make a copy of these
 	// maps, but instead record that each one is shared.  Only if an item
 	// is added to one is a unique copy actually made.
-	using FloatTextureMap = std::map<std::string, std::shared_ptr<Texture<Float>>>;
+	using FloatTextureMap = std::map<std::string, DynamicHostTexture<Float>*>;
 	std::shared_ptr<FloatTextureMap> floatTextures;
 	bool floatTexturesShared = false;
 
-	using SpectrumTextureMap = std::map<std::string, std::shared_ptr<Texture<Spectrum>>>;
-	std::shared_ptr<SpectrumTextureMap> spectrumTextures;
-	bool spectrumTexturesShared = false;
+	// using SpectrumTextureMap = std::map<std::string, DynamicHostTexture<Spectrum>*>;
+	// std::shared_ptr<SpectrumTextureMap> spectrumTextures;
+	// bool spectrumTexturesShared = false;
+
+	using Float3TextureMap = std::map<std::string, DynamicHostTexture<float3>*>;
+	std::shared_ptr<Float3TextureMap> float3Textures;
+	bool float3TexturesShared = false;
 
 	using NamedMaterialMap = std::map<std::string, std::shared_ptr<MaterialInstance>>;
 	std::shared_ptr<NamedMaterialMap> namedMaterials;
@@ -312,6 +316,158 @@ static DynamicHostMaterial* MakeMaterial( const std::string& name,
 	return material;
 }
 
+DynamicHostTexture<Float>* CreateImageFloatTexture( const Transform& tex2world,
+													const TextureParams& tp )
+{
+	return nullptr;
+}
+
+static DynamicHostTexture<float3>* CreateImageSpectrumTexture(
+	const Transform& tex2world, const TextureParams& tp )
+{
+#if 0 // TODO
+    // Initialize 2D texture mapping _map_ from _tp_
+    std::unique_ptr<TextureMapping2D> map;
+    std::string type = tp.FindString("mapping", "uv");
+    if (type == "uv") {
+        Float su = tp.FindFloat("uscale", 1.);
+        Float sv = tp.FindFloat("vscale", 1.);
+        Float du = tp.FindFloat("udelta", 0.);
+        Float dv = tp.FindFloat("vdelta", 0.);
+        map.reset(new UVMapping2D(su, sv, du, dv));
+    } else if (type == "spherical")
+        map.reset(new SphericalMapping2D(Inverse(tex2world)));
+    else if (type == "cylindrical")
+        map.reset(new CylindricalMapping2D(Inverse(tex2world)));
+    else if (type == "planar")
+        map.reset(new PlanarMapping2D(tp.FindVector3f("v1", Vector3f(1, 0, 0)),
+                                      tp.FindVector3f("v2", Vector3f(0, 1, 0)),
+                                      tp.FindFloat("udelta", 0.f),
+                                      tp.FindFloat("vdelta", 0.f)));
+    else {
+        Error("2D texture mapping \"%s\" unknown", type.c_str());
+        map.reset(new UVMapping2D);
+    }
+#endif
+
+	// Initialize _ImageTexture_ parameters
+#if 0 // TODO
+	Float maxAniso = tp.FindFloat( "maxanisotropy", 8.f );
+	bool trilerp = tp.FindBool( "trilinear", false );
+	std::string wrap = tp.FindString( "wrap", "repeat" );
+	ImageWrap wrapMode = ImageWrap::Repeat;
+	if ( wrap == "black" )
+		wrapMode = ImageWrap::Black;
+	else if ( wrap == "clamp" )
+		wrapMode = ImageWrap::Clamp;
+	Float scale = tp.FindFloat( "scale", 1.f );
+#endif
+	std::string filename = tp.FindFilename( "filename" );
+#if 0
+	bool gamma = tp.FindBool( "gamma", HasExtension( filename, ".tga" ) ||
+										   HasExtension( filename, ".png" ) );
+#endif
+
+	int texId = hostScene->FindOrCreateTexture( filename, HostTexture::FLIPPED );
+	auto texPtr = hostScene->textures[texId];
+	return texPtr;
+
+	// return new ImageTexture<RGBSpectrum, Spectrum>(
+	// 	std::move( map ), filename, trilerp, maxAniso, wrapMode, scale, gamma );
+
+	// hostScene->FindOrCreateTexture();
+}
+
+DynamicHostTexture<Float>* CreateCheckerboardFloatTexture( const Transform& tex2world,
+														   const TextureParams& tp )
+{
+	return nullptr;
+}
+DynamicHostTexture<Spectrum>* CreateCheckerboardSpectrumTexture( const Transform& tex2world,
+																 const TextureParams& tp )
+{
+	return nullptr;
+}
+
+static DynamicHostTexture<Float>* MakeFloatTexture(
+	const std::string& name,
+	const Transform& tex2world,
+	const TextureParams& tp )
+{
+	DynamicHostTexture<Float>* tex = nullptr;
+	// if ( name == "constant" )
+	// 	tex = CreateConstantFloatTexture( tex2world, tp );
+	// else if ( name == "scale" )
+	// 	tex = CreateScaleFloatTexture( tex2world, tp );
+	// else if ( name == "mix" )
+	// 	tex = CreateMixFloatTexture( tex2world, tp );
+	// else if ( name == "bilerp" )
+	// 	tex = CreateBilerpFloatTexture( tex2world, tp );
+	// else
+	if ( name == "imagemap" )
+		tex = CreateImageFloatTexture( tex2world, tp );
+	// else if ( name == "uv" )
+	// 	tex = CreateUVFloatTexture( tex2world, tp );
+	else if ( name == "checkerboard" )
+		tex = CreateCheckerboardFloatTexture( tex2world, tp );
+	// else if ( name == "dots" )
+	// 	tex = CreateDotsFloatTexture( tex2world, tp );
+	// else if ( name == "fbm" )
+	// 	tex = CreateFBmFloatTexture( tex2world, tp );
+	// else if ( name == "wrinkled" )
+	// 	tex = CreateWrinkledFloatTexture( tex2world, tp );
+	// else if ( name == "marble" )
+	// 	tex = CreateMarbleFloatTexture( tex2world, tp );
+	// else if ( name == "windy" )
+	// 	tex = CreateWindyFloatTexture( tex2world, tp );
+	// else if ( name == "ptex" )
+	// 	tex = CreatePtexFloatTexture( tex2world, tp );
+	else
+		Warning( "Float texture \"%s\" unknown.", name.c_str() );
+	tp.ReportUnused();
+	// return DynamicHostTexture<Float> * ( tex );
+	return tex;
+}
+
+static DynamicHostTexture<float3>* MakeSpectrumTexture(
+	const std::string& name, const Transform& tex2world,
+	const TextureParams& tp )
+{
+	DynamicHostTexture<float3>* tex = nullptr;
+	// if ( name == "constant" )
+	// 	tex = CreateConstantSpectrumTexture( tex2world, tp );
+	// else if ( name == "scale" )
+	// 	tex = CreateScaleSpectrumTexture( tex2world, tp );
+	// else if ( name == "mix" )
+	// 	tex = CreateMixSpectrumTexture( tex2world, tp );
+	// else if ( name == "bilerp" )
+	// 	tex = CreateBilerpSpectrumTexture( tex2world, tp );
+	// else
+	if ( name == "imagemap" )
+		tex = CreateImageSpectrumTexture( tex2world, tp );
+	// else if ( name == "uv" )
+	// 	tex = CreateUVSpectrumTexture( tex2world, tp );
+	// else if ( name == "checkerboard" )
+	// 	tex = CreateCheckerboardSpectrumTexture( tex2world, tp );
+	// else if ( name == "dots" )
+	// 	tex = CreateDotsSpectrumTexture( tex2world, tp );
+	// else if ( name == "fbm" )
+	// 	tex = CreateFBmSpectrumTexture( tex2world, tp );
+	// else if ( name == "wrinkled" )
+	// 	tex = CreateWrinkledSpectrumTexture( tex2world, tp );
+	// else if ( name == "marble" )
+	// 	tex = CreateMarbleSpectrumTexture( tex2world, tp );
+	// else if ( name == "windy" )
+	// 	tex = CreateWindySpectrumTexture( tex2world, tp );
+	// else if ( name == "ptex" )
+	// 	tex = CreatePtexSpectrumTexture( tex2world, tp );
+	else
+		Warning( "Spectrum texture \"%s\" unknown.", name.c_str() );
+	tp.ReportUnused();
+	// return DynamicHostTexture<Spectrum> * ( tex );
+	return tex;
+}
+
 void pbrtInit( const Options& opt, HostScene* hs )
 {
 	PbrtOptions = opt;
@@ -497,7 +653,7 @@ void pbrtAttributeBegin()
 {
 	VERIFY_WORLD( "AttributeBegin" );
 	pushedGraphicsStates.push_back( graphicsState );
-	graphicsState.floatTexturesShared = graphicsState.spectrumTexturesShared =
+	graphicsState.floatTexturesShared = graphicsState.float3TexturesShared =
 		graphicsState.namedMaterialsShared = true;
 	pushedTransforms.push_back( curTransform );
 	pushedActiveTransformBits.push_back( activeTransformBits );
@@ -566,14 +722,61 @@ void pbrtTransformEnd()
 
 void pbrtTexture( const std::string& name, const std::string& type, const std::string& texname, const ParamSet& params )
 {
-	Warning( "pbrtTexture is not implemented!" );
+	VERIFY_WORLD( "Texture" );
+
+	TextureParams tp( params, params, *graphicsState.floatTextures,
+					  *graphicsState.float3Textures );
+	if ( type == "float" )
+	{
+		// Create _Float_ texture and store in _floatTextures_
+		if ( graphicsState.floatTextures->find( name ) !=
+			 graphicsState.floatTextures->end() )
+			Warning( "Texture \"%s\" being redefined", name.c_str() );
+		WARN_IF_ANIMATED_TRANSFORM( "Texture" );
+		auto ft =
+			MakeFloatTexture( texname, curTransform[0], tp );
+		if ( ft )
+		{
+			// TODO: move this to be a GraphicsState method, also don't
+			// provide direct floatTextures access?
+			if ( graphicsState.floatTexturesShared )
+			{
+				graphicsState.floatTextures =
+					std::make_shared<GraphicsState::FloatTextureMap>( *graphicsState.floatTextures );
+				graphicsState.floatTexturesShared = false;
+			}
+			( *graphicsState.floatTextures )[name] = ft;
+		}
+	}
+	else if ( type == "color" || type == "spectrum" )
+	{
+		// Create _color_ texture and store in _spectrumTextures_
+		if ( graphicsState.float3Textures->find( name ) !=
+			 graphicsState.float3Textures->end() )
+			Warning( "Texture \"%s\" being redefined", name.c_str() );
+		WARN_IF_ANIMATED_TRANSFORM( "Texture" );
+		auto st =
+			MakeSpectrumTexture( texname, curTransform[0], tp );
+		if ( st )
+		{
+			if ( graphicsState.float3TexturesShared )
+			{
+				graphicsState.float3Textures =
+					std::make_shared<GraphicsState::Float3TextureMap>( *graphicsState.float3Textures );
+				graphicsState.float3TexturesShared = false;
+			}
+			( *graphicsState.float3Textures )[name] = st;
+		}
+	}
+	else
+		Error( "Texture type \"%s\" unknown.", type.c_str() );
 }
 
 void pbrtMaterial( const std::string& name, const ParamSet& params )
 {
 	ParamSet emptyParams;
 	TextureParams mp( params, emptyParams, *graphicsState.floatTextures,
-					  *graphicsState.spectrumTextures );
+					  *graphicsState.float3Textures );
 
 	auto mtl = MakeMaterial( name, mp );
 	graphicsState.currentMaterial =
@@ -591,7 +794,7 @@ void pbrtMakeNamedMaterial( const std::string& name, const ParamSet& params )
 {
 	ParamSet emptyParams;
 	TextureParams mp( params, emptyParams, *graphicsState.floatTextures,
-					  *graphicsState.spectrumTextures );
+					  *graphicsState.float3Textures );
 	std::string matName = mp.FindString( "type" );
 	WARN_IF_ANIMATED_TRANSFORM( "MakeNamedMaterial" );
 	if ( matName == "" )
@@ -805,7 +1008,7 @@ DynamicHostMaterial* GraphicsState::GetMaterialForShape(
 		// parameters are (apparently) going to provide values for some of
 		// the material parameters.
 		TextureParams mp( shapeParams, currentMaterial->params, *floatTextures,
-						  *spectrumTextures );
+						  *float3Textures );
 		return MakeMaterial( currentMaterial->name, mp );
 	}
 	else

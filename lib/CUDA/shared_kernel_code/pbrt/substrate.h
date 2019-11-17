@@ -37,17 +37,21 @@ class Substrate : public SimpleMaterial<
 {
   public:
 	__device__ void ComputeScatteringFunctions( const common::materials::pbrt::Substrate& params,
+												const float2 uv,
 												const bool allowMultipleLobes,
 												const TransportMode mode ) override
 	{
 
 		// TODO: Bumpmapping
 
-		if ( IsBlack( params.Kd ) && IsBlack( params.Ks ) )
-			return;
+		const auto Kd = params.Kd.Evaluate( uv );
+		const auto Ks = params.Ks.Evaluate( uv );
 
-		float urough = params.urough;
-		float vrough = params.vrough;
+		auto urough = params.urough.Evaluate( uv );
+		auto vrough = params.vrough.Evaluate( uv );
+
+		if ( IsBlack( Kd ) && IsBlack( Ks ) )
+			return;
 
 		if ( params.remapRoughness )
 		{
@@ -57,6 +61,6 @@ class Substrate : public SimpleMaterial<
 
 		const TrowbridgeReitzDistribution<> distrib( urough, vrough );
 
-		bxdfs.emplace_back<FresnelBlend<TrowbridgeReitzDistribution<>>>( params.Kd, params.Ks, distrib );
+		bxdfs.emplace_back<FresnelBlend<TrowbridgeReitzDistribution<>>>( Kd, Ks, distrib );
 	}
 };
