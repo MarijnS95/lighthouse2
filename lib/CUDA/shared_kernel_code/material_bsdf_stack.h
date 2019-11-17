@@ -222,6 +222,7 @@ class SimpleMaterial : public BSDFStackMaterial<BxDFs...>
 {
   protected:
 	__device__ virtual void ComputeScatteringFunctions( const CoreMaterialProperties& props,
+														const float2 uv,
 														const bool allowMultipleLobes,
 														const TransportMode mode ) = 0;
 
@@ -246,6 +247,20 @@ class SimpleMaterial : public BSDFStackMaterial<BxDFs...>
 											N, iN, fN, T, waveLength, allowMultipleLobes, mode );
 
 		const auto props = LoadMaterial<CoreMaterialProperties>( materialInstance );
-		ComputeScatteringFunctions( props, allowMultipleLobes, mode );
+
+		float tu, tv;
+
+		const float4 tdata0 = tri.u4;
+		const float4 tdata1 = tri.v4;
+		const float w = 1 - ( u + v );
+#ifdef OPTIXPRIMEBUILD
+		tu = u * TRI_U0 + v * TRI_U1 + w * TRI_U2;
+		tv = u * TRI_V0 + v * TRI_V1 + w * TRI_V2;
+#else
+		tu = w * TRI_U0 + u * TRI_U1 + v * TRI_U2;
+		tv = w * TRI_V0 + u * TRI_V1 + v * TRI_V2;
+#endif
+
+		ComputeScatteringFunctions( props, make_float2( tu, tv ), allowMultipleLobes, mode );
 	}
 };

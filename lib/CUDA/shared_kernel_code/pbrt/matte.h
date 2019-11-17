@@ -39,19 +39,23 @@ class Matte : public SimpleMaterial<
 
   public:
 	__device__ void ComputeScatteringFunctions( const common::materials::pbrt::Matte& params,
+												const float2 uv,
 												const bool allowMultipleLobes,
 												const TransportMode mode ) override
 	{
 		// TODO: Bumpmapping
 
-		if ( IsBlack( params.Kd ) )
+		const auto Kd = params.Kd.Evaluate( uv );
+		const auto sigma = params.sigma.Evaluate( uv );
+
+		if ( IsBlack( Kd ) )
 			return;
 
-		const float sig = clamp( params.sigma, 0.f, 90.f );
+		const float sig = clamp( sigma, 0.f, 90.f );
 
 		if ( sig == 0.f )
-			bxdfs.emplace_back<LambertianReflection>( params.Kd );
+			bxdfs.emplace_back<LambertianReflection>( Kd );
 		else
-			bxdfs.emplace_back<OrenNayar>( params.Kd, sig );
+			bxdfs.emplace_back<OrenNayar>( Kd, sig );
 	}
 };

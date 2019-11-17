@@ -19,7 +19,7 @@
 //  +-----------------------------------------------------------------------------+
 //  |  DynamicHostMaterial                                                        |
 //  |  Host-side dynamic material definition.                               LH2'19|
-//  |  Virtual interface holding a material.                                |
+//  |  Virtual interface holding a material.                                      |
 //  +-----------------------------------------------------------------------------+
 class DynamicHostMaterial
 {
@@ -29,9 +29,7 @@ class DynamicHostMaterial
   public:
 	const MaterialType type;
 
-	virtual uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener ) const = 0;
-	// Blegh.
-	virtual void CollectMaps( CoreMaterialEx& gpuMatEx ) const = 0;
+	virtual uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener, const CoreTexDesc* texDescs ) const = 0;
 
 	virtual bool IsEmissive() const = 0;
 	// Retrieve color for material. Mainly used for emissive materials
@@ -66,14 +64,9 @@ class SimpleHostMaterial : public DynamicHostMaterial_T<SimpleHostMaterial<Mater
 	{
 	}
 
-	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener ) const override
+	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener, const CoreTexDesc* texDescs ) const override
 	{
 		return flattener.push_back( material ).offset();
-	}
-
-	void CollectMaps( CoreMaterialEx& gpuMatEx ) const override
-	{
-		// Nothing. This function should be refactored out.
 	}
 
 	bool IsEmissive() const override
@@ -117,15 +110,10 @@ class EmissiveMaterial : public DynamicHostMaterial_T<EmissiveMaterial, Material
 	{
 	}
 
-	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener ) const override
+	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener, const CoreTexDesc* texDescs ) const override
 	{
 		// TODO: return -1, assume host_light picks this up
 		return flattener.push_back( light ).offset();
-	}
-
-	void CollectMaps( CoreMaterialEx& gpuMatEx ) const override
-	{
-		// Nothing. This function should be refactored out.
 	}
 
 	bool IsEmissive() const override

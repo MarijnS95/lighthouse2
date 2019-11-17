@@ -445,18 +445,19 @@ class Disney : public SimpleMaterial<
   public:
 	__device__ void ComputeScatteringFunctions(
 		const common::materials::pbrt::Disney& params,
+		const float2 uv,
 		const bool allowMultipleLobes,
 		const TransportMode mode ) override
 	{
 		// TODO: Bumpmapping
 
-		const float3 c = params.color;
-		const float metallicWeight = params.metallic;
-		const float e = params.eta;
-		const float strans = params.specTrans;
+		const float3 c = params.color.Evaluate( uv );
+		const float metallicWeight = params.metallic.Evaluate( uv );
+		const float e = params.eta.Evaluate( uv );
+		const float strans = params.specTrans.Evaluate( uv );
 		const float diffuseWeight = ( 1.f - metallicWeight ) * ( 1.f - strans );
-		const float dt = params.diffTrans / 2.f; // 0: all diffuse is reflected -> 1, transmitted
-		const float rough = params.roughness;
+		const float dt = params.diffTrans.Evaluate( uv ) / 2.f; // 0: all diffuse is reflected -> 1, transmitted
+		const float rough = params.roughness.Evaluate( uv );
 		const float lum = 0.212671f * c.x + 0.715160f * c.y + 0.072169f * c.z;
 		// normalize lum. to isolate hue+sat
 		const float3 Ctint = lum > 0 ? ( c / lum ) : make_float3( 1.f );
@@ -475,7 +476,7 @@ class Disney : public SimpleMaterial<
 			}
 			else
 			{
-				float3 sd = params.scatterDistance;
+				float3 sd = params.scatterDistance.Evaluate(uv);
 				if ( IsBlack( sd ) )
 				{
 					bxdfs.emplace_back<DisneyDiffuse>( diffuseWeight * c );
@@ -495,10 +496,10 @@ class Disney : public SimpleMaterial<
 			bxdfs.emplace_back<DisneyRetro>( diffuseWeight * c, rough );
 
 			// Sheen (if enabled)
-			const float sheenWeight = params.sheen;
+			const float sheenWeight = params.sheen.Evaluate(uv);
 			if ( sheenWeight > 0 )
 			{
-				const float stint = params.sheenTint;
+				const float stint = params.sheenTint.Evaluate(uv);
 				const float3 Csheen = pbrt_Lerp( stint, make_float3( 1.f ), Ctint );
 
 				bxdfs.emplace_back<DisneySheen>( diffuseWeight * sheenWeight * Csheen );
@@ -507,22 +508,22 @@ class Disney : public SimpleMaterial<
 
 		// Create the microfacet distribution for metallic and/or specular
 		// transmission.
-		const float aspect = std::sqrt( 1.f - params.anisotropic * .9f );
+		const float aspect = std::sqrt( 1.f - params.anisotropic.Evaluate(uv) * .9f );
 		const float ax = std::max( .001f, sqr( rough ) / aspect );
 		const float ay = std::max( .001f, sqr( rough ) * aspect );
 		const DisneyMicrofacetDistribution distrib( ax, ay );
 
 		// Specular is Trowbridge-Reitz with a modified Fresnel function.
-		const float specTint = params.specularTint;
+		const float specTint = params.specularTint.Evaluate(uv);
 		const float3 Cspec0 = pbrt_Lerp( metallicWeight, SchlickR0FromEta( e ) * pbrt_Lerp( specTint, make_float3( 1.f ), Ctint ), c );
 		const DisneyFresnel fresnel( Cspec0, metallicWeight, e );
 		// https://github.com/mmp/pbrt-v3/issues/224
 		bxdfs.emplace_back<DisneyMicrofacetReflection>( make_float3( 1.f ), distrib, fresnel );
 
 		// Clearcoat
-		const float cc = params.clearcoat;
+		const float cc = params.clearcoat.Evaluate(uv);
 		if ( cc > 0 )
-			bxdfs.emplace_back<DisneyClearcoat>( cc, pbrt_Lerp( params.clearcoatGloss, .1f, .001f ) );
+			bxdfs.emplace_back<DisneyClearcoat>( cc, pbrt_Lerp( params.clearcoatGloss.Evaluate(uv), .1f, .001f ) );
 
 		// BTDF
 		if ( strans > 0 )

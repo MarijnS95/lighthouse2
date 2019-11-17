@@ -578,7 +578,7 @@ int HostScene::CreateTexture( const string& origin, const uint modFlags )
 	// create a new texture
 	HostTexture* newTexture = new HostTexture( origin.c_str(), modFlags );
 	textures.push_back( newTexture );
-	return (int)textures.size() - 1;
+	return newTexture->ID = (int)textures.size() - 1;
 }
 
 //  +-----------------------------------------------------------------------------+

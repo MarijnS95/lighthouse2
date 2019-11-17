@@ -35,8 +35,7 @@ class HostMaterial : public DynamicHostMaterial_T<HostMaterial, MaterialType::DI
 	// constructor / destructor
 	HostMaterial() = default;
 	// methods
-	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener ) const override;
-	void CollectMaps( CoreMaterialEx& gpuMatEx ) const override;
+	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener, const CoreTexDesc* texDescs ) const override;
 
 	bool IsEmissive() const override;
 	float3 Color() const override;

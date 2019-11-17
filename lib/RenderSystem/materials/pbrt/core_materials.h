@@ -1,26 +1,29 @@
 #pragma once
 
-#define FLOAT3( name, extra_name ) \
-	union {                        \
-		float4 name##_float4;      \
-		struct                     \
-		{                          \
-			float3 name;           \
-			float extra_name;      \
-		};                         \
-	};
+typedef uint32_t CoreMaterialChunk;
+
+namespace common
+{
+namespace materials
+{
+namespace pbrt
+{
+
+using namespace lh2core;
 
 struct Disney
 {
 	static constexpr auto type = MaterialType::PBRT_DISNEY;
 
-	FLOAT3( color, flatness );
-	FLOAT3( scatterDistance, specTrans );
-	float metallic, eta;
-	float roughness, specularTint, anisotropic;
-	float sheenTint, sheen;
-	float clearcoat, clearcoatGloss;
-	float diffTrans;
+	CoreTexture<float3> color;
+	CoreTexture<float> flatness;
+	CoreTexture<float3> scatterDistance;
+	CoreTexture<float> specTrans;
+	CoreTexture<float> metallic, eta;
+	CoreTexture<float> roughness, specularTint, anisotropic;
+	CoreTexture<float> sheenTint, sheen;
+	CoreTexture<float> clearcoat, clearcoatGloss;
+	CoreTexture<float> diffTrans;
 	// float bumpMap;
 	bool thin;
 };
@@ -29,10 +32,12 @@ struct Glass
 {
 	static constexpr auto type = MaterialType::PBRT_GLASS;
 
-	FLOAT3( R, urough );
-	FLOAT3( T, vrough );
+	CoreTexture<float3> R;
+	CoreTexture<float> urough;
+	CoreTexture<float3> T;
+	CoreTexture<float> vrough;
 
-	float eta;
+	CoreTexture<float> eta;
 
 	bool remapRoughness;
 };
@@ -41,15 +46,18 @@ struct Matte
 {
 	static constexpr auto type = MaterialType::PBRT_MATTE;
 
-	FLOAT3( Kd, sigma );
+	CoreTexture<float3> Kd;
+	CoreTexture<float> sigma;
 };
 
 struct Metal
 {
 	static constexpr auto type = MaterialType::PBRT_METAL;
 
-	FLOAT3( eta, urough );
-	FLOAT3( k, vrough );
+	CoreTexture<float3> eta;
+	CoreTexture<float> urough;
+	CoreTexture<float3> k;
+	CoreTexture<float> vrough;
 	bool remapRoughness;
 
 	// float roughness;
@@ -60,15 +68,16 @@ struct Mirror
 {
 	static constexpr auto type = MaterialType::PBRT_MIRROR;
 
-	float3 Kr;
+	CoreTexture<float3> Kr;
 };
 
 struct Plastic
 {
 	static constexpr auto type = MaterialType::PBRT_PLASTIC;
 
-	FLOAT3( Kd, roughness );
-	float3 Ks;
+	CoreTexture<float3> Kd;
+	CoreTexture<float> roughness;
+	CoreTexture<float3> Ks;
 
 	bool remapRoughness;
 };
@@ -77,8 +86,14 @@ struct Substrate
 {
 	static constexpr auto type = MaterialType::PBRT_SUBSTRATE;
 
-	FLOAT3( Kd, urough );
-	FLOAT3( Ks, vrough );
+	CoreTexture<float3> Kd;
+	CoreTexture<float> urough;
+	CoreTexture<float3> Ks;
+	CoreTexture<float> vrough;
 
 	bool remapRoughness;
 };
+
+}; // namespace pbrt
+}; // namespace materials
+}; // namespace common

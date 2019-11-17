@@ -43,12 +43,14 @@
 // #include "geometry.h"
 #include "pbrt_wrap.h"
 #include "spectrum.h"
-#include "texture.h"
+#include <dynamic_host_texture.h>
 #include <map>
 #include <stdio.h>
 
 namespace pbrt
 {
+
+using namespace lh2core;
 
 // ParamSet Declarations
 class ParamSet
@@ -168,28 +170,25 @@ class TextureParams
 {
   public:
 	// TextureParams Public Methods
-	TextureParams(
+	inline TextureParams(
 		const ParamSet& geomParams, const ParamSet& materialParams,
-		std::map<std::string, std::shared_ptr<Texture<Float>>>& fTex,
-		std::map<std::string, std::shared_ptr<Texture<Spectrum>>>& sTex )
+		std::map<std::string, DynamicHostTexture<Float>*>& fTex,
+		std::map<std::string, DynamicHostTexture<float3>*>& sTex )
 		: floatTextures( fTex ),
 		  spectrumTextures( sTex ),
 		  geomParams( geomParams ),
 		  materialParams( materialParams ) {}
-	std::shared_ptr<Texture<Spectrum>> GetSpectrumTexture(
+
+	DynamicHostTexture<float3>* GetFloat3Texture(
+		const std::string& name, const float3& def ) const;
+	DynamicHostTexture<float3>* GetFloat3Texture(
 		const std::string& name, const Spectrum& def ) const;
-	std::shared_ptr<Texture<Spectrum>> GetSpectrumTextureOrNull(
+	DynamicHostTexture<float3>* GetFloat3TextureOrNull(
 		const std::string& name ) const;
-	std::shared_ptr<Texture<Float>> GetFloatTexture( const std::string& name,
-													 Float def ) const;
-	std::shared_ptr<Texture<Float>> GetFloatTextureOrNull(
+	DynamicHostTexture<Float>* GetFloatTexture( const std::string& name,
+												Float def ) const;
+	DynamicHostTexture<Float>* GetFloatTextureOrNull(
 		const std::string& name ) const;
-
-	// LH2 Additions
-	Float GetConstantFloatTexture( const std::string& name, float def ) const;
-
-	Spectrum GetConstantSpectrumTexture( const std::string& name, Spectrum def ) const;
-	// End LH2 additions
 
 	Float FindFloat( const std::string& n, Float d ) const
 	{
@@ -240,8 +239,8 @@ class TextureParams
 
   private:
 	// TextureParams Private Data
-	std::map<std::string, std::shared_ptr<Texture<Float>>>& floatTextures;
-	std::map<std::string, std::shared_ptr<Texture<Spectrum>>>& spectrumTextures;
+	std::map<std::string, DynamicHostTexture<Float>*>& floatTextures;
+	std::map<std::string, DynamicHostTexture<float3>*>& spectrumTextures;
 	const ParamSet &geomParams, &materialParams;
 };
 

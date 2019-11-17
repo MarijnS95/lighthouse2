@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-   THIS IS A SHARED FILE: used in 
+   THIS IS A SHARED FILE: used in
    - RenderCore_OptixPrime_b
    - RenderCore_Optix7
    - RenderCore_Optix7Filter
@@ -202,6 +202,65 @@ LH2_DEVFUNC void ReadTexelConsistent2( const float4* buffer, const float4* prevW
 	if (sum == 0) return;
 	direct = make_float3( w0 * pd0 + w1 * pd1 + w2 * pd2 + w3 * pd3 ) * (1.0f / sum);
 	indirect = make_float3( w0 * pi0 + w1 * pi1 + w2 * pi2 + w3 * pi3 ) * (1.0f / sum);
+}
+
+template <typename T>
+__device__ T CoreTexture<T>::Evaluate( float2 uv ) const
+{
+	switch ( type )
+	{
+	case Constant:
+		return constant;
+	case Imagemap:
+		if ( imagemap.trilinear )
+			return FetchTexelTrilinear(
+				0, uv,
+				imagemap.textureOffset,
+				imagemap.width,
+				imagemap.height );
+		else
+			return FetchTexel(
+				uv,
+				imagemap.textureOffset,
+				imagemap.width,
+				imagemap.height );
+	}
+	return T{};
+}
+
+template <>
+__device__ float CoreTexture<float>::Evaluate( float2 uv ) const
+{
+	switch ( type )
+	{
+	case Constant:
+		return constant;
+	}
+	return 0.f;
+}
+
+template <>
+__device__ float3 CoreTexture<float3>::Evaluate( float2 uv ) const
+{
+	switch ( type )
+	{
+	case Constant:
+		return constant;
+	case Imagemap:
+		return make_float3(
+			imagemap.trilinear
+				? FetchTexelTrilinear(
+					  0, uv,
+					  imagemap.textureOffset,
+					  imagemap.width,
+					  imagemap.height )
+				: FetchTexel(
+					  uv,
+					  imagemap.textureOffset,
+					  imagemap.width,
+					  imagemap.height ) );
+	}
+	return make_float3( 0.f );
 }
 
 // EOF

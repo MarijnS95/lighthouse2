@@ -43,8 +43,11 @@ using namespace half_float;
 #include "common_types.h"
 #include "common_settings.h"
 #include "common_classes.h"
+#include <core_texture.h>
+#include <dynamic_host_texture.h>
 #include <materials/dynamic_host_material.h>
 #include <common_materials.h>
+#include <host_materials.h>
 #include <GLFW/glfw3.h>		// needed for Timer class
 
 // https://devblogs.microsoft.com/cppblog/msvc-preprocessor-progress-towards-conformance/

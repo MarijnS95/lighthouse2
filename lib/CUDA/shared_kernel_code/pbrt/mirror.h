@@ -37,14 +37,17 @@ class Mirror : public SimpleMaterial<
 {
   public:
 	__device__ void ComputeScatteringFunctions( const common::materials::pbrt::Mirror& params,
+												const float2 uv,
 												const bool allowMultipleLobes,
 												const TransportMode mode ) override
 	{
 		// TODO: Bumpmapping
 
-		if ( IsBlack( params.Kr ) )
+		const auto Kr = params.Kr.Evaluate( uv );
+
+		if ( IsBlack( Kr ) )
 			return;
 
-		bxdfs.emplace_back<SpecularReflection<FresnelNoOp>>( params.Kr, FresnelNoOp() );
+		bxdfs.emplace_back<SpecularReflection<FresnelNoOp>>( Kr, FresnelNoOp() );
 	}
 };

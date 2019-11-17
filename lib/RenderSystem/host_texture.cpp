@@ -129,6 +129,11 @@ void HostTexture::ConstructMIPmaps()
 	}
 }
 
+CoreTexture<float3> HostTexture::GetCoreTexture( const CoreTexDesc* texDescs ) const
+{
+	return {texDescs[ID].firstPixel, width, height};
+}
+
 //  +-----------------------------------------------------------------------------+
 //  |  HostTexture::Load                                                          |
 //  |  Load texture data from disk.                                         LH2'19|

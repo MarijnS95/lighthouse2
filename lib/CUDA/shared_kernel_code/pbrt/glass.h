@@ -42,22 +42,28 @@ class Glass : public SimpleMaterial<
 
   public:
 	__device__ void ComputeScatteringFunctions( const common::materials::pbrt::Glass& params,
+												const float2 uv,
 												const bool allowMultipleLobes,
 												const TransportMode mode ) override
 	{
 		// TODO: Bumpmapping
 
-		if ( IsBlack( params.R ) && IsBlack( params.T ) )
+		const auto R = params.R.Evaluate( uv );
+		const auto T = params.T.Evaluate( uv );
+
+		if ( IsBlack( R ) && IsBlack( T ) )
 			return;
 
-		float urough = params.urough;
-		float vrough = params.vrough;
+		const auto eta = params.eta.Evaluate( uv );
+
+		auto urough = params.urough.Evaluate( uv );
+		auto vrough = params.vrough.Evaluate( uv );
 
 		const bool isSpecular = urough == 0 && vrough == 0;
 
 		if ( isSpecular && allowMultipleLobes )
 		{
-			bxdfs.emplace_back<FresnelSpecular>( params.R, params.T, 1.f, params.eta, mode );
+			bxdfs.emplace_back<FresnelSpecular>( R, T, 1.f, eta, mode );
 		}
 		else
 		{
@@ -69,21 +75,21 @@ class Glass : public SimpleMaterial<
 
 			const TrowbridgeReitzDistribution<> distrib( urough, vrough );
 
-			if ( !IsBlack( params.R ) )
+			if ( !IsBlack( R ) )
 			{
-				const FresnelDielectric fresnel( 1.f, params.eta );
+				const FresnelDielectric fresnel( 1.f, eta );
 				if ( isSpecular )
-					bxdfs.emplace_back<SpecularReflection<FresnelDielectric>>( params.R, fresnel );
+					bxdfs.emplace_back<SpecularReflection<FresnelDielectric>>( R, fresnel );
 				else
-					bxdfs.emplace_back<MicrofacetReflection<TrowbridgeReitzDistribution<>, FresnelDielectric>>( params.R, distrib, fresnel );
+					bxdfs.emplace_back<MicrofacetReflection<TrowbridgeReitzDistribution<>, FresnelDielectric>>( R, distrib, fresnel );
 			}
 
-			if ( !IsBlack( params.T ) )
+			if ( !IsBlack( T ) )
 			{
 				if ( isSpecular )
-					bxdfs.emplace_back<SpecularTransmission>( params.T, 1.f, params.eta, mode );
+					bxdfs.emplace_back<SpecularTransmission>( T, 1.f, eta, mode );
 				else
-					bxdfs.emplace_back<MicrofacetTransmission<TrowbridgeReitzDistribution<>>>( params.T, distrib, 1.f, params.eta, mode );
+					bxdfs.emplace_back<MicrofacetTransmission<TrowbridgeReitzDistribution<>>>( T, distrib, 1.f, eta, mode );
 			}
 		}
 	}
