@@ -18,8 +18,6 @@
 
 #include <bitset>
 
-#include <bitset>
-
 static RenderAPI* renderer = 0;
 static GLTexture* renderTarget = 0;
 static Shader* shader = 0;
