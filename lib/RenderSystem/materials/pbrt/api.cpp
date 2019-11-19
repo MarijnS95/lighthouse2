@@ -152,6 +152,9 @@ enum class APIState
 static APIState currentApiState = APIState::Uninitialized;
 int catIndentCount = 0;
 
+std::map<std::string, std::vector<HostNode*>> instances;
+std::vector<HostNode*>* currentInstance = nullptr;
+
 // API Macros
 #define VERIFY_INITIALIZED( func )                         \
 	if ( !( PbrtOptions.cat || PbrtOptions.toPly ) &&      \
@@ -920,24 +923,15 @@ void pbrtShape( const std::string& name, const ParamSet& params )
 #endif
 
 	auto meshIdx = hostScene->AddMesh( hostMesh );
-	hostScene->AddInstance( meshIdx, ObjToWorld );
+	HostNode* newNode = new HostNode( meshIdx, ObjToWorld );
 
 	// Add _prims_ and _areaLights_ to scene or current instance
-	// if ( renderOptions->currentInstance )
-	// {
-	// 	if ( areaLights.size() )
-	// 		Warning( "Area lights not supported with object instancing" );
-	// 	renderOptions->currentInstance->insert(
-	// 		renderOptions->currentInstance->end(), prims.begin(), prims.end() );
-	// }
-	// else
-	// {
-	// 	renderOptions->primitives.insert( renderOptions->primitives.end(),
-	// 									  prims.begin(), prims.end() );
-	// 	if ( areaLights.size() )
-	// 		renderOptions->lights.insert( renderOptions->lights.end(),
-	// 									  areaLights.begin(), areaLights.end() );
-	// }
+	if ( currentInstance )
+		// Abusing HostNode instance (this is not an instance of the mesh _yet_)
+		// because it keeps track of the transform.
+		currentInstance->push_back( newNode );
+	else
+		hostScene->AddInstance( newNode );
 }
 
 // Attempt to determine if the ParamSet for a shape may provide a value for
@@ -1022,17 +1016,64 @@ void pbrtReverseOrientation()
 
 void pbrtObjectBegin( const std::string& name )
 {
-	Warning( "pbrtObjectBegin is not implemented!" );
+	VERIFY_WORLD( "ObjectBegin" );
+	pbrtAttributeBegin();
+	if ( currentInstance )
+		Error( "ObjectBegin called inside of instance definition" );
+	instances[name] = std::vector<HostNode*>();
+	currentInstance = &instances[name];
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+		printf( "%*sObjectBegin \"%s\"\n", catIndentCount, "", name.c_str() );
 }
 
 void pbrtObjectEnd()
 {
-	Warning( "pbrtObjectEnd is not implemented!" );
+	VERIFY_WORLD( "ObjectEnd" );
+	if ( !currentInstance )
+		Error( "ObjectEnd called outside of instance definition" );
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+		printf( "%*sObjectEnd\n", catIndentCount, "" );
+	currentInstance = nullptr;
+	pbrtAttributeEnd();
 }
 
 void pbrtObjectInstance( const std::string& name )
 {
-	Warning( "pbrtObjectInstance is not implemented!" );
+	VERIFY_WORLD( "ObjectInstance" );
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+	{
+		printf( "%*sObjectInstance \"%s\"\n", catIndentCount, "", name.c_str() );
+		return;
+	}
+
+	// Perform object instance error checking
+	if ( currentInstance )
+	{
+		Error( "ObjectInstance can't be called inside instance definition" );
+		return;
+	}
+	if ( instances.find( name ) == instances.end() )
+	{
+		Error( "Unable to find instance named \"%s\"", name.c_str() );
+		return;
+	}
+	auto& in = instances[name];
+	if ( in.empty() ) return;
+	// static_assert( MaxTransforms == 2,
+	// 			   "TransformCache assumes only two transforms" );
+	// Create _animatedInstanceToWorld_ transform for instance
+	// Transform* InstanceToWorld[2] = {
+	// 	transformCache.Lookup( curTransform[0] ),
+	// 	transformCache.Lookup( curTransform[1] )};
+	// AnimatedTransform animatedInstanceToWorld(
+	// 	InstanceToWorld[0], transformStartTime,
+	// 	InstanceToWorld[1], transformEndTime );
+	// std::shared_ptr<Primitive> prim(
+	// 	std::make_shared<TransformedPrimitive>( in[0], animatedInstanceToWorld ) );
+	// primitives.push_back( prim );
+
+	for ( auto& mesh : in )
+		hostScene->AddInstance( new HostNode( *mesh ) );
 }
 
 void pbrtWorldEnd()
