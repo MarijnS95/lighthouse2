@@ -419,9 +419,8 @@ int HostScene::AddQuad( float3 N, const float3 pos, const float width, const flo
 //  |  HostScene::AddInstance                                                     |
 //  |  Add an instance of an existing mesh to the scene.                    LH2'19|
 //  +-----------------------------------------------------------------------------+
-int HostScene::AddInstance( const int meshId, const mat4& transform )
+int HostScene::AddInstance( HostNode* newNode )
 {
-	HostNode* newNode = new HostNode( meshId, transform );
 	if (nodeListHoles > 0)
 	{
 		// we have holes in the nodes vector due to instance deletions; search from the
@@ -443,6 +442,16 @@ int HostScene::AddInstance( const int meshId, const mat4& transform )
 	nodePool.push_back( newNode );
 	rootNodes.push_back( newNode->ID );
 	return newNode->ID;
+}
+
+//  +-----------------------------------------------------------------------------+
+//  |  HostScene::AddInstance                                                     |
+//  |  Add an instance of an existing mesh to the scene.                    LH2'19|
+//  +-----------------------------------------------------------------------------+
+int HostScene::AddInstance( const int meshId, const mat4& transform )
+{
+	HostNode* newNode = new HostNode( meshId, transform );
+	return AddInstance( newNode );
 }
 
 //  +-----------------------------------------------------------------------------+
