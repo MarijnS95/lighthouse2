@@ -55,7 +55,7 @@ uint atomicAggInc( uint *ptr )
 	}
 
 	// broadcast previous value within the warp
-	// and add each active thread’s rank to it
+	// and add each active threadï¿½s rank to it
 	prev = g.thread_rank() + g.shfl( prev, 0 );
 	return prev;
 }
@@ -171,16 +171,24 @@ void shadeKernel( float4* accumulator, const uint stride,
 	if (material.IsEmissive() /* r, g or b exceeds 1 */)
 	{
 		const float DdotNL = -dot( D, N );
-		float3 contribution = make_float3( 0 ); // initialization required.
 		if (DdotNL > 0 /* lights are not double sided */)
 		{
-			// apply MIS
-			const float3 lastN = UnpackNormal( __float_as_uint( Q4.y ) );
-			const CoreTri& tri = (const CoreTri&)instanceTriangles[PRIMIDX];
-			const float lightPdf = CalculateLightPDF( D, HIT_T, tri.area, N );
-			const float pickProb = LightPickProb( tri.ltriIdx, RAY_O, lastN /* TODO: lastN for primary ray? */, I /* the N at the previous vertex */ );
-			if ((bsdfPdf + lightPdf * pickProb) > 0) contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf * pickProb));
-			contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf));
+			float3 contribution = make_float3( 0 ); // initialization required.
+			if (pathLength == 1 || (FLAGS & S_SPECULAR) > 0)
+			{
+				// only camera rays will be treated special
+				contribution = material.Color();
+			}
+			else
+			{
+				// apply MIS
+				const float3 lastN = UnpackNormal( __float_as_uint( Q4.y ) );
+				const CoreTri& tri = (const CoreTri&)instanceTriangles[PRIMIDX];
+				const float lightPdf = CalculateLightPDF( D, HIT_T, tri.area, N );
+				const float pickProb = LightPickProb( tri.ltriIdx, RAY_O, lastN /* TODO: lastN for primary ray? */, I /* the N at the previous vertex */ );
+				// if ((bsdfPdf + lightPdf * pickProb) > 0) contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf * pickProb));
+				contribution = throughput * material.Color() * (1.0f / (bsdfPdf + lightPdf));
+			}
 			CLAMPINTENSITY;
 			FIXNAN_FLOAT3( contribution );
 			accumulator[pixelIdx] += make_float4( contribution, 0 );
