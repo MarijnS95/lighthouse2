@@ -150,7 +150,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	{
 		const float DdotNL = -dot( D, N );
 		float3 contribution = make_float3( 0 ); // initialization required.
-		if (DdotNL > 0 /* lights are not double sided */)
+		if (material.IsEmissiveTwosided() || DdotNL > 0 /* lights are not double sided */)
 		{
 			if (pathLength == 1 || (FLAGS & S_SPECULAR) > 0)
 			{

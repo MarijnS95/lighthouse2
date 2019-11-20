@@ -43,6 +43,7 @@ class MaterialIntf : public HasPlacementNewOperator
 	__device__ virtual void InvertETAAndDisableTransmittance() = 0;
 
 	__device__ virtual bool IsEmissive() const = 0;
+	__device__ virtual bool IsEmissiveTwosided() const { return false; }
 	__device__ virtual bool IsAlpha() const = 0;
 	/**
 	 * Used to retrieve color for emissive surfaces.

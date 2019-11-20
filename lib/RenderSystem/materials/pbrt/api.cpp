@@ -928,9 +928,10 @@ void pbrtShape( const std::string& name, const ParamSet& params )
 		// area = MakeAreaLight( graphicsState.areaLight, curTransform[0],
 		//                                        mi, graphicsState.areaLightParams, s );
 		auto& lparams = graphicsState.areaLightParams;
-		auto L = lparams.FindOneSpectrum( "L", Spectrum( 1.0 ) ).vector();
-		auto sc = lparams.FindOneSpectrum( "scale", Spectrum( 1.0 ) ).vector();
-		auto mtl = new EmissiveMaterial( L * sc );
+		auto L = lparams.FindOneSpectrum( "L", Spectrum( 1.0 ) );
+		auto sc = lparams.FindOneSpectrum( "scale", Spectrum( 1.0 ) );
+		bool twoSided = lparams.FindOneBool( "twosided", false );
+		auto mtl = new EmissiveMaterial( ( L * sc ).vector(), twoSided );
 		materialIdx = hostScene->AddMaterial( mtl );
 	}
 	else

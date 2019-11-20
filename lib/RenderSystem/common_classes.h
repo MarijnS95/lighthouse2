@@ -266,6 +266,7 @@ struct CoreMaterialDesc
 struct CoreEmissiveMaterial
 {
 	float3 color;
+	bool twosided;
 };
 
 enum TexelStorage

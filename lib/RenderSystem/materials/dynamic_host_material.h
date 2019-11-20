@@ -106,7 +106,7 @@ class EmissiveMaterial : public DynamicHostMaterial_T<EmissiveMaterial, Material
 	CoreEmissiveMaterial light;
 
   public:
-	EmissiveMaterial( const float3& color ) : light{color}
+	EmissiveMaterial( const float3& color, bool twosided ) : light{color, twosided}
 	{
 	}
 
