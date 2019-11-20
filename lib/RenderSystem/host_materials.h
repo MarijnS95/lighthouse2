@@ -210,5 +210,31 @@ struct SubstrateHostMaterial : public TexturedMaterial<Substrate>
 	}
 };
 
+struct UberHostMaterial : public TexturedMaterial<Uber>
+{
+	DynamicHostTexture<float3>*Kd, *Ks, *Kr, *Kt, *opacity;
+	DynamicHostTexture<float>*roughnessu, *roughnessv, *eta;
+
+	bool remapRoughness;
+
+	uint32_t Flatten( Flattener<sizeof( uint32_t )>& flattener, const CoreTexDesc* texDescs ) const override
+	{
+		Uber material;
+
+		material.Kd = Kd->GetCoreTexture( texDescs );
+		material.Ks = Ks->GetCoreTexture( texDescs );
+		material.Kr = Kr->GetCoreTexture( texDescs );
+		material.Kt = Kt->GetCoreTexture( texDescs );
+		material.opacity = opacity->GetCoreTexture( texDescs );
+
+		material.roughnessu = roughnessu->GetCoreTexture( texDescs );
+		material.roughnessv = roughnessv->GetCoreTexture( texDescs );
+
+		material.remapRoughness = remapRoughness;
+
+		return flattener.push_back( material ).offset();
+	}
+};
+
 }; // namespace pbrt
 }; // namespace materials
