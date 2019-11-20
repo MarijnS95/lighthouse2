@@ -191,7 +191,7 @@ void RenderCore::SetTarget( GLTexture* target, const uint spp )
 		delete shadowRayPotential;
 		delete shadowHitBuffer;
 		delete accumulator;
-		const uint maxShadowRays = maxPixels * spp * MAXPATHLENGTH; // upper limit; safe but wasteful
+		const uint maxShadowRays = maxPixels * spp * 2; // Enough for at least 2 frames; traced inbetween frames if over halfway full
 		extensionHitBuffer = new CoreBuffer<Intersection>( maxPixels * spp, ON_DEVICE );
 		shadowRayBuffer = new CoreBuffer<Ray4>( maxShadowRays, ON_DEVICE );
 		shadowRayPotential = new CoreBuffer<float4>( maxShadowRays, ON_DEVICE ); // .w holds pixel index
@@ -484,6 +484,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 	}
 	// render image
 	coreStats.totalExtensionRays = 0;
+	coreStats.shadowTraceTime = 0;
 	// setup primary rays
 	float3 right = view.p2 - view.p1, up = view.p3 - view.p1;
 	InitCountersForExtend( scrwidth * scrheight * scrspp );
@@ -522,16 +523,39 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 			break;
 		}
 		counterBuffer->CopyToHost(); // sadly this is needed; Optix Prime doesn't expose persistent threads
-		Counters& counters = counterBuffer->HostPtr()[0];
+		Counters& counters = *counterBuffer->HostPtr();
 		cudaEventRecord( shadeEnd[pathLength - 1] );
 		pathCount = counters.extensionRays;
 		swap( inBuffer, outBuffer );
+
+		// trace shadow rays now if the next loop iteration could overflow the buffer.
+		if ( pathCount + counters.shadowRays > shadowRayBuffer->GetSize() )
+		{
+			// trace the shadow rays using OptiX Prime
+			Timer t;
+			RTPquery query;
+			CHK_PRIME( rtpQueryCreate( *topLevel, RTP_QUERY_TYPE_ANY, &query ) );
+			CHK_PRIME( rtpBufferDescSetRange( shadowRaysDesc, 0, counters.shadowRays ) );
+			CHK_PRIME( rtpBufferDescSetRange( shadowHitsDesc, 0, counters.shadowRays ) );
+			CHK_PRIME( rtpQuerySetRays( query, shadowRaysDesc ) );
+			CHK_PRIME( rtpQuerySetHits( query, shadowHitsDesc ) );
+			CHK_PRIME( rtpQueryExecute( query, RTP_QUERY_HINT_NONE ) );
+			CHK_PRIME( rtpQueryDestroy( query ) );
+			coreStats.shadowTraceTime += t.elapsed();
+			// process intersection results
+			finalizeConnections( counters.shadowRays, accumulator->DevPtr(), shadowHitBuffer->DevPtr(), shadowRayPotential->DevPtr() );
+			printf( "WARNING: Shadow ray buffer over halfway full; tracing rays to prevent overflow.\n" ); // we should not have to do this; handled here to be conservative.
+
+			counterBuffer->HostPtr()->shadowRays = 0;
+			counterBuffer->CopyToDevice();
+		}
+
 		InitCountersSubsequent();
 	}
 	CHK_PRIME( rtpQueryDestroy( query ) );
 	// loop completed; handle gathered shadow rays
 	counterBuffer->CopyToHost();
-	Counters& counters = counterBuffer->HostPtr()[0];
+	Counters& counters = *counterBuffer->HostPtr();
 	if (counters.shadowRays > 0)
 	{
 		// trace the shadow rays using OptiX Prime
@@ -544,7 +568,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 		CHK_PRIME( rtpQuerySetHits( query, shadowHitsDesc ) );
 		CHK_PRIME( rtpQueryExecute( query, RTP_QUERY_HINT_NONE ) );
 		CHK_PRIME( rtpQueryDestroy( query ) );
-		coreStats.shadowTraceTime = t.elapsed();
+		coreStats.shadowTraceTime += t.elapsed();
 		// process intersection results
 		finalizeConnections( counters.shadowRays, accumulator->DevPtr(), shadowHitBuffer->DevPtr(), shadowRayPotential->DevPtr() );
 	}
