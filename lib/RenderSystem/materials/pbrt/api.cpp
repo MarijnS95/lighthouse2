@@ -875,7 +875,71 @@ void pbrtNamedMaterial( const std::string& name )
 
 void pbrtLightSource( const std::string& name, const ParamSet& params )
 {
-	if ( name == "infinite" || name == "exinfinite" )
+	if ( name == "point" )
+	{
+		const auto I = params.FindOneSpectrum( "I", Spectrum( 1.0 ) );
+		const auto sc = params.FindOneSpectrum( "scale", Spectrum( 1.0 ) );
+		const auto P = params.FindOnePoint3f( "from", make_float3( 0, 0, 0 ) );
+
+		// Instead of creating a translation matrix from world to light,
+		// transform the point to the desired position in space:
+		const auto light2world = curTransform[0];
+		const auto pos = light2world.TransformPoint( P );
+
+		hostScene->AddPointLight( pos, ( I * sc ).vector() );
+	}
+	else if ( name == "spot" )
+	{
+		const auto I = params.FindOneSpectrum( "I", Spectrum( 1.0 ) );
+		const auto sc = params.FindOneSpectrum( "scale", Spectrum( 1.0 ) );
+		const auto coneangle = params.FindOneFloat( "coneangle", 30. );
+		const auto conedelta = params.FindOneFloat( "conedeltaangle", 5. );
+		// Compute spotlight world to light transformation
+		const auto from = params.FindOnePoint3f( "from", make_float3( 0, 0, 0 ) );
+		const auto to = params.FindOnePoint3f( "to", make_float3( 0, 0, 1 ) );
+		const float3 dir = normalize( to - from );
+
+		// PBRT Uses a transformation instead of separate from and direction:
+		// float3 du, dv;
+		// CoordinateSystem( dir, du, dv );
+		// TBN:
+		// mat4 dirToZ{du.x, du.y, du.z, 0.,
+		// 			dv.x, dv.y, dv.z, 0.,
+		// 			dir.x, dir.y, dir.z, 0.,
+		// 			0, 0, 0, 1.};
+		// const auto light2world = curTransform[0] * mat4::Translate( from ) * dirToZ.Inverted();
+
+		// ERROR:
+		// https://www.pbrt.org/fileformat-v3.html#lights specifies for _coneangle_:
+		// > The angle that the spotlight's cone makes with its primary axis.
+		// > For directions up to this angle from the main axis, the full radiant intensity
+		// > given by "I" is emitted. After this angle and up to "coneangle" + "conedeltaangle",
+		// > illumination falls off until it is zero.
+		// HOWEVER:
+		// The code computes and assigns the following:
+		const auto totalWidth = coneangle;
+		const auto falloffStart = coneangle - conedelta;
+		// If the documentation is to be believed, this should instead be:
+		// const auto totalWidth = coneangle + conedelta;
+		// const auto falloffStart = coneangle;
+		// This is perhaps worth filing an issue for.
+
+		hostScene->AddSpotLight( from, dir,
+								 std::cos( Radians( falloffStart ) ),
+								 std::cos( Radians( totalWidth ) ),
+								 ( I * sc ).vector() );
+	}
+	else if ( name == "distant" )
+	{
+		const auto L = params.FindOneSpectrum( "L", Spectrum( 1.0 ) );
+		const auto sc = params.FindOneSpectrum( "scale", Spectrum( 1.0 ) );
+		const auto from = params.FindOnePoint3f( "from", make_float3( 0, 0, 0 ) );
+		const auto to = params.FindOnePoint3f( "to", make_float3( 0, 0, 1 ) );
+		const auto light2world = curTransform[0];
+		const auto dir = normalize( light2world.TransformVector( from - to ) );
+		hostScene->AddDirectionalLight( dir, ( L * sc ).vector() );
+	}
+	else if ( name == "infinite" || name == "exinfinite" )
 	{
 		Spectrum L = params.FindOneSpectrum( "L", Spectrum( 1.0 ) );
 		Spectrum sc = params.FindOneSpectrum( "scale", Spectrum( 1.0 ) );
