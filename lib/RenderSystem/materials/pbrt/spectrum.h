@@ -319,6 +319,9 @@ class CoefficientSpectrum
 		return c[i];
 	}
 
+	// LH2 additions
+	typename VectorType<nSpectrumSamples>::type vector() const;
+
 	// CoefficientSpectrum Public Data
 	static const int nSamples = nSpectrumSamples;
 
@@ -326,6 +329,13 @@ class CoefficientSpectrum
 	// CoefficientSpectrum Protected Data
 	Float c[nSpectrumSamples];
 };
+
+// LH2 additions
+template <>
+inline typename VectorType<3>::type CoefficientSpectrum<3>::vector() const
+{
+	return {c[0], c[1], c[2]};
+}
 
 class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples>
 {
@@ -546,12 +556,6 @@ class RGBSpectrum : public CoefficientSpectrum<3>
 		xyz[1] *= scale;
 		xyz[2] *= scale;
 		return FromXYZ( xyz );
-	}
-
-	// LH2 additions
-	Vector3f vector() const
-	{
-		return {c[0], c[1], c[2]};
 	}
 };
 

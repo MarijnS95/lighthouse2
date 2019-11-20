@@ -29,8 +29,9 @@ public:
 	// constructor / destructor
 	HostSkyDome();
 	~HostSkyDome();
-	void Load( const char* filename );
+	void Load( const char* filename, const float3 scale = {1.f, 1.f, 1.f} );
 	// public data members
+	mat4 worldToLight = mat4::Identity();
 	float3* pixels = nullptr;			// HDR texture data for sky dome
 	int width = 0;						// width of the sky texture
 	int height = 0;						// height of the sky texture
