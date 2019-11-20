@@ -97,6 +97,7 @@ endif()
 
 # Include default RenderCores:
 add_render_core("lib/RenderCore_SoftRasterizer")
+add_render_core("lib/RenderCore_Minimal")
 
 message(STATUS "Found RenderCores: ${render_cores}")
 
