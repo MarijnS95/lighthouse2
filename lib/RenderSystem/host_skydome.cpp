@@ -42,9 +42,6 @@ static int RadicalInverse9bit( const int v )
 //  +-----------------------------------------------------------------------------+
 HostSkyDome::HostSkyDome()
 {
-	pdf = (float*)MALLOC64( IBLWIDTH * IBLHEIGHT * sizeof( float ) );
-	cdf = (float*)MALLOC64( IBLWIDTH * (IBLHEIGHT + 1) * sizeof( float ) );
-	columncdf = (float*)MALLOC64( (IBLWIDTH + 1) * sizeof( float ) );
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -53,22 +50,30 @@ HostSkyDome::HostSkyDome()
 //  +-----------------------------------------------------------------------------+
 HostSkyDome::~HostSkyDome()
 {
-	FREE64( pdf );
-	FREE64( cdf );
-	FREE64( columncdf );
+	if ( pdf )
+		FREE64( pdf );
+	if ( cdf )
+		FREE64( cdf );
+	if ( columncdf )
+		FREE64( columncdf );
 }
 
 //  +-----------------------------------------------------------------------------+
 //  |  HostSkyDome::Load                                                          |
 //  |  Load a skydome.                                                      LH2'19|
 //  +-----------------------------------------------------------------------------+
-void HostSkyDome::Load()
+void HostSkyDome::Load( const char* filename )
 {
 	Timer timer;
 	timer.reset();
 	FREE64( pixels ); // just in case we're reloading
 	pixels = 0;
-	char t[] = "data/sky_15.hdr" /* skyBoxPath */, *p;
+
+	// Append ".bin" to the filename:
+	char bin_name[PATH_MAX];
+	strncpy(bin_name, filename, sizeof(bin_name));
+	strncat(bin_name, ".bin", sizeof(bin_name));
+
 #ifdef TESTSKY
 	// red / green / blue test environment
 	width = 5120, height = 2560;
@@ -79,26 +84,16 @@ void HostSkyDome::Load()
 	for (int x = 2000; x < 2200; x++) for (int y = 900; y < 1100; y++) pixels[x + y * 5120] = make_float3( 0, 10, 0 );
 	for (int x = 4000; x < 4200; x++) for (int y = 900; y < 1100; y++) pixels[x + y * 5120] = make_float3( 0, 0, 10 );
 #else
-	if (p = strstr( t, ".hdr" ))
+	// attempt to load skydome from binary file
+	std::ifstream f( bin_name, std::ios::binary );
+	if (f)
 	{
-		// attempt to load skydome from binary file
-		memcpy( strstr( t, ".hdr" ), ".bin", 4 );
-		std::ifstream f( t, std::ios::binary );
-		if (f)
-		{
-			printf( "loading cached hdr data... " );
-			f.read( (char*)&width, sizeof( width ) );
-			f.read( (char*)&height, sizeof( height ) );
-			// TODO: Mmap
-			pixels = (float3*)MALLOC64( width * height * sizeof( float3 ) );
-			f.read( (char*)pixels, sizeof( float3 ) * width * height );
-		}
-		else memcpy( strstr( t, ".bin" ), ".hdr", 4 );
-	}
-	else
-	{
-		printf( "bad skydome filename.\n" );
-		return;
+		printf( "loading cached hdr data... " );
+		f.read( (char*)&width, sizeof( width ) );
+		f.read( (char*)&height, sizeof( height ) );
+		// TODO: Mmap
+		pixels = (float3*)MALLOC64( width * height * sizeof( float3 ) );
+		f.read( (char*)pixels, sizeof( float3 ) * width * height );
 	}
 #endif
 	if (!pixels)
@@ -106,18 +101,18 @@ void HostSkyDome::Load()
 		// load skydome from original .hdr file
 		printf( "loading original hdr data... " );
 		FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-		fif = FreeImage_GetFileType( t, 0 );
-		if (fif == FIF_UNKNOWN) fif = FreeImage_GetFIFFromFilename( t );
-		FIBITMAP* dib = FreeImage_Load( fif, t );
+		fif = FreeImage_GetFileType( filename, 0 );
+		if (fif == FIF_UNKNOWN) fif = FreeImage_GetFIFFromFilename( filename );
+		FIBITMAP* dib = FreeImage_Load( fif, filename );
 		if (!dib) return;
 		width = FreeImage_GetWidth( dib );
 		height = FreeImage_GetHeight( dib );
 		pixels = (float3*)MALLOC64( width * height * sizeof( float3 ) );
+		// TODO: Properly parse different pixel types.
 		for (int y = 0; y < height; y++) memcpy( pixels + y * width, FreeImage_GetScanLine( dib, height - 1 - y ), width * sizeof( float3 ) );
 		FreeImage_Unload( dib );
 		// save skydome to binary file, .hdr is slow to load
-		memcpy( strstr( t, ".hdr" ), ".bin", 4 );
-		std::ofstream f( t, std::ios::binary );
+		std::ofstream f( bin_name, std::ios::binary );
 		f.write( (char*)&width, sizeof( width ) );
 		f.write( (char*)&height, sizeof( height ) );
 		f.write( (char*)pixels, sizeof( float3 ) * width * height );
@@ -127,6 +122,13 @@ void HostSkyDome::Load()
 	// see: https://www.scribd.com/document/134001376/Importance-Sampling-with-Infinite-Area-Light-Source
 	// summarized in: http://cgg.mff.cuni.cz/~jaroslav/teaching/2011-pg3/ibl-writeup.pdf
 	printf( "calculating sky pdf... " );
+
+	// TODO: Free if not null!
+	// (Better: Refactor "Load" function into RAII)
+	pdf = (float*)MALLOC64( IBLWIDTH * IBLHEIGHT * sizeof( float ) );
+	cdf = (float*)MALLOC64( IBLWIDTH * (IBLHEIGHT + 1) * sizeof( float ) );
+	columncdf = (float*)MALLOC64( (IBLWIDTH + 1) * sizeof( float ) );
+
 	float stepTheta = (2.0f * PI) / IBLWIDTH;			// theta: -PI...PI
 	float stepPhi = PI / IBLHEIGHT;						// phi:     0...PI
 	for (int p = 0; p < IBLHEIGHT; p++) // loop over rows

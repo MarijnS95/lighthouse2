@@ -44,8 +44,15 @@ using namespace pbrt;
 //  +-----------------------------------------------------------------------------+
 void PrepareScene()
 {
-	// initialize scene
+	auto scene = renderer->GetScene();
+
 #if 0
+	// initialize skydome
+	auto sky = new HostSkyDome();
+	sky->Load( "data/sky_15.hdr" );
+	scene->SetSkyDome( sky );
+
+	// initialize scene
 	materialFile = string( "data/pica/pica_materials.xml" );
 	renderer->AddScene( "scene.gltf", "data/pica/", mat4::Translate( 0, -10.2f, 0 ) );
 	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
@@ -129,14 +136,16 @@ void PrepareScene()
 
 	Options opts;
 
-	pbrtInit( opts, renderer->GetScene() );
+	pbrtInit( opts, scene );
 
-	// pbrtParseFile( "data/coffee/scene.pbrt" );
+	pbrtParseFile( "data/coffee/scene.pbrt" );
 	// pbrtParseFile( "data/material-testball/scene.pbrt" );
 	// pbrtParseFile( "data/glass-of-water/scene.pbrt" );
 	// pbrtParseFile( "data/lamp/scene.pbrt" );
-	pbrtParseFile( "data/kitchen/scene.pbrt" );
+	// pbrtParseFile( "data/kitchen/scene.pbrt" );
 	// pbrtParseFile( "data/bathroom2/scene.pbrt" );
+	// pbrtParseFile("pbrt-v3-scenes/caustic-glass/glass.pbrt");
+	// pbrtParseFile("pbrt-v3-scenes/transparent-machines/frame1266.pbrt");
 
 	// TODO in end of main!
 	// pbrtCleanup();

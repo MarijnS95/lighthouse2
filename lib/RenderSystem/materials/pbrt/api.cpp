@@ -847,7 +847,20 @@ void pbrtNamedMaterial( const std::string& name )
 
 void pbrtLightSource( const std::string& name, const ParamSet& params )
 {
-	Warning( "pbrtLightSource is not implemented!" );
+	if ( name == "infinite" || name == "exinfinite" )
+	{
+		Spectrum L = params.FindOneSpectrum( "L", Spectrum( 1.0 ) );
+		Spectrum sc = params.FindOneSpectrum( "scale", Spectrum( 1.0 ) );
+		std::string texmap = params.FindOneFilename( "mapname", "" );
+		int nSamples = params.FindOneInt( "samples",
+										  params.FindOneInt( "nsamples", 1 ) );
+		auto sd = new HostSkyDome();
+		sd->Load( texmap.c_str() );
+		hostScene->SetSkyDome( sd );
+	}
+	// TODO: Implement other light types
+	else
+		Error( "LightSource: light type \"%s\" unknown.", name.c_str() );
 }
 
 void pbrtAreaLightSource( const std::string& name, const ParamSet& params )

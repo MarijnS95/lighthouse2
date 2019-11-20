@@ -177,11 +177,16 @@ void HostScene::DeserializeMaterials( const char* xmlFile )
 //  +-----------------------------------------------------------------------------+
 void HostScene::Init()
 {
-	// initialize skydome
-	sky = new HostSkyDome();
-	sky->Load();
 	// initialize the camera
 	camera = new Camera();
+}
+
+//  +-----------------------------------------------------------------------------+
+//  |  HostScene::SetSkyDome                                                      |
+//  |  Set the skydome used for this scene.                                 LH2'19|
+//  +-----------------------------------------------------------------------------+
+void HostScene::SetSkyDome( HostSkyDome* skydome ) {
+	sky = skydome;
 }
 
 //  +-----------------------------------------------------------------------------+
