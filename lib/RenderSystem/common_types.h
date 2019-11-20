@@ -502,6 +502,43 @@ public:
 		M[2] = z.x, M[6] = z.y, M[10] = z.z;
 		return M;
 	}
+	static mat4 LookAt( const float3& pos, const float3& look, const float3& up )
+	{
+		mat4 cameraToWorld;
+		// Initialize fourth column of viewing matrix
+		cameraToWorld( 0, 3 ) = pos.x;
+		cameraToWorld( 1, 3 ) = pos.y;
+		cameraToWorld( 2, 3 ) = pos.z;
+		cameraToWorld( 3, 3 ) = 1;
+
+		// Initialize first three columns of viewing matrix
+		float3 dir = normalize( look - pos );
+		float3 right = cross( normalize( up ), dir );
+		if ( dot( right, right ) == 0 )
+		{
+			printf(
+				"\"up\" vector (%f, %f, %f) and viewing direction (%f, %f, %f) "
+				"passed to LookAt are pointing in the same direction.  Using "
+				"the identity transformation.\n",
+				up.x, up.y, up.z, dir.x, dir.y, dir.z );
+			return mat4();
+		}
+		right = normalize( right );
+		float3 newUp = cross( dir, right );
+		cameraToWorld( 0, 0 ) = right.x;
+		cameraToWorld( 1, 0 ) = right.y;
+		cameraToWorld( 2, 0 ) = right.z;
+		cameraToWorld( 3, 0 ) = 0.;
+		cameraToWorld( 0, 1 ) = newUp.x;
+		cameraToWorld( 1, 1 ) = newUp.y;
+		cameraToWorld( 2, 1 ) = newUp.z;
+		cameraToWorld( 3, 1 ) = 0.;
+		cameraToWorld( 0, 2 ) = dir.x;
+		cameraToWorld( 1, 2 ) = dir.y;
+		cameraToWorld( 2, 2 ) = dir.z;
+		cameraToWorld( 3, 2 ) = 0.;
+		return cameraToWorld.Inverted();
+	}
 	static mat4 Translate( const float x, const float y, const float z ) { mat4 r; r.cell[3] = x; r.cell[7] = y; r.cell[11] = z; return r; };
 	static mat4 Translate( const float3 P ) { mat4 r; r.cell[3] = P.x; r.cell[7] = P.y; r.cell[11] = P.z; return r; };
 	float Trace3() const { return cell[0] + cell[5] + cell[10]; }
