@@ -499,28 +499,56 @@ void pbrtCleanup()
 
 void pbrtIdentity()
 {
-	Warning( "pbrtIdentity is not implemented!" );
+	VERIFY_INITIALIZED( "Identity" );
+	FOR_ACTIVE_TRANSFORMS( curTransform[i] = Transform(); )
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+		printf( "%*sIdentity\n", catIndentCount, "" );
 }
 
 void pbrtTranslate( Float dx, Float dy, Float dz )
 {
-	Warning( "pbrtTranslate is not implemented!" );
+	VERIFY_INITIALIZED( "Translate" );
+	FOR_ACTIVE_TRANSFORMS( curTransform[i] = curTransform[i] *
+											 mat4::Translate( dx, dy, dz ); )
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+		printf( "%*sTranslate %.9g %.9g %.9g\n", catIndentCount, "", dx, dy,
+				dz );
 }
 
-void pbrtRotate( Float angle, Float ax, Float ay, Float az )
+void pbrtRotate( Float angle, Float dx, Float dy, Float dz )
 {
-	Warning( "pbrtRotate is not implemented!" );
+	VERIFY_INITIALIZED( "Rotate" );
+	auto axis = normalize( make_float3( dx, dy, dz ) );
+	FOR_ACTIVE_TRANSFORMS( curTransform[i] =
+							   curTransform[i] *
+							   mat4::Rotate( axis, Radians( angle ) ); )
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+		printf( "%*sRotate %.9g %.9g %.9g %.9g\n", catIndentCount, "", angle,
+				dx, dy, dz );
 }
 
 void pbrtScale( Float sx, Float sy, Float sz )
 {
-	Warning( "pbrtScale is not implemented!" );
+	VERIFY_INITIALIZED( "Scale" );
+	FOR_ACTIVE_TRANSFORMS( curTransform[i] =
+							   curTransform[i] * mat4::Scale( make_float3( sx, sy, sz ) ); )
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+		printf( "%*sScale %.9g %.9g %.9g\n", catIndentCount, "", sx, sy, sz );
 }
 
 void pbrtLookAt( Float ex, Float ey, Float ez, Float lx, Float ly, Float lz,
 				 Float ux, Float uy, Float uz )
 {
-	Warning( "pbrtLookAt is not implemented!" );
+	VERIFY_INITIALIZED( "LookAt" );
+	Transform lookAt =
+		mat4::LookAt( make_float3( ex, ey, ez ), make_float3( lx, ly, lz ), make_float3( ux, uy, uz ) );
+	FOR_ACTIVE_TRANSFORMS( curTransform[i] = curTransform[i] * lookAt; );
+	if ( PbrtOptions.cat || PbrtOptions.toPly )
+		printf(
+			"%*sLookAt %.9g %.9g %.9g\n%*s%.9g %.9g %.9g\n"
+			"%*s%.9g %.9g %.9g\n",
+			catIndentCount, "", ex, ey, ez, catIndentCount + 8, "", lx, ly, lz,
+			catIndentCount + 8, "", ux, uy, uz );
 }
 
 void pbrtConcatTransform( Float tr[16] )
