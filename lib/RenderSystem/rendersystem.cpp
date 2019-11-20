@@ -53,7 +53,7 @@ void RenderSystem::SynchronizeSky()
 	{
 		// send sky data to core
 		HostSkyDome* sky = scene->sky;
-		core->SetSkyData( sky->pixels, sky->width, sky->height );
+		core->SetSkyData( sky->pixels, sky->width, sky->height, sky->worldToLight );
 	}
 }
 

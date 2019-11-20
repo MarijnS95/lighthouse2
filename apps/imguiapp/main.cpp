@@ -51,6 +51,8 @@ void PrepareScene()
 	// initialize skydome
 	auto sky = new HostSkyDome();
 	sky->Load( "data/sky_15.hdr" );
+	// Compensate for different evaluation in PBRT
+	sky->worldToLight = mat4::RotateX( -PI / 2 );
 	scene->SetSkyDome( sky );
 
 #if 1
