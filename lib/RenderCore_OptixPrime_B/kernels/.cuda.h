@@ -32,6 +32,7 @@ typedef unsigned char uchar;
 #include "../core_settings.h"
 #include "common_settings.h"
 #include "common_classes.h"
+#include "common_types.h"
 #include <core_texture.h>
 #include <materials/pbrt/core_materials.h>
 #if __CUDA_ARCH__ >= 700
