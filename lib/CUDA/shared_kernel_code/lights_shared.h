@@ -22,7 +22,7 @@
 #include "noerrors.h"
 
 #define ISLIGHTS
-#define MAXISLIGHTS	8
+#define MAXISLIGHTS	2048
 
 #define AREALIGHTCOUNT			lightCounts.x
 #define POINTLIGHTCOUNT			lightCounts.y
