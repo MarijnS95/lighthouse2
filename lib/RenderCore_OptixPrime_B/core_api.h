@@ -50,7 +50,7 @@ public:
 		const CoreSpotLight* spotLights, const int spotLightCount,
 		const CoreDirectionalLight* directionalLights, const int directionalLightCount );
 	// SetSkyData: specify the data required for sky dome rendering.
-	void SetSkyData( const float3* pixels, const uint width, const uint height );
+	void SetSkyData( const float3* pixels, const uint width, const uint height, const mat4& worldToLight );
 	// SetGeometry: update the geometry for a single mesh.
 	void SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangles, const uint* alphaFlags = 0 );
 	// SetInstance: update the data on a single instance.
