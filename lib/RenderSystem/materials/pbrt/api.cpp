@@ -852,10 +852,12 @@ void pbrtLightSource( const std::string& name, const ParamSet& params )
 		Spectrum L = params.FindOneSpectrum( "L", Spectrum( 1.0 ) );
 		Spectrum sc = params.FindOneSpectrum( "scale", Spectrum( 1.0 ) );
 		std::string texmap = params.FindOneFilename( "mapname", "" );
-		int nSamples = params.FindOneInt( "samples",
-										  params.FindOneInt( "nsamples", 1 ) );
+		// int nSamples = params.FindOneInt( "samples",
+		// 								  params.FindOneInt( "nsamples", 1 ) );
 		auto sd = new HostSkyDome();
-		sd->Load( texmap.c_str() );
+		const auto light2world = curTransform[0];
+		sd->worldToLight = light2world.Inverted();
+		sd->Load( texmap.c_str(), ( L * sc ).vector() );
 		hostScene->SetSkyDome( sd );
 	}
 	// TODO: Implement other light types

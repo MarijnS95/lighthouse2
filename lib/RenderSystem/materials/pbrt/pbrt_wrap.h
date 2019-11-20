@@ -40,6 +40,33 @@ using Point3f = float3;
 using Point2f = float2;
 using Transform = mat4;
 
+/**
+ * traits-alike structure returning the desired vector type
+ * for a templatable number of components.
+ */
+template <int c, typename T = Float>
+struct VectorType
+{
+	// Incomplete but valid type for now
+	typedef T* type;
+};
+
+template <>
+struct VectorType<2, Float>
+{
+	typedef float2 type;
+};
+template <>
+struct VectorType<3, Float>
+{
+	typedef float3 type;
+};
+template <>
+struct VectorType<4, Float>
+{
+	typedef float4 type;
+};
+
 #define PBRT_CONSTEXPR constexpr
 
 static PBRT_CONSTEXPR Float Infinity = std::numeric_limits<Float>::infinity();
