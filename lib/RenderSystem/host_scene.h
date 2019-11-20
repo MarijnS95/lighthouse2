@@ -37,6 +37,7 @@ public:
 	static void DeserializeMaterials( const char* xmlFile );
 	// methods
 	static void Init();
+	static void SetSkyDome( HostSkyDome* );
 	static int FindOrCreateTexture( const string& origin, const uint modFlags = 0 );
 	static int CreateTexture( const string& origin, const uint modFlags = 0 );
 	static int FindOrCreateMaterial( const string& name );
