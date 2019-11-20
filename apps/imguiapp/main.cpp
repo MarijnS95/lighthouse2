@@ -45,7 +45,13 @@ using namespace pbrt;
 void PrepareScene()
 {
 	// initialize scene
+	auto scene = renderer->GetScene();
+
 #if 0
+	// initialize skydome
+	auto sky = new HostSkyDome();
+	sky->Load( "data/sky_15.hdr" );
+	scene->SetSkyDome( sky );
 
 #if 1
 	// mushrooms
@@ -144,14 +150,16 @@ void PrepareScene()
 
 	Options opts;
 
-	pbrtInit( opts, renderer->GetScene() );
+	pbrtInit( opts, scene );
 
-	// pbrtParseFile( "data/coffee/scene.pbrt" );
+	pbrtParseFile( "data/coffee/scene.pbrt" );
 	// pbrtParseFile( "data/material-testball/scene.pbrt" );
 	// pbrtParseFile( "data/glass-of-water/scene.pbrt" );
 	// pbrtParseFile( "data/lamp/scene.pbrt" );
-	pbrtParseFile( "data/kitchen/scene.pbrt" );
+	// pbrtParseFile( "data/kitchen/scene.pbrt" );
 	// pbrtParseFile( "data/bathroom2/scene.pbrt" );
+	// pbrtParseFile("pbrt-v3-scenes/caustic-glass/glass.pbrt");
+	// pbrtParseFile("pbrt-v3-scenes/transparent-machines/frame1266.pbrt");
 
 	// TODO in end of main!
 	// pbrtCleanup();

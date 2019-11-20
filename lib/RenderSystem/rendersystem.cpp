@@ -49,7 +49,7 @@ void RenderSystem::SetTarget( GLTexture* target, const uint spp )
 //  +-----------------------------------------------------------------------------+
 void RenderSystem::SynchronizeSky()
 {
-	if (scene->sky->Changed())
+	if (scene->sky && scene->sky->Changed())
 	{
 		// send sky data to core
 		HostSkyDome* sky = scene->sky;
