@@ -34,6 +34,11 @@ class Emissive : public MaterialIntf
 		return true;
 	}
 
+	__device__ bool IsEmissiveTwosided() const override
+	{
+		return light.twosided;
+	}
+
 	__device__ bool IsAlpha() const override
 	{
 		return false;
