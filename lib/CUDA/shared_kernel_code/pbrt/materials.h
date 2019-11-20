@@ -17,5 +17,6 @@ namespace pbrt
 #include "./mirror.h"
 #include "./plastic.h"
 #include "./substrate.h"
+#include "./uber.h"
 
 }; // namespace pbrt

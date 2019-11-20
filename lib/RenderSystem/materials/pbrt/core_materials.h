@@ -94,6 +94,16 @@ struct Substrate
 	bool remapRoughness;
 };
 
+struct Uber
+{
+	static constexpr auto type = MaterialType::PBRT_UBER;
+
+	CoreTexture<float3> Kd, Ks, Kr, Kt, opacity;
+	CoreTexture<float> roughnessu, roughnessv, eta;
+
+	bool remapRoughness;
+};
+
 }; // namespace pbrt
 }; // namespace materials
 }; // namespace common

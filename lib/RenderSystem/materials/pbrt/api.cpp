@@ -286,9 +286,9 @@ static DynamicHostMaterial* MakeMaterial( const std::string& name,
 		material = CreateMetalMaterial( mp );
 	else if ( name == "substrate" )
 		material = CreateSubstrateMaterial( mp );
-#if 0 // Not implemented
 	else if ( name == "uber" )
 		material = CreateUberMaterial( mp );
+#if 0 // Not implemented
 	else if ( name == "subsurface" )
 		material = CreateSubsurfaceMaterial( mp );
 	else if ( name == "kdsubsurface" )

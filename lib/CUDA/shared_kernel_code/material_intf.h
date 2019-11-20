@@ -110,6 +110,7 @@ using Materials = MaterialSwitch<
 	Case<MaterialType::PBRT_MIRROR, pbrt::Mirror>,
 	Case<MaterialType::PBRT_PLASTIC, pbrt::Plastic>,
 	Case<MaterialType::PBRT_SUBSTRATE, pbrt::Substrate>,
+	Case<MaterialType::PBRT_UBER, pbrt::Uber>,
 	Case<MaterialType::EMISSIVE, Emissive>,
 	>;
 
