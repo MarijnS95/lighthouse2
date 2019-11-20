@@ -100,9 +100,9 @@ void CoreAPI::SetLights( const CoreLightTri* areaLights, const int areaLightCoun
 		directionalLights, directionalLightCount );
 }
 
-void CoreAPI::SetSkyData( const float3* pixels, const uint width, const uint height )
+void CoreAPI::SetSkyData( const float3* pixels, const uint width, const uint height, const mat4& worldToLight )
 {
-	core->SetSkyData( pixels, width, height );
+	core->SetSkyData( pixels, width, height, worldToLight );
 }
 
 void CoreAPI::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangles, const uint* alphaFlags )
