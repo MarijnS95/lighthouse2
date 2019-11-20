@@ -40,6 +40,7 @@ class MaterialIntf : public HasPlacementNewOperator
 		const TransportMode mode = TransportMode::Radiance // IN:	Mode based on integrator (optional)
 		) = 0;
 	__device__ virtual bool IsEmissive() const = 0;
+	__device__ virtual bool IsEmissiveTwosided() const { return false; }
 	__device__ virtual bool IsAlpha() const = 0;
 	/**
 	 * Used to retrieve color for emissive surfaces.

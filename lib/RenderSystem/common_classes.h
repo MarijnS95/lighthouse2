@@ -266,6 +266,7 @@ static_assert( sizeof( CoreMaterialDesc ) == sizeof( int ), "CoreMaterialDesc mu
 struct CoreEmissiveMaterial
 {
 	float3 color;
+	bool twosided;
 };
 
 enum TexelStorage
