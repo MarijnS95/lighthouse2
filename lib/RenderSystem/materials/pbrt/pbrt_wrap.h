@@ -118,6 +118,10 @@ inline T Clamp( T val, U low, V high )
 
 inline Float Lerp( Float t, Float v1, Float v2 ) { return ( 1 - t ) * v1 + t * v2; }
 
+inline Float Radians( Float deg ) { return ( PI / 180.f ) * deg; }
+
+inline Float Degrees( Float rad ) { return ( 180.f / PI ) * rad; }
+
 template <typename Predicate>
 int FindInterval( int size, const Predicate& pred )
 {
