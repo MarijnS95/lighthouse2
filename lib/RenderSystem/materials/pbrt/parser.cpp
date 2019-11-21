@@ -30,6 +30,8 @@
 
  */
 
+#include <platform.h>
+
 #include "pbrt_wrap.h"
 
 // core/parser.cpp*
@@ -50,8 +52,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#elif defined( PBRT_IS_WINDOWS )
-#include <windows.h> // Windows file mapping API
 #endif
 #include <functional>
 #include <iostream>
