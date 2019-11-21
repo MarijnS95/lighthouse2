@@ -268,7 +268,11 @@ class TrowbridgeReitzDistribution : public MicrofacetDistribution<sampleVisibleA
 	__device__ float Lambda( const float3& w ) const override
 	{
 		const float absTanTheta = std::abs( TanTheta( w ) );
+#ifdef _MSC_VER
+		if ( isinf( absTanTheta ) ) return 0.;
+#else
 		if ( std::isinf( absTanTheta ) ) return 0.;
+#endif
 		// Compute _alpha_ for direction _w_
 		const float alpha =
 			std::sqrt( Cos2Phi( w ) * alphax * alphax + Sin2Phi( w ) * alphay * alphay );
@@ -356,8 +360,12 @@ class TrowbridgeReitzDistribution : public MicrofacetDistribution<sampleVisibleA
 
 	__device__ float D( const float3& wh ) const override
 	{
-		const float tan2Theta = Tan2Theta( wh );
+		float tan2Theta = Tan2Theta( wh );
+#ifdef _MSC_VER
+		if ( isinf( tan2Theta ) ) return 0.;
+#else
 		if ( std::isinf( tan2Theta ) ) return 0.;
+#endif
 		const float cos4Theta = Cos2Theta( wh ) * Cos2Theta( wh );
 		const float e =
 			( Cos2Phi( wh ) / ( alphax * alphax ) + Sin2Phi( wh ) / ( alphay * alphay ) ) *
