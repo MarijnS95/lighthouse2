@@ -33,6 +33,7 @@ endif()
 
 if(WIN32)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif()
 
 # External dependencies bundled with the source:
