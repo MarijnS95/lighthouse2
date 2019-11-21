@@ -12,11 +12,32 @@
 #define ALIGN( x ) __attribute__( ( aligned( x ) ) )
 #endif
 
+// https://developercommunity.visualstudio.com/content/problem/560274/error-c2988-unrecognizable-template-declarationdef.html
+// https://stackoverflow.com/questions/53705903/stdis-convertibleargtypes-validtraitsvalue-dependent-name-is-not-a-type
+// Reportedly fixed in 2019 16.3
+#if defined(_MSC_VER) && _MSC_VER < 1923
+
+template <bool... v>
+struct all_true
+{
+	static constexpr bool value = std::min( {v...} );
+};
+
+template <bool... v>
+struct any_true
+{
+	static constexpr bool value = std::max( {v...} );
+};
+
+#else /* MSVC BUG */
+
 template <bool... v>
 using all_true = std::integral_constant<bool, std::min( {v...} )>;
 
 template <bool... v>
 using any_true = std::integral_constant<bool, std::max( {v...} )>;
+
+#endif /* MSVC BUG */
 
 template <typename same, typename... more>
 using any_is_same = any_true<std::is_same<same, more>::value...>;
