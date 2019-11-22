@@ -38,3 +38,8 @@ Note there are a bunch of `TODO` comments spread across the code. These range fr
 - Objects with flipped normals (see the drawers in the kitchen scene) have a darker reflection (why?)
 - Overall, scenes look much duller, darker, and less detailed than their online renderers. Look at the kitchen scene and breakfast room from Benedikt Bitterli, or the glass of water splashing. The last one even has a black background towards the edges, which is totally not the case in the images on the website.
 - The directional light - despite seeming implemented properly - massively overbrightens everything (see lamp scene).
+
+## Windows bugs
+- CUDA Kernel assertions do not compile in debug mode (except with #define NDEBUG, defeating the purpose).
+- Compile-time sanity checks are disabled thanks to broken templated type aliases.
+- CoreMaterialDesc too large due to alignment.
