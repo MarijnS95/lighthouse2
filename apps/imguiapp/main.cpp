@@ -154,14 +154,20 @@ void PrepareScene()
 
 	pbrtInit( opts, scene );
 
-	pbrtParseFile( "data/coffee/scene.pbrt" );
+	// pbrtParseFile( "data/coffee/scene.pbrt" );
 	// pbrtParseFile( "data/material-testball/scene.pbrt" );
 	// pbrtParseFile( "data/glass-of-water/scene.pbrt" );
 	// pbrtParseFile( "data/lamp/scene.pbrt" );
 	// pbrtParseFile( "data/kitchen/scene.pbrt" );
-	// pbrtParseFile( "data/bathroom2/scene.pbrt" );
+	pbrtParseFile( "data/bathroom2/scene.pbrt" );
+	// pbrtParseFile( "data/dining-room/scene.pbrt" );
 	// pbrtParseFile("pbrt-v3-scenes/caustic-glass/glass.pbrt");
 	// pbrtParseFile("pbrt-v3-scenes/transparent-machines/frame1266.pbrt");
+	// pbrtParseFile("pbrt-v3-scenes/chopper-titan/chopper-titan.pbrt");
+	// pbrtParseFile("pbrt-v3-scenes/breakfast/breakfast.pbrt");
+	// pbrtParseFile("pbrt-v3-scenes/contemporary-bathroom/contemporary-bathroom.pbrt");
+	// pbrtParseFile("pbrt-v3-scenes/measure-one/frame25.pbrt");
+	// pbrtParseFile("pbrt-v3-scenes/villa/f16-20a.pbrt");
 
 	// TODO in end of main!
 	// pbrtCleanup();
