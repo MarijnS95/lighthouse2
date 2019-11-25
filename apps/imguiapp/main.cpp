@@ -182,7 +182,8 @@ void PrepareScene()
 bool HandleInput( float frameTime )
 {
 	// handle keyboard input
-	float tspd = (keystates[GLFW_KEY_LEFT_SHIFT] ? 15.0f : 5.0f) * frameTime, rspd = 2.5f * frameTime;
+	float tspd = ( keystates[GLFW_KEY_LEFT_CONTROL] ? 1.f : ( keystates[GLFW_KEY_LEFT_SHIFT] ? 15.0f : 5.0f ) ) * frameTime,
+		  rspd = 2.5f * frameTime;
 	bool changed = false;
 	Camera *camera = renderer->GetCamera();
 	if (keystates[GLFW_KEY_A]) { changed = true; camera->TranslateRelative( make_float3( -tspd, 0, 0 ) ); }
