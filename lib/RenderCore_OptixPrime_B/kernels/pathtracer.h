@@ -186,6 +186,28 @@ void shadeKernel( float4* accumulator, const uint stride,
 	const float faceDir = (dot( D, N ) > 0) ? -1 : 1;
 	if (faceDir == 1) materialPtr->DisableTransmittance();
 
+	// evaluate bsdf to obtain direction for next path segment
+	float3 R;
+	float newBsdfPdf, r3, r4;
+	if (sampleIdx < 256)
+	{
+		const uint x = (pixelIdx % w) & 127, y = (pixelIdx / w) & 127;
+		r3 = blueNoiseSampler( blueNoise, x, y, sampleIdx, 6 + 4 * pathLength );
+		r4 = blueNoiseSampler( blueNoise, x, y, sampleIdx, 7 + 4 * pathLength );
+	}
+	else
+	{
+		r3 = RandomFloat( seed );
+		r4 = RandomFloat( seed );
+	}
+
+	materials::BxDFType sampledType;
+	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, HIT_T, r3, r4, bsdfFlags,
+										 R, newBsdfPdf, sampledType );
+
+	// detect specular surfaces
+	if ( sampledType & materials::BxDFType::BSDF_SPECULAR ) FLAGS |= S_SPECULAR; else FLAGS &= ~S_SPECULAR;
+
 	// apply postponed bsdf pdf
 	throughput *= 1.0f / bsdfPdf;
 
@@ -234,29 +256,7 @@ void shadeKernel( float4* accumulator, const uint stride,
 	// cap at two diffuse bounces, or a maximum path length
 	if (/* FLAGS & ENOUGH_BOUNCES || */ pathLength == MAXPATHLENGTH) return;
 
-	// evaluate bsdf to obtain direction for next path segment
-	float3 R;
-	float newBsdfPdf, r3, r4;
-	if (sampleIdx < 256)
-	{
-		const uint x = (pixelIdx % w) & 127, y = (pixelIdx / w) & 127;
-		r3 = blueNoiseSampler( blueNoise, x, y, sampleIdx, 6 + 4 * pathLength );
-		r4 = blueNoiseSampler( blueNoise, x, y, sampleIdx, 7 + 4 * pathLength );
-	}
-	else
-	{
-		r3 = RandomFloat( seed );
-		r4 = RandomFloat( seed );
-	}
-
-	materials::BxDFType sampledType;
-	const float3 bsdf = material.Sample( fN, N, T, D * -1.0f, HIT_T, r3, r4, bsdfFlags,
-										 R, newBsdfPdf, sampledType );
-
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
-
-	// detect specular surfaces
-	if ( sampledType & materials::BxDFType::BSDF_SPECULAR ) FLAGS |= S_SPECULAR; else FLAGS &= ~S_SPECULAR;
 
 	// russian roulette (TODO: greatly increases variance.)
 	const float p = ((FLAGS & S_SPECULAR) || ((FLAGS & S_BOUNCED) == 0))  ? 1 : SurvivalProbability( bsdf );
