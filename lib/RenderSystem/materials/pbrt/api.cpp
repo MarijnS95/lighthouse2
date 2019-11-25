@@ -936,7 +936,9 @@ void pbrtLightSource( const std::string& name, const ParamSet& params )
 		const auto from = params.FindOnePoint3f( "from", make_float3( 0, 0, 0 ) );
 		const auto to = params.FindOnePoint3f( "to", make_float3( 0, 0, 1 ) );
 		const auto light2world = curTransform[0];
-		const auto dir = normalize( light2world.TransformVector( from - to ) );
+		// WARNING: In PBRT the dir vector points _towards_ the light,
+		// while in LH2 this represents the direction the light is pointed towards
+		const auto dir = normalize( light2world.TransformVector( to - from ) );
 		hostScene->AddDirectionalLight( dir, ( L * sc ).vector() );
 	}
 	else if ( name == "infinite" || name == "exinfinite" )
