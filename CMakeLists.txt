@@ -32,6 +32,11 @@ add_subdirectory("lib/CUDA")
 # Include RenderCores:
 file(GLOB cores "lib/RenderCore_*")
 foreach(core IN LISTS cores)
+	if(NOT EXISTS "${core}/CMakeLists.txt")
+		message(WARNING "${core} does not contain CMakeLists.txt, it will not be built.")
+		continue()
+	endif()
+
 	add_subdirectory(${core})
 	get_filename_component(core_name ${core} NAME)
 	# get_property(core_loc TARGET ${core_name} PROPERTY LOCATION)
