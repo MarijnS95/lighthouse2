@@ -613,6 +613,9 @@ int HostScene::AddMaterial( DynamicHostMaterial* material )
 //  +-----------------------------------------------------------------------------+
 int HostScene::AddMaterial( const float3 color )
 {
+	if ( color.x > 1 || color.y > 1 || color.z > 1 )
+		return AddMaterial( new EmissiveMaterial( color, /*twosided:*/ false ) );
+
 	auto material = new HostMaterial();
 	material->color = color;
 	return material->ID = AddMaterial( material );
