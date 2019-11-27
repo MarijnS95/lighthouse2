@@ -19,6 +19,35 @@ Ready-to-use PBRT scenes can be pulled from [the official website](https://pbrt.
 
 While efficiency has just been discussed above, these scenes still render much, much faster even on older/slower graphics cards. When manually rendering these scenes with `pbrt`, expect much longer rendering times, with a worse (read: more noisy) result. The desired sample count seems to have been increased when generating the images on the website, which is not reflected in the scene files.
 
+### Coffee Maker
+![Coffee Maker](/screenshots/coffee.png)
+Original:
+[![Original](https://benedikt-bitterli.me/resources/thumb/coffee.png)](https://benedikt-bitterli.me/resources/images/coffee.png)
+Notice the bright reflection on the left side of the handle, and the black plastic that appears brighter and less specular than the original.
+PBRT doesn't generate an image with this deep orange color. It seems to have been graded afterwards.
+PBRT does however have a reflection on the inside of the metal ring, which is missing on the other pictures. This has likely been a global switch to double-sided surfaces?
+There is also some fringing below the brand name on the black button, and across the center line where the pot connects to the top.
+
+### Salle de bain
+TODO: Redo with more bounces, sinks and wood is too dark!
+![Salle de bain](/screenshots/bathroom2.png)
+Original:
+[![Original](https://benedikt-bitterli.me/resources/thumb/bathroom2.png)](https://benedikt-bitterli.me/resources/images/bathroom2.png)
+The area light in this scene appears more yellow, and overexposes everything around it.
+
+### Glass of water
+![Glass of water](/screenshots/glass-of-water.png)
+Original:
+[![Original](https://benedikt-bitterli.me/resources/thumb/glass-of-water.png)](https://benedikt-bitterli.me/resources/images/glass-of-water.png)
+Notice that this scene is also less dark than the original. There are less shadows or at least not as pronounced, and they are completely absent under the puddles around the melting icecubes.
+
+### Lamp
+This lamp is modeled with >2000 area lights representing the lightbulb.
+![Lamp](/screenshots/lamp.png)
+[![Original](https://benedikt-bitterli.me/resources/thumb/lamp.png)](https://benedikt-bitterli.me/resources/images/lamp.png)
+Notice that the background is darker than the original (hiding the shadows, especially those cast by the head and arealights, which are blocking the distant light source), and the matte black is way less shiny and dark just like the Coffee Maker. The specular spot from the distant light source is completely absent.
+The back area light on the left side of the picture casts a hard shadow.
+
 ## What's missing?
 - Parsing simple and advanced configuration nodes from PBRT files; look for `not implemented` markers in [api.cpp](../lib/RenderSystem/materials/pbrt/api.cpp) for the current status.
   For example:
@@ -35,13 +64,6 @@ Note there are a bunch of `TODO` comments spread across the code. These range fr
 - Uber material Ks on the `chopper-titan` scene looks lighter than it should be
 - Window slits in the `dining-room` scene do not cast proper shadows on the wall
   - Can be skydome transformation and the distant light source
-
-## Update after rebase on top of master:
-- Darker reflection on flipped normals is fixed
-- Dark indoor scenes seem fixed, to a certain extent.
-- The "always working" coffee machine scene is now broken, way too dark.
-- Indoor scenes seem too light on unlit surfaces. As if a light vector got flipped somewhere.
-- Overbrightening in the lamp scene seems gone now. But the light-direction issue seems to rear its head here as well.
 
 ## Windows bugs
 - CUDA Kernel assertions do not compile in debug mode (except with #define NDEBUG, defeating the purpose).
