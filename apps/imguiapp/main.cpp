@@ -158,8 +158,8 @@ void PrepareScene()
 	// pbrtParseFile( "data/material-testball/scene.pbrt" );
 	// pbrtParseFile( "data/glass-of-water/scene.pbrt" );
 	// pbrtParseFile( "data/lamp/scene.pbrt" );
-	// pbrtParseFile( "data/kitchen/scene.pbrt" );
-	pbrtParseFile( "data/bathroom2/scene.pbrt" );
+	pbrtParseFile( "data/kitchen/scene.pbrt" );
+	// pbrtParseFile( "data/bathroom2/scene.pbrt" );
 	// pbrtParseFile( "data/dining-room/scene.pbrt" );
 	// pbrtParseFile("pbrt-v3-scenes/caustic-glass/glass.pbrt");
 	// pbrtParseFile("pbrt-v3-scenes/transparent-machines/frame1266.pbrt");

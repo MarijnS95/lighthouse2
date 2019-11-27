@@ -259,8 +259,8 @@ void shadeKernel( float4* accumulator, const uint stride,
 	if (newBsdfPdf < EPSILON || isnan( newBsdfPdf )) return;
 
 	// russian roulette (TODO: greatly increases variance.)
-	const float p = ((FLAGS & S_SPECULAR) || ((FLAGS & S_BOUNCED) == 0))  ? 1 : SurvivalProbability( bsdf );
-	if (p < RandomFloat( seed )) return; else throughput *= 1 / p;
+	// const float p = ((FLAGS & S_SPECULAR) || ((FLAGS & S_BOUNCED) == 0))  ? 1 : SurvivalProbability( bsdf );
+	// if (p < RandomFloat( seed )) return; else throughput *= 1 / p;
 
 	// write extension ray
 	const uint extensionRayIdx = atomicAdd( &counters->extensionRays, 1 ); // compact
