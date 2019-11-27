@@ -26,10 +26,10 @@ LH2_DEVFUNC float mitchellNetravali( const float v )
 	else if (x < 2) return 1.0f / 6.0f * ((-B - 6 * C) * x3 + (6 * B + 30 * C) * x2 + (-12 * B - 48 * C) * x + (8 * B + 24 * C)); else return 0.0f;
 }
 
-LH2_DEVFUNC float4 __uchar4_to_float4( const uint v4 )
+LH2_DEVFUNC float4 __uchar4_to_float4( const uchar4 v4 )
 {
 	const float r = 1.0f / 256.0f;
-	return make_float4( (float)(v4 & 255) * r, (float)((v4 >> 8) & 255) * r, (float)((v4 >> 16) & 255) * r, (float)(v4 >> 24) * r );
+	return make_float4( v4.x * r, v4.y * r, v4.z * r, v4.w * r );
 }
 
 LH2_DEVFUNC float4 FetchTexel( const float2 texCoord, const int o, const int w, const int h,
