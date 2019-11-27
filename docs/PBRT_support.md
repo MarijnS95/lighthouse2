@@ -26,18 +26,15 @@ While efficiency has just been discussed above, these scenes still render much, 
 - Support for participating media (`MakeNamedMedium` and `MediumInterface`).
 - This implementation supports rendering `RGBSpectrum` (as `float3`) only. `SampledSpectrum`s (describing intensity for a number of light frquency bins) is not supported.
 - Not all materials are supported. Complicated ones such as `Hair` require a lot of extra code, while others should be relatively easy to add when necessary for a scene.
+- Bumpmapping is not implemented yet.
 
 Note there are a bunch of `TODO` comments spread across the code. These range from simple items to those requiring major architectural changes to the project, which have been deemed out of scope for this implementation.
 
 ## Bugs
 - Rotation and/or transformed skydome loading goes the wrong way around an axis
-- Certain materials appear lighter than they should be:
-  - Uber material Ks on the `chopper-titan` scene
-  - Textured surfaces in the kitchen scene
-  - Textured floor in "The Breakfast Room"
-- Objects with flipped normals (see the drawers in the kitchen scene) have a darker reflection (why?)
-- Overall, scenes look much duller, darker, and less detailed than their online renderers. Look at the kitchen scene and breakfast room from Benedikt Bitterli, or the glass of water splashing. The last one even has a black background towards the edges, which is totally not the case in the images on the website.
-- The directional light - despite seeming implemented properly - massively overbrightens everything (see lamp scene).
+- Uber material Ks on the `chopper-titan` scene looks lighter than it should be
+- Window slits in the `dining-room` scene do not cast proper shadows on the wall
+  - Can be skydome transformation and the distant light source
 
 ## Update after rebase on top of master:
 - Darker reflection on flipped normals is fixed
