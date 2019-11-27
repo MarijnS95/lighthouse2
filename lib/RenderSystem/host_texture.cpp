@@ -76,6 +76,21 @@ void HostTexture::sRGBtoLinear( uchar* pixels, const uint size, const uint strid
 	}
 }
 
+float HostTexture::InverseGammaCorrect( float value )
+{
+	if ( value <= 0.04045f ) return value * 1.f / 12.92f;
+	return std::pow( ( value + 0.055f ) * 1.f / 1.055f, 2.4f );
+}
+
+float4 HostTexture::InverseGammaCorrect( const float4& color )
+{
+	return make_float4(
+		InverseGammaCorrect( color.x ),
+		InverseGammaCorrect( color.y ),
+		InverseGammaCorrect( color.z ),
+		color.w );
+}
+
 //  +-----------------------------------------------------------------------------+
 //  |  HostTexture::Equals                                                        |
 //  |  Returns true if the fields that identify the texture are identical to the  |
@@ -247,6 +262,30 @@ void HostTexture::Load( const char* fileName, const uint modFlags, bool normalMa
 	if (normalMap) flags |= NORMALMAP;
 	// unload
 	FreeImage_Unload( img ); if (bpp == 32) FreeImage_Unload( tmp );
+
+	// Perform gamma correction
+	if ( mods & GAMMACORRECTION )
+	{
+		for ( uint p = 0; p < width * height; ++p )
+		{
+			if ( flags & HDR )
+				fdata[p] = InverseGammaCorrect( fdata[p] );
+			else
+			{
+				const auto convert = []( const uchar in ) {
+					return (uchar)clamp( InverseGammaCorrect( in / 255.f ) * 255.f, 0.f, 255.f );
+				};
+
+				const auto in = idata[p];
+				idata[p] = make_uchar4(
+					convert( in.x ),
+					convert( in.y ),
+					convert( in.z ),
+					in.w );
+			}
+		}
+	}
+
 #ifdef CACHEIMAGES
 	// prepare binary blob to be faster next time
 	if (strlen( fileName ) > 4) if (fileName[strlen( fileName ) - 4] == '.')

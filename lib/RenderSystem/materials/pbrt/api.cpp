@@ -366,12 +366,15 @@ static DynamicHostTexture<float3>* CreateImageSpectrumTexture(
 	Float scale = tp.FindFloat( "scale", 1.f );
 #endif
 	std::string filename = tp.FindFilename( "filename" );
-#if 0
+
 	bool gamma = tp.FindBool( "gamma", HasExtension( filename, ".tga" ) ||
 										   HasExtension( filename, ".png" ) );
-#endif
 
-	int texId = hostScene->FindOrCreateTexture( filename, HostTexture::FLIPPED );
+	int flags = HostTexture::FLIPPED;
+	if ( gamma )
+		flags |= HostTexture::GAMMACORRECTION;
+
+	int texId = hostScene->FindOrCreateTexture( filename, flags );
 	auto texPtr = hostScene->textures[texId];
 	return texPtr;
 
