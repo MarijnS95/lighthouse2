@@ -103,7 +103,7 @@ void RenderCore::SetInstance( const int instanceIdx, const int meshIdx, const ma
 	// adjust the instances vector if we have more.
 	if (meshIdx == -1)
 	{
-		if (rasterizer.scene.root->child.size() > instanceIdx) 
+		if (rasterizer.scene.root->child.size() > instanceIdx)
 			rasterizer.scene.root->child.resize( instanceIdx );
 		return;
 	}
@@ -224,6 +224,10 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 void RenderCore::Shutdown()
 {
 	delete renderTarget;
+}
+
+CoreStats RenderCore::GetCoreStats() const {
+	return coreStats;
 }
 
 // EOF

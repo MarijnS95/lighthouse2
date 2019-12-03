@@ -630,4 +630,8 @@ void RenderCore::Shutdown()
 	rtpContextDestroy( context );
 }
 
+CoreStats RenderCore::GetCoreStats() const {
+	return coreStats;
+}
+
 // EOF

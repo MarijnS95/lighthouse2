@@ -1177,6 +1177,10 @@ void RenderCore::Shutdown()
 	// Vulkan device & Vulkan instance automatically get freed when this class gets destroyed
 }
 
+CoreStats RenderCore::GetCoreStats() const {
+	return coreStats;
+}
+
 } // namespace lh2core
 
 // EOF

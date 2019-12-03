@@ -37,7 +37,7 @@ struct DeviceVars
 //  |  RenderCore                                                                 |
 //  |  Encapsulates device code.                                            LH2'19|
 //  +-----------------------------------------------------------------------------+
-class RenderCore
+class RenderCore : public CoreAPI_Base
 {
 public:
 	static RenderCore *instance;
@@ -67,6 +67,7 @@ public:
 	void SetInstance( const int instanceIdx, const int modelIdx, const mat4 &transform );
 	void UpdateToplevel();
 	void SetProbePos( const int2 pos );
+	CoreStats GetCoreStats() const override;
 
 	// public data members
 	vk::DispatchLoaderDynamic dynamicDispatcher; // Dynamic dispatcher for extension functions such as NV_RT

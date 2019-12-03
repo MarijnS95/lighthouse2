@@ -37,7 +37,7 @@ struct DeviceVars
 //  |  RenderCore                                                                 |
 //  |  Encapsulates device code.                                            LH2'19|
 //  +-----------------------------------------------------------------------------+
-class RenderCore
+class RenderCore : public CoreAPI_Base
 {
 public:
 	// methods
@@ -65,6 +65,7 @@ public:
 	void SetInstance( const int instanceIdx, const int modelIdx, const mat4& transform );
 	void UpdateToplevel() { /* nothing here for a rasterizer */ }
 	void SetProbePos( const int2 pos );
+	CoreStats GetCoreStats() const override;
 	// internal methods
 private:
 	// data members

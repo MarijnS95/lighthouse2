@@ -165,7 +165,6 @@ struct Intersection { float t; int triid, instid; float u, v; };
 #ifndef __CUDACC__
 
 #include "core_api_base.h"
-#include "core_api.h"
 #include "rendercore.h"
 
 // blue noise data, from https://eheitzresearch.wordpress.com/762-2

@@ -275,7 +275,7 @@ void RenderCore::SetTextures( const CoreTexDesc* tex, const int textures )
 	SyncStorageType( TexelStorage::ARGB32 );
 	SyncStorageType( TexelStorage::ARGB128 );
 	SyncStorageType( TexelStorage::NRM32 );
-	// Notes: 
+	// Notes:
 	// - the three types are copied from the original HostTexture pixel data (to which the
 	//   descriptors point) straight to the GPU. There is no pixel storage on the host
 	//   in the RenderCore.
@@ -596,6 +596,10 @@ void RenderCore::Shutdown()
 	rtpBufferDescDestroy( extensionRaysDesc[1] );
 	rtpBufferDescDestroy( extensionHitsDesc );
 	rtpContextDestroy( context );
+}
+
+CoreStats RenderCore::GetCoreStats() const {
+	return coreStats;
 }
 
 // EOF

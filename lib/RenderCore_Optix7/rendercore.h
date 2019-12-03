@@ -32,7 +32,7 @@ struct DeviceVars
 //  |  RenderCore                                                                 |
 //  |  Encapsulates device code.                                            LH2'19|
 //  +-----------------------------------------------------------------------------+
-class RenderCore
+class RenderCore : public CoreAPI_Base
 {
 public:
 	// methods
@@ -61,6 +61,7 @@ public:
 	void UpdateToplevel();
 	void SetProbePos( const int2 pos );
 	CoreMaterial& GetCoreMaterial( int materialIdx ) { return materialBuffer->HostPtr()[materialIdx]; }
+	CoreStats GetCoreStats() const override;
 	// internal methods
 private:
 	void SyncStorageType( const TexelStorage storage );

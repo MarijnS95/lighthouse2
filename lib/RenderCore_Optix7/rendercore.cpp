@@ -764,4 +764,8 @@ void RenderCore::Shutdown()
 	cudaFree( (void*)sbt.hitgroupRecordBase );
 }
 
+CoreStats RenderCore::GetCoreStats() const {
+	return coreStats;
+}
+
 // EOF

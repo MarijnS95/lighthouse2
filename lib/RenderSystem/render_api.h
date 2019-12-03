@@ -62,7 +62,7 @@ public:
 	int AddDirectionalLight( const float3 direction, const float3 radiance, bool enabled = true );
 	void SetTarget( GLTexture* tex, const uint spp );
 	void SetProbePos( const int2 pos );
-	CoreStats GetCoreStats();
+	CoreStats GetCoreStats() const;
 	SystemStats GetSystemStats();
 };
 

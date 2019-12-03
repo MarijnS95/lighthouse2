@@ -37,7 +37,7 @@ struct DeviceVars
 //  |  RenderCore                                                                 |
 //  |  Encapsulates device code.                                            LH2'19|
 //  +-----------------------------------------------------------------------------+
-class RenderCore
+class RenderCore : public CoreAPI_Base
 {
 public:
 	// methods
@@ -67,6 +67,7 @@ public:
 	int4 GetScreenParams();
 	void SetProbePos( const int2 pos );
 	CoreMaterial& GetCoreMaterial( int materialIdx ) { return materialBuffer->HostPtr()[materialIdx]; }
+	CoreStats GetCoreStats() const override;
 	// internal methods
 private:
 	void SyncStorageType( const TexelStorage storage );
@@ -75,7 +76,7 @@ private:
     int scrspp = 1;									// samples to be taken per screen pixel
 	int skywidth = 0, skyheight = 0;				// size of the skydome texture
 	int maxPixels = 0;								// max screen size buffers can accomodate without a realloc
-	int currentSPP = 0;	
+	int currentSPP = 0;
     int samplesTaken = 0;// spp count which will be accomodated without a realloc
     uint maxVisNum = 1600 * 900 * VIS_BUFFERSIZE;
 	int2 probePos = make_int2( 0 );					// triangle picking; primary ray for this pixel copies its triid to coreStats.probedTriid
