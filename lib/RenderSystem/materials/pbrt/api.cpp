@@ -659,7 +659,8 @@ void pbrtCamera( const std::string& name, const ParamSet& params )
 	hostScene->camera->direction = make_float3( CameraToWorld[0] * make_float4( 0, 0, 1, 0 ) );
 
 	hostScene->camera->FOV = params.FindOneFloat( "fov", 90.f );
-	hostScene->camera->focalDistance = params.FindOneFloat( "focaldistance", /* PBRT default: 1e6f */ 5.f );
+	hostScene->camera->focalDistance = params.FindOneFloat( "focaldistance", 1e6f);
+	hostScene->camera->aperture = params.FindOneFloat("lensradius", 0.f);
 }
 
 void pbrtMakeNamedMedium( const std::string& name, const ParamSet& params )
